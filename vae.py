@@ -56,6 +56,6 @@ class VAE:
         # Divergence from N(0, 1)
         loss += 0.5 * torch.sum(self.sigma) # tr(sigma)
         loss += 0.5 * torch.sum(torch.norm(self.mu, dim=1))
-        loss += 0.5 * torch.sum(torch.log(self.sigma + 0.0001)) #log(sigma)
+        loss -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001)) #log(sigma)
 
         return loss

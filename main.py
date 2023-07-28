@@ -21,7 +21,7 @@ optimizer = optim.Adam(
         {"params": vae.decoder.parameters()}, 
         {"params": vae.encoder.parameters()}
     ],
-    lr=0.000001
+    lr=0.0001
 )
 
 losses = []
