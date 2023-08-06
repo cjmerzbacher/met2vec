@@ -1,3 +1,4 @@
+import torch
 from vae import VAE
 from fluxDataset import FluxDataset
 from torch.utils.data import DataLoader
@@ -5,16 +6,21 @@ from tqdm import tqdm
 import torch.optim as optim
 import math
 
-fd = FluxDataset("./data/samples/liver_100.csv")
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-dl = DataLoader(fd, batch_size=10, shuffle=True);
+print(f"Using device {device}")
 
-epochs = 5
+fd = FluxDataset("./data/samples/liver_10k.csv")
+dl = DataLoader(fd, batch_size=64, shuffle=True);
+
+epochs = 50
 n_in = int(fd.data.shape[1])
 n_emb = 256
 n_lay = 5
 
 vae = VAE(n_in, n_emb, n_lay)
+vae.encoder = vae.encoder.to(device)
+vae.decoder = vae.decoder.to(device)
 
 optimizer = optim.Adam(
     [
@@ -28,12 +34,13 @@ losses = []
 for epoch in range(epochs):
     with tqdm(dl) as t:
         for x in t:
+            x = x.to(device)
             optimizer.zero_grad()
 
             y = vae.encode_decode(x)
             loss = vae.loss(x, y)
             loss.backward()
-            losses.append(loss.detach().numpy())
+            losses.append(loss.detach().cpu().numpy())
 
             optimizer.step()
 

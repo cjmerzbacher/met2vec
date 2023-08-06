@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 class VAE:
     def __init__(self, n_in : int, n_emb : int, n_lay : int):
         self.n_in = n_in
@@ -41,8 +43,10 @@ class VAE:
         return self.mu, self.sigma
 
     def encode_decode(self, x):
+        global device
+
         mu, sigma = self.get_dist(x) 
-        epsilon = torch.normal(torch.zeros(sigma.size()), torch.ones(sigma.size())) 
+        epsilon = torch.normal(torch.zeros(sigma.size()), torch.ones(sigma.size())).to(device)
 
         z = mu + (sigma * epsilon)
 
