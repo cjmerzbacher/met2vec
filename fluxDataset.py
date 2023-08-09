@@ -21,15 +21,14 @@ class FluxDataset(Dataset):
         return torch.Tensor(self.data[idx])
     
     def normalize(self):
-        self.ignore = np.all(self.data == 0.0, axis=0, keepdims=True)
+        ignore = np.repeat(np.all(self.data == 0.0, axis=0, keepdims=True), self.data.shape[0], axis=0)
 
         self.mean = np.mean(self.data, axis=0)
         self.data = (self.data - self.mean)
 
         self.std = np.std(self.data, axis=0)
+        self.std[np.all(ignore, axis=0)] = 1.0
+
         self.data = self.data / self.std
 
-        self.data[np.repeat(self.ignore, self.data.shape[0], axis=0)] = 0.0
-
-
-fd = FluxDataset("./data/samples/liver_100.csv")
+        self.data[ignore] = 0.0
