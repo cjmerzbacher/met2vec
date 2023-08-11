@@ -29,8 +29,8 @@ class VAETrainer:
             return loss
         
         def save_model(e):
-            torch.save(vae.encoder, os.path.join(self.args.model_folder, f"encoder{e}.pth"))
-            torch.save(vae.decoder, os.path.join(self.args.model_folder, f"decoder{e}.pth"))
+            torch.save(vae.encoder, os.path.join(self.args.main_folder, f"encoder{e}.pth"))
+            torch.save(vae.decoder, os.path.join(self.args.main_folder, f"decoder{e}.pth"))
 
         optimizer = optim.SGD(
             [

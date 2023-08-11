@@ -11,28 +11,32 @@ from collections import namedtuple
 
 # Get arguments
 parser = argparse.ArgumentParser("VAE trainer", "Python program to train VAE from flux dataset.")
-parser.add_argument("-e", "--epochs", default=1, type=int)
-parser.add_argument("-s", "--save_on", default=10, type=int)
-parser.add_argument("--n_emb", default=128, type=int)
-parser.add_argument("--n_lay", default=5, type=int)
-parser.add_argument("--lr", default=0.0001, type=float)
-parser.add_argument("-d" ,"--dataset_name", required=True, type=str)
+parser.add_argument("-e", "--epochs", default=1, type=int, help="The number of epochs the VAE will be trained for.")
+parser.add_argument("-b", "--batch_size", default=64, type=int, help="The batch size samples will be taken in.")
+parser.add_argument("-m", "--main_folder", type=str, help="Name of the folder data will be saved to.")
+parser.add_argument("-s", "--save_on", default=10, type=int, help="The number of epochs between saves of the VAE.")
+parser.add_argument("--n_emb", default=128, type=int, help="The number of embeding dimensions.")
+parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
+parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
+parser.add_argument("-d" ,"--dataset_name", required=True, type=str, help="The name of the dataset that will be trained on.")
 args = parser.parse_args()
 
 # Setup model folder
-args.model_folder = os.path.abspath(os.path.join(
+if args.main_folder is None:
+    args.main_folder = "%m/%d/%Y, %H:%M:%S";
+args.main_folder = os.path.abspath(os.path.join(
         "data", 
         "models", 
         args.dataset_name, 
-        datetime.now().strftime('%m-%d-%Y@%H-%M-%S')),
-    )
-os.makedirs(args.model_folder)
+        args.main_folder,
+    ))
+os.makedirs(args.main_folder)
 
 # Setup losses file
-args.losses_file = os.path.join(args.model_folder, "losses.csv")
+args.losses_file = os.path.join(args.main_folder, "losses.csv")
 
 # Save args
-with open(os.path.join(args.model_folder, "args.txt"), "w+") as file:
+with open(os.path.join(args.main_folder, "args.txt"), "w+") as file:
     file.writelines([f"{n}:{v}\n" for n, v, in args._get_kwargs()])
 
 # Check device
@@ -42,7 +46,7 @@ print(f"Using device {device}...")
 # Load dataset
 print("Loading dataset...")
 fd = FluxDataset(f"./data/samples/{args.dataset_name}.csv")
-dl = DataLoader(fd, batch_size=1, shuffle=True);
+dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
 n_in = int(fd.data.shape[1])
 
 # Load VAE
