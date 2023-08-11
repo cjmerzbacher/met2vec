@@ -13,12 +13,12 @@ from collections import namedtuple
 parser = argparse.ArgumentParser("VAE trainer", "Python program to train VAE from flux dataset.")
 parser.add_argument("-e", "--epochs", default=1, type=int, help="The number of epochs the VAE will be trained for.")
 parser.add_argument("-b", "--batch_size", default=64, type=int, help="The batch size samples will be taken in.")
-parser.add_argument("-m", "--main_folder", type=str, help="Name of the folder data will be saved to.")
 parser.add_argument("-s", "--save_on", default=10, type=int, help="The number of epochs between saves of the VAE.")
 parser.add_argument("--n_emb", default=128, type=int, help="The number of embeding dimensions.")
 parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
 parser.add_argument("-d" ,"--dataset_name", required=True, type=str, help="The name of the dataset that will be trained on.")
+parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
 # Setup model folder
@@ -30,7 +30,8 @@ args.main_folder = os.path.abspath(os.path.join(
         args.dataset_name, 
         args.main_folder,
     ))
-os.makedirs(args.main_folder)
+if not os.path.exists(args.main_folder):
+    os.makedirs(args.main_folder)
 
 # Setup losses file
 args.losses_file = os.path.join(args.main_folder, "losses.csv")

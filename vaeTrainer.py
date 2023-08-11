@@ -13,7 +13,7 @@ class VAETrainer:
     def __init__(self, args):
         self.args = args
 
-    def train(self, vae : VAE, data_loader : DataLoader, losses_file : str =None):
+    def train(self, vae : VAE, data_loader : DataLoader):
         e_size = len(str(self.args.epochs - 1))
         with open(self.args.losses_file, "w+") as file:
             file.write("loss\n")

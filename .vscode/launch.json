@@ -11,7 +11,7 @@
             "program": "main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-d", "liver_100"]
+            "args": ["-d", "liver_100", "-b", "1", "debug"]
         }
     ]
 }
