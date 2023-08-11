@@ -20,8 +20,12 @@ class VAETrainer:
 
         def train_batch(x):
             optimizer.zero_grad()
-            loss = vae.forward_backward(x)
+            y = vae.encode_decode(x)
+            loss = vae.loss(x, y)
+            loss.backward()
             optimizer.step()
+
+            loss = loss.detach().cpu().numpy()
 
             with open(self.args.losses_file, "a+") as file:
                 file.write(f"{loss}\n")
@@ -32,7 +36,7 @@ class VAETrainer:
             torch.save(vae.encoder, os.path.join(self.args.main_folder, f"encoder{e}.pth"))
             torch.save(vae.decoder, os.path.join(self.args.main_folder, f"decoder{e}.pth"))
 
-        optimizer = optim.SGD(
+        optimizer = optim.Adam(
             [
                 {"params": vae.decoder.parameters()}, 
                 {"params": vae.encoder.parameters()}

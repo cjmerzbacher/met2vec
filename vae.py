@@ -62,16 +62,8 @@ class VAE:
         loss = torch.sum(torch.pow(x - y, 2.0), dim=1) 
 
         # Divergence from N(0, 1)
-        loss += 0.5 * torch.sum(self.sigma, dim=1)                     # tr(sigma)
-        loss += 0.5 * torch.sum(torch.pow(self.mu, 2.0), dim=1)
+        loss += 0.5 * torch.sum(self.sigma, dim=1) # tr(sigma)
+        loss += 0.5 * torch.norm(self.mu, dim=1)
         loss -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
 
         return torch.mean(loss)
-    
-    def forward_backward(self, x):
-        y = self.encode_decode(x)
-        self.loss(x, y)
-        loss = self.loss(x, y)
-        loss.backward()
-
-        return loss.detach().cpu().numpy()
