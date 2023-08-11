@@ -35,6 +35,10 @@ class VAE:
         ]
         self.decoder = nn.Sequential(*decoder).float()
 
+    def to(self, device):
+        self.encoder = self.encoder.to(device)
+        self.decoder = self.decoder.to(device)
+
     def get_dist(self, x):
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
@@ -63,3 +67,11 @@ class VAE:
         loss -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
 
         return torch.mean(loss)
+    
+    def forward_backward(self, x):
+        y = self.encode_decode(x)
+        self.loss(x, y)
+        loss = self.loss(x, y)
+        loss.backward()
+
+        return loss.detach().cpu().numpy()
