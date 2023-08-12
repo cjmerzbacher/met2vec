@@ -14,6 +14,7 @@ class VAETrainer:
         self.args = args
 
     def train(self, vae : VAE, data_loader : DataLoader):
+        vae.to(device)
         e_size = len(str(self.args.epochs - 1))
         with open(self.args.losses_file, "w+") as file:
             file.write("loss\n")
