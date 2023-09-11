@@ -13,7 +13,7 @@ plt.rcParams['figure.dpi'] = 60
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("type", type=str, choices=["hist", "scatter"])
+    parser.add_argument("type", type=str, choices=["hist", "scatter", "pca_scree"])
     parser.add_argument("--columns", "-c", type=int, nargs=2, default=[0,1])
     parser.add_argument("--pca", action="store_true")
     parser.add_argument("--tsne", action="store_true")
@@ -63,6 +63,22 @@ def scatter(values, columns, column_names, colors, handles):
     plt.xlabel(column_names[x_ax])
     plt.ylabel(column_names[y_ax])
 
+def pca_scree(values):
+    print("PCA Scree: Fitting...")
+    pca = PCA()
+    pca.fit(values)
+    print("PCA Scree: Done.")
+
+    evr = pca.explained_variance_ratio_
+
+    plt.plot(evr, label='Explained Variance')
+    plt.plot([sum(evr[:i]) for i in range(pca.n_components_)], label="Cumulative Variace")
+
+    plt.xlabel("Principal Components")
+    plt.ylabel("% Total Variance")
+    plt.legend()
+
+
 args = get_args()
 plotD = PlottingDataset()
 for path in tqdm(expanded_datasets(args), desc="Loading datasets"):
@@ -98,6 +114,8 @@ match args.type:
         hist(values, columns)
     case "scatter":
         scatter(values, args.columns, columns, colors, plotD.handles())
+    case "pca_scree":
+        pca_scree(values)
 
 plt.suptitle(args.title, fontsize=32)
 plt.show()
