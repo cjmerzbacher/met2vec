@@ -21,10 +21,6 @@ class PlottingDataset:
         return len(self.df)
 
     def add_section(self, path : str):
-        if not path.endswith('.csv'):
-            [self.add_section(os.path.join(path, f)) for f in os.listdir(path) if f.endswith('.csv')]
-            return
-
         label = get_label_from_path(path)
 
         df = prepare_section(pd.read_csv(path))
