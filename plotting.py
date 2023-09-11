@@ -1,6 +1,7 @@
 from plottingDataset import PlottingDataset
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from umap import UMAP
 from tqdm import tqdm
 
 import argparse
@@ -15,7 +16,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("type", type=str, choices=["hist", "scatter", "pca_scree"])
     parser.add_argument("--columns", "-c", type=int, nargs=2, default=[0,1])
-    parser.add_argument("--pca", action="store_true")
+    parser.add_argument("--preprocessing", "-p", type=str, choices=["normalized", "none", "tsne", "umap", "pca"], default="normalized")
     parser.add_argument("--tsne", action="store_true")
     parser.add_argument("--title", type=str, default="Plot")
     parser.add_argument("datasets", nargs="+", type=str)
@@ -30,6 +31,47 @@ def expanded_datasets(args):
         else:
             datasets.append(path)
     return datasets
+
+def preprocess(plotD, args):
+    values = plotD.normalized_values()
+    columns = plotD.columns()
+    colors = plotD.colors()
+
+    match args.preprocessing:
+        case "pca":
+            print("PCA: Fitting...")
+            pca = PCA()
+            pca.fit(values)
+            print("PCA: Transforming...")
+            values = pca.transform(values)
+            print("PCA: Done.")
+            columns = [f"PCA{i}" for i in range(pca.n_components_)]
+        case "tsne":
+            print("T-SNE: Fitting...")
+            n = 2
+            n_samples = min(6000, values.shape[0])
+            selection = np.random.choice(values.shape[0], n_samples, replace=False)
+
+            values = TSNE(n).fit_transform(values[selection])
+            colors = np.array(colors)[selection]
+
+            print("T-SNE: Done...")
+            columns = [f"E{i}" for i in range(n)] 
+        case "none":
+            values = plotD.values()
+        case "normalized":
+            pass
+        case "umap":
+            print("UMAP: Fitting...")
+            values = UMAP(min_dist=0.85).fit_transform(values)
+            print("UMAP: Done.")
+            columns = [f"E{i}" for i in range(2)] 
+
+    return values, columns, colors
+
+#
+#   PLOTTING
+#
 
 def hist(values, column_names):
     n = 8
@@ -59,7 +101,7 @@ def scatter(values, columns, column_names, colors, handles):
     y = values[:, y_ax]
 
     plt.scatter(x, y, c=colors)
-    plt.legend(handles=plotD.handles())
+    plt.legend(handles=handles)
     plt.xlabel(column_names[x_ax])
     plt.ylabel(column_names[y_ax])
 
@@ -78,44 +120,28 @@ def pca_scree(values):
     plt.ylabel("% Total Variance")
     plt.legend()
 
+#
+#   MAIN
+#
 
-args = get_args()
-plotD = PlottingDataset()
-for path in tqdm(expanded_datasets(args), desc="Loading datasets"):
-    plotD.add_section(path)
+def main():
+    args = get_args()
+    plotD = PlottingDataset()
+    for path in tqdm(expanded_datasets(args), desc="Loading datasets"):
+        plotD.add_section(path)
 
-values = plotD.normalized_values()
-columns = plotD.columns()
-colors = plotD.colors()
+    values, columns, colors = preprocess(plotD, args)
 
-if args.pca == True:
-    print("PCA: Fitting...")
-    pca = PCA()
-    pca.fit(values)
-    print("PCA: Transforming...")
-    values = pca.transform(values)
-    print("PCA: Done.")
-    columns = [f"PCA{i}" for i in range(pca.n_components_)]
+    match args.type:
+        case "hist":
+            hist(values, columns)
+        case "scatter":
+            scatter(values, args.columns, columns, colors, plotD.handles())
+        case "pca_scree":
+            pca_scree(values)
 
-if args.tsne == True:
-    print("T-SNE: Fitting...")
-    n = 2
-    n_samples = min(6000, values.shape[0])
-    selection = np.random.choice(values.shape[0], n_samples, replace=False)
+    plt.suptitle(args.title, fontsize=32)
+    plt.show()
 
-    values = TSNE(n).fit_transform(values[selection])
-    colors = np.array(colors)[selection]
-
-    print("T-SNE: Done...")
-    columns = [f"E{i}" for i in range(n)] 
-
-match args.type:
-    case "hist":
-        hist(values, columns)
-    case "scatter":
-        scatter(values, args.columns, columns, colors, plotD.handles())
-    case "pca_scree":
-        pca_scree(values)
-
-plt.suptitle(args.title, fontsize=32)
-plt.show()
+if __name__ == "__main__":
+    main()
