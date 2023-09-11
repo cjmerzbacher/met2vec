@@ -1,11 +1,13 @@
 from plottingDataset import PlottingDataset
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from tqdm import tqdm
 
 import argparse
 import random
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 plt.rcParams['figure.dpi'] = 60
 
@@ -14,6 +16,7 @@ def get_args():
     parser.add_argument("type", type=str, choices=["hist", "scatter"])
     parser.add_argument("--columns", "-c", type=int, nargs=2, default=[0,1])
     parser.add_argument("--pca", action="store_true")
+    parser.add_argument("--tsne", action="store_true")
     parser.add_argument("--title", type=str, default="Plot")
     parser.add_argument("datasets", nargs="+", type=str)
 
@@ -50,12 +53,12 @@ def hist(values, column_names):
     fig.set_figheight(100)
     fig.set_figwidth(100)
 
-def scatter(plotD, values, columns, column_names):
+def scatter(values, columns, column_names, colors, handles):
     x_ax, y_ax = columns
     x = values[:, x_ax]
     y = values[:, y_ax]
 
-    plt.scatter(x, y, c=plotD.colors())
+    plt.scatter(x, y, c=colors)
     plt.legend(handles=plotD.handles())
     plt.xlabel(column_names[x_ax])
     plt.ylabel(column_names[y_ax])
@@ -67,6 +70,7 @@ for path in tqdm(expanded_datasets(args), desc="Loading datasets"):
 
 values = plotD.normalized_values()
 columns = plotD.columns()
+colors = plotD.colors()
 
 if args.pca == True:
     print("PCA: Fitting...")
@@ -77,11 +81,23 @@ if args.pca == True:
     print("PCA: Done.")
     columns = [f"PCA{i}" for i in range(pca.n_components_)]
 
+if args.tsne == True:
+    print("T-SNE: Fitting...")
+    n = 2
+    n_samples = min(6000, values.shape[0])
+    selection = np.random.choice(values.shape[0], n_samples, replace=False)
+
+    values = TSNE(n).fit_transform(values[selection])
+    colors = np.array(colors)[selection]
+
+    print("T-SNE: Done...")
+    columns = [f"E{i}" for i in range(n)] 
+
 match args.type:
     case "hist":
         hist(values, columns)
     case "scatter":
-        scatter(plotD, values, args.columns, columns)
+        scatter(values, args.columns, columns, colors, plotD.handles())
 
 plt.suptitle(args.title, fontsize=32)
 plt.show()
