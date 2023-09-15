@@ -11,7 +11,6 @@ def prepare_section(df : pd.DataFrame) -> pd.DataFrame:
 def get_label_from_path(path : str) -> str:
     return re.match(r"([a-z_]*)[a-z]", os.path.basename(path)).group()
 
-
 class PlottingDataset:
     def __init__(self):
         self.sections = {}
