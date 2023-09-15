@@ -1,7 +1,14 @@
 # TODO
 
 ## Basic Exploration
-[ ] Plot a map of histograms for a flux dataset
-[ ] Plot PCA values for combined datasets
-[ ] Plots t-SNE
+[x] Plot a map of histograms for a flux dataset
+[x] Plot PCA values for combined datasets
+[x] Plots t-SNE
+[ ] Plot UMAP
+[ ] Plot Scree
 [ ] Plot ...
+
+Notes:
+
+Command to compare models.
+    > py management/reaction_names_exploration.py C:\Users\Sam\Documents\met2vec\data\liver_hepatocytes.xml C:\Users\Sam\Documents\met2vec\data\lung_macrophages.xml C:\Users\Sam\Documents\met2vec\data\skeletal_muscle_myocytes.xml
