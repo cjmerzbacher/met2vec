@@ -23,13 +23,8 @@ args = parser.parse_args()
 
 # Setup model folder
 if args.main_folder is None:
-    args.main_folder = "%m/%d/%Y, %H:%M:%S";
-args.main_folder = os.path.abspath(os.path.join(
-        "data", 
-        "models", 
-        args.dataset_name, 
-        args.main_folder,
-    ))
+    args.main_folder = "%m/%d/%Y, %H:%M:%S"
+
 if not os.path.exists(args.main_folder):
     os.makedirs(args.main_folder)
 
