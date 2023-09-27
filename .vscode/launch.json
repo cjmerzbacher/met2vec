@@ -8,10 +8,10 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "main.py",
+            "program": "management\\flux_sample_combiner.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-d", "liver_100", "-b", "1", "debug"]
+            "args": ["U", ".\\data\\samples\\", ".\\data\\samples\\combined\\combined.csv"]
         }
     ]
 }
