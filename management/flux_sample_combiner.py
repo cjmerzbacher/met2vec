@@ -28,7 +28,7 @@ def find_files_with_extension(args, extension):
 
 def find_model_file(sample_file, args):
     try: 
-        name = re.sub('_[0-9]*.csv', '', re.search(r'[a-z|_]*_[0-9]+.csv', sample_file).group())
+        name = re.sub('_[0-9]*.csv', '', re.search(r'[a-z|_| |-]*_[0-9|k]+.csv', sample_file).group())
         return os.path.join(args.model, f'{name}.xml')
     except AttributeError:
         print('Cannot find name from file {sample_file}')
