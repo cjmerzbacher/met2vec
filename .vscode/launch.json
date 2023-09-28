@@ -11,7 +11,7 @@
             "program": "management\\flux_sample_combiner.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["U", ".\\data\\samples\\", ".\\data\\samples\\combined\\combined.csv"]
+            "args": ["I", ".\\data\\samples\\", ".\\data\\samples\\inter"]
         }
     ]
 }
