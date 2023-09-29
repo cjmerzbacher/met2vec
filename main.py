@@ -17,7 +17,7 @@ parser.add_argument("-s", "--save_on", default=10, type=int, help="The number of
 parser.add_argument("--n_emb", default=128, type=int, help="The number of embeding dimensions.")
 parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
-parser.add_argument("-d" ,"--dataset_name", required=True, type=str, help="The name of the dataset that will be trained on.")
+parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -41,7 +41,7 @@ print(f"Using device {device}...")
 
 # Load dataset
 print("Loading dataset...")
-fd = FluxDataset(f"./data/samples/{args.dataset_name}.csv")
+fd = FluxDataset(args.dataset)
 dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
 n_in = int(fd.data.shape[1])
 
