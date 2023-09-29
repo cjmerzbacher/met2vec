@@ -9,7 +9,7 @@ import logging
 import pandas as pd
 import numpy as np
 
-logging.getLogger('cobra').setLevel(logging.ERROR)
+logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
 UNION = 'U'
 INTER = 'I'
@@ -28,7 +28,7 @@ def find_files_with_extension(args, extension):
 
 def find_model_file(sample_file, args):
     try: 
-        name = re.sub('_[0-9]*.csv', '', re.search(r'[a-z|_| |-]*_[0-9|k]+.csv', sample_file).group())
+        name = re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,]*_[0-9|k]+.csv', sample_file).group())
         return os.path.join(args.model, f'{name}.xml')
     except AttributeError:
         print('Cannot find name from file {sample_file}')
@@ -50,6 +50,11 @@ def read_sample(file):
     df.drop(columns=df.columns[0], inplace=True)
     return df
 
+def read_sample_columns(file):
+    df = pd.read_csv(file, nrows=0)
+    df.drop(columns=df.columns[0], inplace=True)
+    return df.columns
+
 def c(prompt = 'Continue (y/n)?'):
     user_input = ''
     while user_input != 'y':
@@ -59,42 +64,41 @@ def c(prompt = 'Continue (y/n)?'):
 def check_model_folders(sample_files, args):
     if args.model is None:
         return
-    model_files = [find_model_file(f) for f in sample_files]
-    print('Sample -> Model mapping', *[f'  {sf} -> {mf}\n' for sf, mf in zip(sample_files, model_files)])
+    model_files = [find_model_file(f, args) for f in sample_files]
+    print('Sample -> Model mapping')
+    for sf, mf in zip(sample_files, model_files):
+        start = '[ ]' if os.path.exists(mf) else '[x]'    
+        print(start, f'{sf} -> {mf}')
     c()
+    return [get_rename_dict(read_sbml_model(f)) for f in tqdm(model_files, 'Loading rename dicts')]
 
 def main():
     args = get_args()
     sample_files = find_files_with_extension(args, '.csv')
-    check_model_folders(sample_files, args)
+    rename_dicts = check_model_folders(sample_files, args)
 
     column_sets = []
-
-    for sample_file in tqdm(sample_files, 'Finding columns to keep'):
-        sample = read_sample(sample_file)
-        start_n_columns = len(sample.columns)
-        
-        if args.model is not None:
-            model = read_sbml_model(find_model_file(sample_file))
-            sample.rename(columns=get_rename_dict(model), inplace=True)
-            if start_n_columns != len(set(sample.columns)):
+    for i in tqdm(range(len(sample_files)), 'Finding columns to keep'):
+        columns = read_sample_columns(sample_files[i])
+        if rename_dicts is not None:
+            columns = [rename_dicts[i][c] for c in columns]
+            if len(columns) != len(set(columns)):
                 print("Err: nColumns has been reduced by model rename...")
                 quit()
-
-        zero_columns = sample.columns[np.all(sample.values == 0, axis=0)]
-        sample.drop(columns=zero_columns, inplace=True)
-
-        column_sets.append(set(sample.columns))
+        column_sets.append(set(columns))
 
     column_set = set().union(*column_sets) if args.action == UNION else set(column_sets[0]).intersection(*column_sets)
     if not os.path.exists(args.output):
         os.mkdir(args.output)
 
-    for sample_file in tqdm(sample_files, 'Updating files'):
-        sample = read_sample(sample_file)
-        drop_columns = [c for c in sample.columns if c not in column_set]
-        sample.drop(columns=drop_columns, inplace=True)
-        sample.to_csv(os.path.join(args.output, os.path.basename(sample_file)))
+    for i in tqdm(range(len(sample_files)), 'Updating files'):
+        sample = read_sample(sample_files[i])
+        if rename_dicts is not None:
+            sample.rename(columns=rename_dicts[i], inplace=True)
+        drop_columns = {c for c in sample.columns if c not in column_set}
+        zero_columns = set(sample.columns[np.all(sample.values == 0, axis=0)])
+        sample.drop(columns=drop_columns.union(zero_columns), inplace=True)
+        sample.to_csv(os.path.join(args.output, os.path.basename(sample_files[i])))
 
 if __name__ == '__main__':
     main()
