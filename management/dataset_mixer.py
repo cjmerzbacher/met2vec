@@ -29,28 +29,21 @@ def main():
     if not os.path.exists(args.output):
         os.mkdir(args.output)
 
-    for mix in tqdm(range(len(dataset_files)), 'Creating mixed datasets', position=0):
-        mix_df = pd.DataFrame(columns=columns)
-        for i in tqdm(range(len(dataset_files)), 'Reading datasets', position=1):
-            dataset = pd.read_csv(dataset_files[i])
+    for i in tqdm(range(len(dataset_files)), 'Reading datasets', position=0):
+        dataset = pd.read_csv(dataset_files[i])
+        dataset.drop(columns=dataset.columns[0], inplace=True)
 
-            n_rows = len(dataset)
-            dataset.drop(dataset_taken_rows[i], axis=0, inplace=True)
-            if i != len(dataset_files) - 1:
-                dataset = dataset.sample(int(n_rows / len(dataset_files)))
+        for mix in tqdm(range(len(dataset_files)), 'Writing mix files', position=1):
+            sample = dataset.sample(int(len(dataset) / (len(dataset_files) - mix)))
+            dataset.drop(sample.index, inplace=True)
 
-            dataset_taken_rows[i] = dataset_taken_rows[i].union(dataset[dataset.columns[0]].values)
-            dataset.drop(columns=dataset.columns[0], inplace=True)
-            mix_df = pd.concat([mix_df, dataset])
-
-        mix_df.to_csv(os.path.join(args.output, f'mix_{mix}.csv'))
-            
-
-    
-
-
-
-
+            mix_df = pd.concat([pd.DataFrame(columns=columns), sample])
+            mix_df.fillna(0, inplace=True)
+            mix_path = os.path.join(args.output, f'mix_{mix}.csv')
+            if i == 0:
+                mix_df.to_csv(mix_path)
+            else:
+                mix_df.to_csv(mix_path, mode='a', header=False)
 
 
 if __name__ == '__main__':
