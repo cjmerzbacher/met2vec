@@ -50,4 +50,4 @@ print("Loading VAE...")
 vae = VAE(n_in, args.n_emb, args.n_lay)
 
 trainer = VAETrainer(args)
-trainer.train(vae, dl)
+trainer.train(vae, dl, fd.reload_mix)

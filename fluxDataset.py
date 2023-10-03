@@ -9,11 +9,12 @@ class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, path):
         '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
-        self.files = [path] if path.contains('.') else [f for f in os.listdir(path) if f.endswith('.csv')]
+        self.files = [path] if '.csv' in path else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
         
         self.columns = set()
         for file in self.files:
             self.columns = self.columns.union(pd.read_csv(file, nrows=0).columns)
+        self.columns = list(self.columns)
 
         self.reload_mix()
 
@@ -29,7 +30,9 @@ class FluxDataset(Dataset):
 
         df = pd.read_csv(self.file)
         df.drop(df.columns[0], axis=1) # First column is counter
-        self.data = df.values
+        df = pd.concat([pd.DataFrame(columns=self.columns), df])
+        df.fillna(0.0, inplace=True)
+        self.data = np.array(df.values, dtype=float)
         self.normalize()
 
     def normalize(self):
@@ -39,7 +42,7 @@ class FluxDataset(Dataset):
         self.mean = np.mean(self.data, axis=0)
         self.data = (self.data - self.mean)
 
-        self.std = np.std(self.data, axis=0)
+        self.std = np.std(self.data, axis=0, ddof=1.0)
         self.std[np.all(ignore, axis=0)] = 1.0
 
         self.data = self.data / self.std

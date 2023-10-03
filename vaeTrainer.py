@@ -13,7 +13,7 @@ class VAETrainer:
     def __init__(self, args):
         self.args = args
 
-    def train(self, vae : VAE, data_loader : DataLoader):
+    def train(self, vae : VAE, data_loader : DataLoader, epoch_update_fun = None):
         vae.to(device)
         e_size = len(str(self.args.epochs - 1))
         with open(self.args.losses_file, "w+") as file:
@@ -50,6 +50,9 @@ class VAETrainer:
                 for x in t:
                     loss = train_batch(x.to(device))
                     t.set_description(f"Epoch [{e:{e_size}}] loss={loss:.4e}")
+
+            if epoch_update_fun != None:
+                epoch_update_fun()
 
             if e % self.args.save_on:
                 save_model(e)
