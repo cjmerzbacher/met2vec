@@ -227,7 +227,7 @@ def output(args):
         losses_dfs.append(losses_df)
 
     output_df = pd.concat(losses_dfs, axis=1)
-    output_df.to_csv(args.filename)
+    output_df.to_csv(args.filename, index=False)
 
 def remove(args):
     state = load_state_file(args)
