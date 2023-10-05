@@ -20,6 +20,8 @@ def get_args():
     parser.add_argument("--title", type=str, default="Plot")
     parser.add_argument("-M", "--dataset_max_size", type=int, default=1000)
     parser.add_argument("datasets", nargs="+", type=str)
+    parser.add_argument("--dpi", type=float, default=100)
+    parser.add_argument("--figsize", type=int, nargs=2, default=[16, 9])
     parser.add_argument("file")
 
     return parser.parse_args()
@@ -163,6 +165,7 @@ def main():
         plotD.add_section(path)
 
     values, columns, colors, labels = preprocess(plotD, args.preprocessing)
+    plt.figure(figsize=args.figsize)
 
     match args.type:
         case "hist":
@@ -174,7 +177,7 @@ def main():
 
     plt.suptitle(args.title, fontsize=32)
     if args.file != None:
-        plt.savefig(args.file)
+        plt.savefig(args.file, dpi=args.dpi)
 
 if __name__ == "__main__":
     main()
