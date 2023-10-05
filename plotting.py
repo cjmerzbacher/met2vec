@@ -20,6 +20,7 @@ def get_args():
     parser.add_argument("--title", type=str, default="Plot")
     parser.add_argument("-M", "--dataset_max_size", type=int, default=1000)
     parser.add_argument("datasets", nargs="+", type=str)
+    parser.add_argument("file")
 
     return parser.parse_args()
 
@@ -172,7 +173,8 @@ def main():
             pca_scree(values)
 
     plt.suptitle(args.title, fontsize=32)
-    plt.show()
+    if args.file != None:
+        plt.savefig(args.file)
 
 if __name__ == "__main__":
     main()
