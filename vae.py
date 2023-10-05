@@ -59,11 +59,16 @@ class VAE:
 
     def loss(self, x, y):
         # Reconstruction loss
-        loss = torch.sum(torch.pow(x - y, 2.0), dim=1) 
+        loss_reconstruction = torch.sum(torch.pow(x - y, 2.0), dim=1) 
+        loss_reconstruction = torch.mean(loss_reconstruction)
 
         # Divergence from N(0, 1)
-        loss += 0.5 * torch.sum(self.sigma, dim=1) # tr(sigma)
-        loss += 0.5 * torch.norm(self.mu, dim=1)
-        loss -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
+        loss_divergence = 0.5 * torch.sum(self.sigma, dim=1) # tr(sigma)
+        loss_divergence += 0.5 * torch.norm(self.mu, dim=1)
+        loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
+        loss_divergence = torch.mean(loss_divergence)
 
-        return torch.mean(loss)
+
+        loss = loss_reconstruction + loss_divergence
+         
+        return loss, loss_reconstruction.detach().cpu().numpy(), loss_divergence.detach().cpu().numpy()

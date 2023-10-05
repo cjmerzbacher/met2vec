@@ -17,19 +17,19 @@ class VAETrainer:
         vae.to(device)
         e_size = len(str(self.args.epochs - 1))
         with open(self.args.losses_file, "w+") as file:
-            file.write("loss\n")
+            file.write("loss,reconstruction_loss,divergence_loss\n")
 
         def train_batch(x):
             optimizer.zero_grad()
             y = vae.encode_decode(x)
-            loss = vae.loss(x, y)
+            loss, reconstruction, divergence = vae.loss(x, y)
             loss.backward()
             optimizer.step()
 
             loss = loss.detach().cpu().numpy()
 
             with open(self.args.losses_file, "a+") as file:
-                file.write(f"{loss}\n")
+                file.write(f"{loss},{reconstruction},{divergence}\n")
 
             return loss
         
@@ -54,7 +54,7 @@ class VAETrainer:
             if epoch_update_fun != None:
                 epoch_update_fun()
 
-            if e % self.args.save_on:
+            if e % self.args.save_on == 0:
                 save_model(e)
 
         save_model(e)
