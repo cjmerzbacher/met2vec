@@ -9,7 +9,7 @@ def prepare_section(df : pd.DataFrame) -> pd.DataFrame:
     return df
 
 def get_label_from_path(path : str) -> str:
-    return re.match(r"([a-z_]*)[a-z]", os.path.basename(path)).group()
+    return re.match(r"([a-z \-_]*)[a-z]", os.path.basename(path)).group()
 
 class PlottingDataset:
     def __init__(self, section_max_size=1000):
@@ -49,7 +49,6 @@ class PlottingDataset:
         unique_cols = list(cm.get_cmap('YlOrBr', len(unique_labels))._segmentdata)
         return {l:col for l, col in zip(unique_labels, unique_cols)}
         
-
     def handles(self):
         cl_dict = self.get_color_label_dict()
         hadles = [patches.Patch(color=cl_dict[l], label=l) for l in cl_dict.keys()]

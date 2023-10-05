@@ -19,6 +19,8 @@ ADD = 'add'
 RUN = 'run'
 CLEAR = 'clear'
 OUTPUT = 'output'
+REMOVE = 'remove'
+STATUS = 'status'
 
 def parse_hyper_parameter(hyperparameter : list[str]):
     parser = argparse.ArgumentParser('hyperparameter')
@@ -33,11 +35,11 @@ def get_args():
     subparsers = parser.add_subparsers(dest='command', help='sub-command help')
 
     # setup command
-    parser_setup = subparsers.add_parser(SETUP)
+    parser_setup = subparsers.add_parser(SETUP, help='Setup folder for tuner instance to run in.')
     parser_setup.add_argument('-H' ,'--hyperparameter', action='append', nargs=3, dest='hyperparameters')
 
     # add command
-    parser_add = subparsers.add_parser(ADD)
+    parser_add = subparsers.add_parser(ADD, help='Add hyperparameter to be enumerated over.')
     parser_add.add_argument('name', type=str, help='The argument/name for the hyperparameter.')
     parser_add.add_argument('--type', choices=['str', 'float', 'int'], required=True)
     parser_add.add_argument('--samples', type=int, default=10)
@@ -46,16 +48,23 @@ def get_args():
     parser_add.add_argument('--erange', nargs=2, type=float)
 
     # run command
-    parser_run = subparsers.add_parser(RUN)
+    parser_run = subparsers.add_parser(RUN, help='Run many intances of the given script to find the effect of the different hyperparameters.')
     parser_run.add_argument('script', type=str)
 
     # output command
-    parser_output = subparsers.add_parser(OUTPUT)
+    parser_output = subparsers.add_parser(OUTPUT, help='Check files made by scripts run to get results.')
     parser_output.add_argument('filename') 
     parser_output.add_argument('-a', '--average', type=int, default=10)
 
-    # clear comands
-    subparsers.add_parser(CLEAR)
+    # clear comand
+    subparsers.add_parser(CLEAR, help='Clears the current run.')
+
+    # remove command
+    parser_remove = subparsers.add_parser(REMOVE, help='Removes hyperparameter')
+    parser_remove.add_argument('name', help='The name of the hyperparameter to be removed.')
+
+    # status command
+    parser_status = subparsers.add_parser(STATUS, help='Get the status of the tuner folder.')
 
     return parser.parse_args() 
 
@@ -72,7 +81,7 @@ def setup_main_folder(main_folder):
         os.mkdir(models_folder)
 
 def setup_state_file(args):
-    state = {'hyperparameters' : {}, 'scripts_run' : 0}
+    state = {HPARAMS : {}, 'scripts_run' : 0}
     save_state_file(state, args)
 
 def save_state_file(state, args):
@@ -109,13 +118,13 @@ def get_hparam_values(hp : dict[str,any]):
     if 'range' in hp:
         return get_range_values(*hp['range'], hp['samples'], _type)
     if 'erange' in hp:
-        return get_range_values(*hp['erange'], hp['samples'], _type)
+        return get_erange_values(*hp['erange'], hp['samples'], _type)
     if 'choices' in hp:
         return hp['choices']
     
-def get_str_values(values, _type):
-    return [f'{v:.4e}' for v in values] if _type == 'float' else [f'{v}' for v in values]
-
+def get_str_values(hp : dict[str,any]):
+    values = get_hparam_values(hp)
+    return [f'{v:.4e}' for v in values] if hp['type'] == 'float' else [f'{v}' for v in values]
     
 def generate_arg_sets(args):
     state = load_state_file(args)
@@ -124,7 +133,7 @@ def generate_arg_sets(args):
     arg_possabilities = {}
     for name, h in hyperparameters.items():
         values = get_hparam_values(h)
-        str_values = get_str_values(values, h['type'])
+        str_values = get_str_values(h)
 
         print(f"    {name} -> {str_values}")
         arg_possabilities[name] = str_values
@@ -172,7 +181,7 @@ def add(args):
     safe_add(hyperparameter, args, 'range')
     safe_add(hyperparameter, args, 'erange')
 
-    state['hyperparameters'][args.name] = hyperparameter
+    state[HPARAMS][args.name] = hyperparameter
     save_state_file(state, args)
 
 
@@ -200,31 +209,49 @@ def clear(args):
 def output(args):
     state = load_state_file(args)
 
-    output_data = {'run' : [], 'final_loss' : []}
+    losses_dfs = []
     for i in range(state[SCRIPTS_RUN]):
         file_path = os.path.join(args.main_folder, RUNS, str(i), 'losses.csv')
         losses_df = pd.read_csv(file_path)
-        
-        losses = losses_df['loss'].values
-        average_length = min(len(losses), args.average)
-        final_loss = np.mean(losses[-average_length:])
-
-        output_data['run'].append(i)
-        output_data['final_loss'].append(final_loss)
 
         arg_set = state[ARG_SETS][i]
         for name, value in arg_set[ARGS].items():
-            if name not in output_data:
-                output_data[name] = []
-            output_data[name].append(value)
+            losses_df[f'{name}'] = value
 
-    output_df = pd.DataFrame(output_data)
+        renamer = {c : f"run{i}_{c}" for c in losses_df.columns}
+        renamer['run'] = 'run'
+        losses_df.rename(columns=renamer, inplace=True)
+
+
+
+        losses_dfs.append(losses_df)
+
+    output_df = pd.concat(losses_dfs, axis=1)
     output_df.to_csv(args.filename)
+
+def remove(args):
+    state = load_state_file(args)
+
+    if args.name in state[HPARAMS]:
+        state[HPARAMS].pop(args.name)
+    else:
+        print(f"No {args.name} hyperparameter was found.")
+
+    save_state_file(state, args)
+
+def status(args):
+    state = load_state_file(args)
+
+    print('# Hyperparameters')
+    for name, hp in state[HPARAMS].items():
+        print(f"{name} -> {get_str_values(hp)}")
+    
+
+    pass
 
 
     
 args = get_args()
-print(args)
 
 match args.command:
     case 'setup':
@@ -237,4 +264,7 @@ match args.command:
         clear(args)
     case 'output':
         output(args)
-
+    case 'remove':
+        remove(args)
+    case 'status':
+        status(args)
