@@ -9,7 +9,7 @@ def prepare_section(df : pd.DataFrame) -> pd.DataFrame:
     return df
 
 def get_label_from_path(path : str) -> str:
-    return re.match(r"([a-z \-_]*)[a-z]", os.path.basename(path)).group()
+    return re.match(r"([a-z ,\-_]*)[a-z]", os.path.basename(path)).group()
 
 class PlottingDataset:
     def __init__(self, section_max_size=1000):

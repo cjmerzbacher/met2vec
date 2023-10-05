@@ -21,7 +21,7 @@ def get_args():
     parser.add_argument("-M", "--dataset_max_size", type=int, default=1000)
     parser.add_argument("datasets", nargs="+", type=str)
     parser.add_argument("--dpi", type=float, default=100)
-    parser.add_argument("--figsize", type=int, nargs=2, default=[16, 9])
+    parser.add_argument("--figsize", type=int, nargs=2, default=[12, 9])
     parser.add_argument("file")
 
     return parser.parse_args()
