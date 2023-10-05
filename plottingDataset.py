@@ -46,7 +46,7 @@ class PlottingDataset:
     def get_color_label_dict(self):
         labels = self.df['label']
         unique_labels = list(labels.unique())
-        unique_cols = list(cm.get_cmap('YlOrBr', len(unique_labels))._segmentdata)
+        unique_cols = cm.get_cmap('prism', len(unique_labels))([i/len(unique_labels) for i in range(len(unique_labels))])
         return {l:col for l, col in zip(unique_labels, unique_cols)}
         
     def handles(self):
