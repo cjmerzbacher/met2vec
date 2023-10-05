@@ -17,8 +17,8 @@ def get_args():
     parser.add_argument("type", type=str, choices=["hist", "scatter", "pca_scree"])
     parser.add_argument("--columns", "-c", type=int, nargs=2, default=[0,1])
     parser.add_argument("--preprocessing", "-p", type=str, choices=["normalized", "none", "tsne", "umap", "pca"], default="normalized")
-    parser.add_argument("--tsne", action="store_true")
     parser.add_argument("--title", type=str, default="Plot")
+    parser.add_argument("-M", "--dataset_max_size", type=int, default=1000)
     parser.add_argument("datasets", nargs="+", type=str)
 
     return parser.parse_args()
@@ -157,7 +157,7 @@ def pca_scree(values):
 
 def main():
     args = get_args()
-    plotD = PlottingDataset()
+    plotD = PlottingDataset(args.dataset_max_size)
     for path in tqdm(expanded_datasets(args.datasets), desc="Loading datasets"):
         plotD.add_section(path)
 

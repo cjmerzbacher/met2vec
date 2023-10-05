@@ -12,7 +12,8 @@ def get_label_from_path(path : str) -> str:
     return re.match(r"([a-z_]*)[a-z]", os.path.basename(path)).group()
 
 class PlottingDataset:
-    def __init__(self):
+    def __init__(self, section_max_size=1000):
+        self.section_max_size = section_max_size
         self.sections = {}
         self.df = pd.DataFrame()
 
@@ -22,7 +23,7 @@ class PlottingDataset:
     def add_section(self, path : str):
         label = get_label_from_path(path)
 
-        df = prepare_section(pd.read_csv(path))
+        df = prepare_section(pd.read_csv(path, nrows=self.section_max_size))
         df['label'] = label
 
         self.sections[label] = df
