@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser("VAE trainer", "Python program to train VAE fro
 parser.add_argument("-e", "--epochs", default=1, type=int, help="The number of epochs the VAE will be trained for.")
 parser.add_argument("-b", "--batch_size", default=64, type=int, help="The batch size samples will be taken in.")
 parser.add_argument("-s", "--save_on", default=10, type=int, help="The number of epochs between saves of the VAE.")
+parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
 parser.add_argument("--n_emb", default=128, type=int, help="The number of embeding dimensions.")
 parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
