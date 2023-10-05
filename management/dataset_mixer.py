@@ -8,6 +8,7 @@ def get_args():
     parser = argparse.ArgumentParser('Dataset Mixer', 'Used to mix many csv dataset files together')
     parser.add_argument('folder', help='The folder the datasets to be mixed will be read from.')
     parser.add_argument('-o', '--output', help='The folder the mixed files will be stored in.')
+    parser.add_argument('-n', type=int, help='Number of dataset files to write (defulat = nr files in).')
     args = parser.parse_args()
 
     if args.output is None:
@@ -17,7 +18,8 @@ def get_args():
 def main():
     args = get_args()
     dataset_files = [os.path.join(args.folder, f) for f in os.listdir(args.folder) if f.endswith('.csv')]
-    dataset_taken_rows = [set() for _ in range(len(dataset_files))]
+    if args.n == None:
+        args.n = len(dataset_files)
 
     columns = set()
     with tqdm(dataset_files, 'Reading Column Names') as t:
@@ -33,8 +35,8 @@ def main():
         dataset = pd.read_csv(dataset_files[i])
         dataset.drop(columns=dataset.columns[0], inplace=True)
 
-        for mix in tqdm(range(len(dataset_files)), 'Writing mix files', position=1):
-            sample = dataset.sample(int(len(dataset) / (len(dataset_files) - mix)))
+        for mix in tqdm(range(args.n), 'Writing mix files', position=1):
+            sample = dataset.sample(int(len(dataset) / (args.n - mix)))
             dataset.drop(sample.index, inplace=True)
 
             mix_df = pd.concat([pd.DataFrame(columns=columns), sample])
