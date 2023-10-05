@@ -51,7 +51,7 @@ class VAETrainer:
                     loss = train_batch(x.to(device))
                     t.set_description(f"Epoch [{e:{e_size}}] loss={loss:.4e}")
 
-            if epoch_update_fun != None and e % self.arg.refresh_data_on == 0:
+            if epoch_update_fun != None and e % self.args.refresh_data_on == 0:
                 epoch_update_fun()
 
             if e % self.args.save_on == 0:
