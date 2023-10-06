@@ -70,15 +70,8 @@ def get_args():
 
 def setup_main_folder(main_folder):
     if not os.path.exists(main_folder):
-        os.mkdir(main_folder)
+        os.makedirs(main_folder)
     
-    losses_folder = os.path.join(main_folder, 'losses')
-    if not os.path.exists(losses_folder):
-        os.mkdir(losses_folder)
-
-    models_folder = os.path.join(main_folder, 'models')
-    if not os.path.exists(models_folder):
-        os.mkdir(models_folder)
 
 def setup_state_file(args):
     state = {HPARAMS : {}, 'scripts_run' : 0}
@@ -245,10 +238,6 @@ def status(args):
     print('# Hyperparameters')
     for name, hp in state[HPARAMS].items():
         print(f"{name} -> {get_str_values(hp)}")
-    
-
-    pass
-
 
     
 args = get_args()
