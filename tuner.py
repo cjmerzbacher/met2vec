@@ -125,7 +125,6 @@ def generate_arg_sets(args):
 
     arg_possabilities = {}
     for name, h in hyperparameters.items():
-        values = get_hparam_values(h)
         str_values = get_str_values(h)
 
         print(f"    {name} -> {str_values}")
@@ -243,7 +242,7 @@ def status(args):
         print("None")
 
     if SCRIPTS_RUN in state:
-        print(f"{state[SCRIPTS_RUN]}/{} scripts run.")
+        print(f"{state[SCRIPTS_RUN]}/{len(state[ARG_SETS])} scripts run.")
 
     
 args = get_args()
