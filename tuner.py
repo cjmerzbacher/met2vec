@@ -238,6 +238,11 @@ def status(args):
     print('# Hyperparameters')
     for name, hp in state[HPARAMS].items():
         print(f"{name} -> {get_str_values(hp)}")
+    if len(state[HPARAMS]) == 0:
+        print("None")
+
+    if SCRIPTS_RUN in state:
+        print(f"{state[SCRIPTS_RUN]}/{len(state[ARG_SETS])} scripts run.")
 
     
 args = get_args()

@@ -7,9 +7,9 @@ from matplotlib import cm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", type=str)
-parser.add_argument("fields", nargs='*', default='loss')
+parser.add_argument("--fields", nargs='+', default='loss')
+parser.add_argument("--labels", nargs='+', default=None)
 parser.add_argument("-e", "--end", default=1, type=int)
-parser.add_argument("-l", "--label", default=None)
 parser.add_argument("-b", "--beta", default=1, type=float)
 parser.add_argument("-s", "--step", default=1, type=int)
 parser.add_argument("--start", default=0, type=int)
@@ -30,10 +30,10 @@ data = pd.read_csv(args.file)
 for i in range(args.start, args.end, args.step):
     color = colors[i - args.start]
     for j, field in enumerate(args.fields):
-        label = None if args.label == None or j != 0 else data[args.label.format(i)][0]
+        label = None if args.labels == None or j != 0 else "-".join([str(data[label.format(i)][0]) for label in args.labels])
         y = smooth(data[field.format(i)])
         plt.plot(y, label=label, color=color, linestyle=linestyles[j])
-if args.label != None:
+if args.labels != None:
     plt.legend()
 plt.show()
 
