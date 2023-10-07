@@ -181,7 +181,7 @@ def add(args):
 def run(args):
     # Generate arg sets
     state = load_state_file(args)
-    if ARG_SETS not in state:
+    if len(state[ARG_SETS]) == 0:
         generate_arg_sets(args)
 
     # Run Scripts
@@ -197,6 +197,7 @@ def clear(args):
     if ARG_SETS in state:
         state.pop(ARG_SETS)
     state[SCRIPTS_RUN] = 0
+    state[ARG_SETS] = []
     save_state_file(state, args)
 
 def output(args):
@@ -242,7 +243,7 @@ def status(args):
         print("None")
 
     if SCRIPTS_RUN in state:
-        print(f"{state[SCRIPTS_RUN]}/{len(state[ARG_SETS])} scripts run.")
+        print(f"{state[SCRIPTS_RUN]}/{} scripts run.")
 
     
 args = get_args()
