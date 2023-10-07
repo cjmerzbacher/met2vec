@@ -74,7 +74,7 @@ def setup_main_folder(main_folder):
     
 
 def setup_state_file(args):
-    state = {HPARAMS : {}, 'scripts_run' : 0}
+    state = {HPARAMS : {}, SCRIPTS_RUN : 0, ARG_SETS: []}
     save_state_file(state, args)
 
 def save_state_file(state, args):
