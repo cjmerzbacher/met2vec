@@ -13,6 +13,7 @@ parser.add_argument("-e", "--end", default=1, type=int)
 parser.add_argument("-b", "--beta", default=1, type=float)
 parser.add_argument("-s", "--step", default=1, type=int)
 parser.add_argument("--start", default=0, type=int)
+parser.add_argument("--title", default='Plot')
 args = parser.parse_args()
 
 n = args.end - args.start
@@ -35,5 +36,7 @@ for i in range(args.start, args.end, args.step):
         plt.plot(y, label=label, color=color, linestyle=linestyles[j])
 if args.labels != None:
     plt.legend()
+
+plt.title(args.title)
 plt.show()
 
