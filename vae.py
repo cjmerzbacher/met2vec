@@ -42,7 +42,7 @@ class VAE:
     def get_dist(self, x):
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
-        self.sigma = torch.pow(torch.sigmoid(y[:,self.n_emb:]), 0.5)
+        self.sigma = torch.log(1.0 + torch.exp(torch.pow(torch.sigmoid(y[:,self.n_emb:]), 0.5)))
 
         return self.mu, self.sigma
 
