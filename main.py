@@ -18,6 +18,7 @@ parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The nu
 parser.add_argument("--n_emb", default=128, type=int, help="The number of embeding dimensions.")
 parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
+parser.add_argument("--lrelu_slope", type=float, default=0.0)
 parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
@@ -48,7 +49,7 @@ n_in = int(fd.data.shape[1])
 
 # Load VAE
 print("Loading VAE...")
-vae = VAE(n_in, args.n_emb, args.n_lay)
+vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope)
 
 trainer = VAETrainer(args)
 trainer.train(vae, dl, fd.reload_mix)

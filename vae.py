@@ -5,7 +5,7 @@ import numpy as np
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class VAE:
-    def __init__(self, n_in : int, n_emb : int, n_lay : int):
+    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.0):
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay
@@ -28,7 +28,7 @@ class VAE:
         for v_in, v_out in zip(decoder_sizes[-1:1:-1], decoder_sizes[-2:0:-1]):
             decoder += [
                 nn.Linear(v_in, v_out),
-                nn.ReLU()
+                nn.LeakyReLU(negative_slope=lrelu_slope)
             ]
         decoder += [
             nn.Linear(decoder_sizes[1], decoder_sizes[0])
