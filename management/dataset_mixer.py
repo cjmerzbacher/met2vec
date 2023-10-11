@@ -23,8 +23,8 @@ def main():
 
     columns = set()
     with tqdm(dataset_files, 'Reading Column Names') as t:
-        for df in t:
-            columns = columns.union(pd.read_csv(df, nrows=0).columns)
+        for data_file in t:
+            columns = columns.union(pd.read_csv(data_file, nrows=0, index_col=0).columns)
             t.set_postfix({'Found' : len(columns)})
     columns = list(columns)
 
