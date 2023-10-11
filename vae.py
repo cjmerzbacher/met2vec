@@ -1,11 +1,35 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import json
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+def make_VAE_from_args(n_in : int, path : str):
+    with open(path, 'r') as file:
+        try:
+            data = json.load(file)
+        except ValueError:    
+            date = {}
+            for line in file.readlines():
+                name, value = line.split(':')
+                match name:
+                    case 'n_emb':
+                        value = int(value)
+                    case 'n_lay':
+                        value = int(value)
+                    case 'lrelu_slope':
+                        value = float(value)
+                    case _:
+                        value = None
+                if value: 
+                    data[name] = value
+        return VAE(n_in, data['n_emb'], data['n_lay'], data['lrelu_slope'])
+        
+
+
 class VAE:
-    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.0):
+    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float):
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay

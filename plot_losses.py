@@ -7,7 +7,7 @@ from matplotlib import cm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("file", type=str)
-parser.add_argument("--fields", nargs='+', default='loss')
+parser.add_argument("--fields", nargs='+', default=['loss'])
 parser.add_argument("--labels", nargs='+', default=None)
 parser.add_argument("-e", "--end", default=1, type=int)
 parser.add_argument("-b", "--beta", default=1, type=float)

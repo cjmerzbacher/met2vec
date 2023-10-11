@@ -8,10 +8,14 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "main.py",
+            "program": "plotting.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-d", ".\\data\\samples\\mixed", "-e", "5", ".\\data\\models\\test", "-b", "1"]
+            "args": ["scatter", ".\\data\\samples\\", 
+            "--preprocessing", "none", 
+            "-M", "50", 
+            "--model", ".\\data\\models\\test\\encoder0.pth", ".\\data\\models\\test\\args.json", 
+            ".\\data\\plots\\test.png"]
         }
     ]
 }

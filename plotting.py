@@ -1,14 +1,16 @@
 from plottingDataset import PlottingDataset
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from umap import UMAP
+#from umap import UMAP
 from tqdm import tqdm
+from vae import *
 
 import argparse
 import random
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import torch
 
 plt.rcParams['figure.dpi'] = 60
 
@@ -22,7 +24,8 @@ def get_args():
     parser.add_argument("datasets", nargs="+", type=str)
     parser.add_argument("--dpi", type=float, default=100)
     parser.add_argument("--figsize", type=int, nargs=2, default=[12, 9])
-    parser.add_argument("file")
+    parser.add_argument("--model", nargs=2, help='Loads a VAE model from the folder, the plotted points replacing X are sampled from P(z|X).')
+    parser.add_argument("file", help='The output file for the plot.')
 
     return parser.parse_args()
 
@@ -70,7 +73,7 @@ def umap(values):
     return values, columns
 
 
-def preprocess(plotD, preprocessing):
+def preprocess(plotD, args):
     '''Preprocesses the data in different ways depending on the preprocessing arg passed in.
     
     Returns values, columns, colors, labels to be used in a scatter plot by default.'''
@@ -79,15 +82,21 @@ def preprocess(plotD, preprocessing):
     colors = plotD.colors()
     labels = plotD.labels()
 
-    match preprocessing:
+    if args.model != None:
+        model_data = torch.load(args.model[0])
+        vae = make_VAE_from_args(model_data._modules['0'].in_features, args.model[1])
+        vae.encoder.load_state_dict(model_data.state_dict())
+        values = vae.encoder(torch.tensor(values, dtype=torch.float32)).detach().cpu().numpy()
+
+    match args.preprocessing:
         case "pca":
             values, columns = pca(values)
         case "tsne":
             values, columns, colors, labels = tsne(values, colors, labels)
         case "none":
-            values = plotD.values()
+            pass
         case "normalized":
-            values = plotD.normalized_values()
+            pass
         case "umap":
             values, columns = umap(values)
 
@@ -164,7 +173,7 @@ def main():
     for path in tqdm(expanded_datasets(args.datasets), desc="Loading datasets"):
         plotD.add_section(path)
 
-    values, columns, colors, labels = preprocess(plotD, args.preprocessing)
+    values, columns, colors, labels = preprocess(plotD, args)
     plt.figure(figsize=args.figsize)
 
     match args.type:

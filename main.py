@@ -1,13 +1,12 @@
 import torch
 import os
 import argparse
+import json
 
 from vae import VAE
 from vaeTrainer import VAETrainer
 from torch.utils.data import DataLoader
 from fluxDataset import FluxDataset
-from datetime import datetime
-from collections import namedtuple
 
 # Get arguments
 parser = argparse.ArgumentParser("VAE trainer", "Python program to train VAE from flux dataset.")
@@ -34,8 +33,8 @@ if not os.path.exists(args.main_folder):
 args.losses_file = os.path.join(args.main_folder, "losses.csv")
 
 # Save args
-with open(os.path.join(args.main_folder, "args.txt"), "w+") as file:
-    file.writelines([f"{n}:{v}\n" for n, v, in args._get_kwargs()])
+with open(os.path.join(args.main_folder, "args.json"), "w+") as file:
+    json.dump(vars(args), file, indent=4)
 
 # Check device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -46,6 +45,7 @@ print("Loading dataset...")
 fd = FluxDataset(args.dataset)
 dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
 n_in = int(fd.data.shape[1])
+print(f"n_in -> {n_in}")
 
 # Load VAE
 print("Loading VAE...")
