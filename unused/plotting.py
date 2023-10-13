@@ -1,4 +1,5 @@
 from plottingDataset import PlottingDataset
+from fluxDataset import FluxDataset
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 #from umap import UMAP
@@ -20,8 +21,9 @@ def get_args():
     parser.add_argument("--columns", "-c", type=int, nargs=2, default=[0,1])
     parser.add_argument("--preprocessing", "-p", type=str, choices=["normalized", "none", "tsne", "umap", "pca"], default="normalized")
     parser.add_argument("--title", type=str, default="Plot")
-    parser.add_argument("-M", "--dataset_max_size", type=int, default=1000)
-    parser.add_argument("datasets", nargs="+", type=str)
+    parser.add_argument("dataset", type=str)
+    parser.add_argument("-n", "--dataset_size", type=int, default=1000)
+    parser.add_argument("--join", choices=['inter', 'union'])
     parser.add_argument("--dpi", type=float, default=100)
     parser.add_argument("--figsize", type=int, nargs=2, default=[12, 9])
     parser.add_argument("--model", nargs=2, help='Loads a VAE model from the folder, the plotted points replacing X are sampled from P(z|X).')
@@ -169,11 +171,9 @@ def pca_scree(values):
 
 def main():
     args = get_args()
-    plotD = PlottingDataset(args.dataset_max_size)
-    for path in tqdm(expanded_datasets(args.datasets), desc="Loading datasets"):
-        plotD.add_section(path)
+    fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, inter_union=args.join)
 
-    values, columns, colors, labels = preprocess(plotD, args)
+    values, columns, colors, labels = preprocess(fd, args)
     plt.figure(figsize=args.figsize)
 
     match args.type:
