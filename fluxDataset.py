@@ -25,7 +25,9 @@ def get_name_from_file(file : str):
 
 def get_rename_dict(file : str):
     def get_reaction_name(reaction):
-        return "".join(sorted([f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]))
+        reaction_parts = [f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]
+        name = "".join(sorted(reaction_parts))
+        return name.replace(",", ".")
 
     try:
         model = read_sbml_model(file)
@@ -88,7 +90,6 @@ class FluxDataset(Dataset):
 
     def get_pkl_path(self, name : str):
         return os.path.join(self.pkl_folder, f"{name}.pkl")
-            
 
     def get_df(self, name : str) -> pd.DataFrame:
         pkl_path = self.get_pkl_path(name)
@@ -128,10 +129,14 @@ class FluxDataset(Dataset):
 
     def reload_mix(self):
         df = pd.DataFrame(columns=self.inter_union[self.iu])
+        self.labels = []
         for name in tqdm(self.files, desc='Loading mix...', disable=not self.verbose):
             sample_df = self.get_df(name)
-            sample_df = sample_df.sample(min(self.dataset_size // len(self.files), len(sample_df)))
+            n_sample = min(self.dataset_size // len(self.files), len(sample_df))
+
+            sample_df = sample_df.sample(n_sample)
             df = pd.concat([df, sample_df], join='inner', ignore_index=True)
+            self.labels += [name] * n_sample
 
         self.data = np.array(df.values, dtype=float)
         self.normalize()
@@ -149,5 +154,3 @@ class FluxDataset(Dataset):
         self.data = self.data / self.std
 
         self.data[ignore] = 0.0
-
-
