@@ -19,6 +19,7 @@ parser.add_argument("--lr", default=0.0001, type=float, help="The step size / le
 parser.add_argument("--lrelu_slope", type=float, default=0.0, help="The lrelu-slop used in the VAE.")
 parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
 parser.add_argument("-n", "--dataset_size", default=65536, help='The size of the dataset to be loaded for each epoch.')
+parser.add_argument("--join", choices=['inter', 'union'], default='inter', help="How the different reaction sets should be joined.")
 parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
 parser.add_argument("--reload_dataset_aux", type=bool, default=False, help="Used to set reload_aux on the flux dataset.")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
@@ -44,7 +45,7 @@ print(f"Using device {device}...")
 
 # Load dataset
 print("Loading dataset...")
-fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux)
+fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux, inter_union=args.join)
 dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
 n_in = int(fd.data.shape[1])
 
