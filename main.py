@@ -20,7 +20,7 @@ parser.add_argument("--lr", default=0.0001, type=float, help="The step size / le
 parser.add_argument("--lrelu_slope", type=float, default=0.0)
 parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
-parser.add_argument("-n", "--dataset_size", desc='The size of the dataset to be loaded for each epoch.')
+parser.add_argument("-n", "--dataset_size", help='The size of the dataset to be loaded for each epoch.')
 args = parser.parse_args()
 
 # Setup model folder
