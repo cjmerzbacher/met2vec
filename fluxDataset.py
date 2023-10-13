@@ -151,9 +151,3 @@ class FluxDataset(Dataset):
         self.data[ignore] = 0.0
 
 
-fd = FluxDataset("./data/samples/small_human/", verbose=True)
-print(fd.data.shape)
-fd.iu = 'union'
-fd.reload_mix()
-print(fd.data.shape)
-
