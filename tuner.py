@@ -204,20 +204,21 @@ def output(args):
 
     losses_dfs = []
     for i in range(state[SCRIPTS_RUN]):
-        file_path = os.path.join(args.main_folder, RUNS, str(i), 'losses.csv')
-        losses_df = pd.read_csv(file_path)
+        try:
+            file_path = os.path.join(args.main_folder, RUNS, str(i), 'losses.csv')
+            losses_df = pd.read_csv(file_path)
 
-        arg_set = state[ARG_SETS][i]
-        for name, value in arg_set[ARGS].items():
-            losses_df[f'{name}'] = value
+            arg_set = state[ARG_SETS][i]
+            for name, value in arg_set[ARGS].items():
+                losses_df[f'{name}'] = value
 
-        renamer = {c : f"run{i}_{c}" for c in losses_df.columns}
-        renamer['run'] = 'run'
-        losses_df.rename(columns=renamer, inplace=True)
+            renamer = {c : f"run{i}_{c}" for c in losses_df.columns}
+            renamer['run'] = 'run'
+            losses_df.rename(columns=renamer, inplace=True)
 
-
-
-        losses_dfs.append(losses_df)
+            losses_dfs.append(losses_df)
+        except:
+            print(f"Error finding losses for run {i}")
 
     output_df = pd.concat(losses_dfs, axis=1)
     output_df.to_csv(args.filename, index=False)
