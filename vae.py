@@ -5,8 +5,8 @@ import json
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-def make_VAE_from_args(n_in : int, path : str):
-    with open(path, 'r') as file:
+def make_VAE_from_args(n_in : int, args_path : str):
+    with open(args_path, 'r') as file:
         try:
             data = json.load(file)
         except ValueError:    

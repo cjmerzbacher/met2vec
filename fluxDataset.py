@@ -40,7 +40,7 @@ def get_non_zero_columns(df : pd.DataFrame):
     return df.columns[non_zeros]
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
-    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, join='inter', verbose=False, reload_aux=False):
+    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, join='inner', verbose=False, reload_aux=False):
         '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
         self.path = path
         self.dataset_size = dataset_size
@@ -63,7 +63,7 @@ class FluxDataset(Dataset):
         return self.data.shape[0]
     
     def __getitem__(self, idx):
-        return self.labels[idx], torch.Tensor(self.data[idx])
+        return self.data['label'].values[idx], torch.Tensor(self.data.drop(columns='label').values[idx])
     
     def find_renaming(self):
         self.renaming_dicts = {}
@@ -128,29 +128,15 @@ class FluxDataset(Dataset):
                 json.dump(self.joins, join_file, indent=4)
 
     def reload_mix(self):
-        df = pd.DataFrame(columns=self.joins[self.join])
-        self.labels = []
+        df = pd.DataFrame(columns=self.joins[self.join] + ['label'])
+        labels = []
         for name in tqdm(self.files, desc='Loading mix...', disable=not self.verbose):
             sample_df = self.get_df(name)
             n_sample = min(self.dataset_size // len(self.files), len(sample_df))
 
             sample_df = sample_df.sample(n_sample)
+            labels += [name] * n_sample
             df = pd.concat([df, sample_df], join=self.join, ignore_index=True)
-            self.labels += [name] * n_sample
 
-        self.data = np.array(df.values, dtype=float)
-        self.normalize()
-
-    def normalize(self):
-        '''Normalized the loaded data for allow columns which are not all 0. The resulting mean and std are stored in the class.'''
-        ignore = np.repeat(np.all(self.data == 0.0, axis=0, keepdims=True), self.data.shape[0], axis=0)
-
-        self.mean = np.mean(self.data, axis=0)
-        self.data = (self.data - self.mean)
-
-        self.std = np.std(self.data, axis=0, ddof=1.0)
-        self.std[np.all(ignore, axis=0)] = 1.0
-
-        self.data = self.data / self.std
-
-        self.data[ignore] = 0.0
+        self.data = (df-df.mean())/df.std()
+        self.data = pd.concat([self.data, pd.DataFrame({'label' : labels})], axis=1)
