@@ -87,6 +87,7 @@ def main():
     data = fd.data.drop(columns='label').values
     if encoder is not None:
         data = encoder(torch.Tensor(data)).detach().cpu().numpy()
+        data = data[:,data.shape[1] // 2]
 
     match args.preprocessing:
         case 'none':
