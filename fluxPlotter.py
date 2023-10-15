@@ -9,6 +9,7 @@ import torch
 from fluxDataset import FluxDataset
 from vae import make_VAE_from_args, VAE
 from tqdm import tqdm
+from sklearn.manifold import TSNE
 
 PLOT_CONFIG_PATH = '.plotconfig.json'
 LABLE_CONFIG = 'lable_config'
@@ -22,6 +23,7 @@ def get_args():
     parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
     parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
     parser.add_argument('-e', '--encoder')
+    parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne'], default='none')
 
     parser.add_argument('-s', '--save_plot')
     parser.add_argument('-t', '--title', default="")
@@ -81,14 +83,23 @@ def main():
 
     plt.figure(figsize=plot_config['figsize'])
 
+    data = fd.data.drop(columns='label').values
+    if encoder is not None:
+        data = encoder(torch.Tensor(data)).detach().cpu().numpy()
+
+    match args.preprocessing:
+        case 'none':
+            pass
+        case 'tsne':
+            print('Fitting tsne...')
+            tsne = TSNE()
+            data = tsne.fit_transform(data)
+
     for name in tqdm(fd.data['label'].unique(), disable=not args.verbose, desc='Plottig data'):
         config = plot_config[LABLE_CONFIG][name]
-        data = fd.data.drop(columns='label')[fd.data['label'] == name].values
+        label_data = data[fd.data['label'] == name]
 
-        if encoder is not None:
-            data = encoder(torch.Tensor(data)).detach().cpu().numpy()
-
-        plt.scatter(data[:,0], data[:,1],
+        plt.scatter(label_data[:,0], label_data[:,1],
                     color=config['color'],
                     marker=config['marker'],
                     label=config['label'],
