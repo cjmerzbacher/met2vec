@@ -47,7 +47,7 @@ class VAETrainer:
 
         for e in range(self.args.epochs):
             with tqdm(data_loader) as t:
-                for x in t:
+                for _, x in t:
                     loss = train_batch(x.to(device))
                     t.set_description(f"Epoch [{e:{e_size}}] loss={loss:.4e}")
 

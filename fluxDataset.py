@@ -63,7 +63,7 @@ class FluxDataset(Dataset):
         return self.data.shape[0]
     
     def __getitem__(self, idx):
-        return torch.Tensor(self.data[idx])
+        return self.labels[idx], torch.Tensor(self.data[idx])
     
     def find_renaming(self):
         self.renaming_dicts = {}
