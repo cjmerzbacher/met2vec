@@ -10,6 +10,7 @@ from fluxDataset import FluxDataset
 from vae import make_VAE_from_args, VAE
 from tqdm import tqdm
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 PLOT_CONFIG_PATH = '.plotconfig.json'
 LABLE_CONFIG = 'lable_config'
@@ -23,7 +24,7 @@ def get_args():
     parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
     parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
     parser.add_argument('-e', '--encoder')
-    parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne'], default='none')
+    parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
 
     parser.add_argument('-s', '--save_plot')
     parser.add_argument('-t', '--title', default="")
@@ -94,6 +95,10 @@ def main():
             print('Fitting tsne...')
             tsne = TSNE()
             data = tsne.fit_transform(data)
+        case 'pca':
+            print("Fitting PCA...")
+            pca = PCA()
+            data = pca.fit_transform(data)
 
     for name in tqdm(fd.data['label'].unique(), disable=not args.verbose, desc='Plottig data'):
         config = plot_config[LABLE_CONFIG][name]
