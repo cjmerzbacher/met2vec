@@ -89,7 +89,7 @@ def main():
         plt.scatter(data[:,0], data[:,1],
                     color=config['color'],
                     marker=config['marker'],
-                    label=name)
+                    label=config['label'])
     
     plt.title = args.title
     plt.legend()
