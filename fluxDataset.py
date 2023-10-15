@@ -16,7 +16,7 @@ logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
 GEM_PATH_FOLDER = 'gems'
 RENAME_DICT_FILE = ".renaming.json"
-INTER_UNION_FILE = ".inter_union.json"
+JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
 DEFAULT_DATASET_SIZE = 65536
 
@@ -40,11 +40,11 @@ def get_non_zero_columns(df : pd.DataFrame):
     return df.columns[non_zeros]
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
-    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, inter_union='inter', verbose=False, reload_aux=False):
+    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, join='inter', verbose=False, reload_aux=False):
         '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
         self.path = path
         self.dataset_size = dataset_size
-        self.iu = inter_union
+        self.join = join
         self.folder = os.path.dirname(path)
         self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
         self.verbose = verbose
@@ -55,7 +55,7 @@ class FluxDataset(Dataset):
         self.files = {get_name_from_file(f) : f for f in self.files}
 
         self.find_renaming()
-        self.find_inter_union()
+        self.find_joins()
 
         self.reload_mix()
 
@@ -105,37 +105,37 @@ class FluxDataset(Dataset):
 
         return df.rename(columns=self.renaming_dicts[name])
 
-    def find_inter_union(self):
-        inter_union_path = os.path.join(self.folder, INTER_UNION_FILE)
-        if os.path.exists(inter_union_path) and not self.reload:
-            with open(inter_union_path, 'r') as inter_union_file:
-                self.inter_union = json.load(inter_union_file)
+    def find_joins(self):
+        join_path = os.path.join(self.folder, JOIN_FILE)
+        if os.path.exists(join_path) and not self.reload:
+            with open(join_path, 'r') as join_file:
+                self.joins = json.load(join_file)
         else:
-            inter = set()
-            union = set()
+            inner = set()
+            outer = set()
 
             for i, name in tqdm(enumerate(self.files), desc="Making inter_union", disable=not self.verbose):
                 columns = get_non_zero_columns(self.get_df(name))
-                inter = set(columns) if i == 0 else inter.intersection(columns)
-                union = union.union(columns)
+                inner = set(columns) if i == 0 else inner.intersection(columns)
+                outer = outer.union(columns)
 
-            self.inter_union = {
-                'inter' : list(inter),
-                'union' : list(union)
+            self.joins = {
+                'inner' : list(inner),
+                'outer' : list(outer)
             }
 
-            with open(inter_union_path, 'w') as inter_union_file:
-                json.dump(self.inter_union, inter_union_file, indent=4)
+            with open(join_path, 'w') as join_file:
+                json.dump(self.joins, join_file, indent=4)
 
     def reload_mix(self):
-        df = pd.DataFrame(columns=self.inter_union[self.iu])
+        df = pd.DataFrame(columns=self.joins[self.join])
         self.labels = []
         for name in tqdm(self.files, desc='Loading mix...', disable=not self.verbose):
             sample_df = self.get_df(name)
             n_sample = min(self.dataset_size // len(self.files), len(sample_df))
 
             sample_df = sample_df.sample(n_sample)
-            df = pd.concat([df, sample_df], join='inner', ignore_index=True)
+            df = pd.concat([df, sample_df], join=self.join, ignore_index=True)
             self.labels += [name] * n_sample
 
         self.data = np.array(df.values, dtype=float)

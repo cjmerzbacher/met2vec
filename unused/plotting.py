@@ -171,7 +171,7 @@ def pca_scree(values):
 
 def main():
     args = get_args()
-    fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, inter_union=args.join)
+    fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, join=args.join)
 
     values, columns, colors, labels = preprocess(fd, args)
     plt.figure(figsize=args.figsize)
