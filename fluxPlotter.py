@@ -55,6 +55,8 @@ def load_plot_config(fd : FluxDataset, args):
         plot_config['dpi'] = 100 
     if not 'figsize' in plot_config:
         plot_config['figsize'] = (10, 8) 
+    if not 'dot_size' in plot_config:
+        plot_config['dot_size'] = 1.0
 
     with open(args.plot_config_path, 'w') as plot_config_file:
         json.dump(plot_config, plot_config_file, indent=4)
@@ -89,7 +91,8 @@ def main():
         plt.scatter(data[:,0], data[:,1],
                     color=config['color'],
                     marker=config['marker'],
-                    label=config['label'])
+                    label=config['label'],
+                    s=plot_config['dot_size'])
     
     plt.title = args.title
     plt.legend()
