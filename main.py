@@ -18,7 +18,7 @@ parser.add_argument("--n_lay", default=5, type=int, help="The number of layers."
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
 parser.add_argument("--lrelu_slope", type=float, default=0.0, help="The lrelu-slop used in the VAE.")
 parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
-parser.add_argument("-n", "--dataset_size", default=65536, help='The size of the dataset to be loaded for each epoch.')
+parser.add_argument("-n", "--dataset_size", default=65536, type=int, help='The size of the dataset to be loaded for each epoch.')
 parser.add_argument("--join", choices=['inner', 'outer'], default='inner', help="How the different reaction sets should be joined.")
 parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
 parser.add_argument("--reload_dataset_aux", type=bool, default=False, help="Used to set reload_aux on the flux dataset.")
