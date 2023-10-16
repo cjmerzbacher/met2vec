@@ -128,7 +128,7 @@ class FluxDataset(Dataset):
                 json.dump(self.joins, join_file, indent=4)
 
     def reload_mix(self):
-        df = pd.DataFrame(columns=self.joins[self.join] + ['label'])
+        df = pd.DataFrame(columns=self.joins[self.join])
         labels = []
         for name in tqdm(self.files, desc='Loading mix...', disable=not self.verbose):
             sample_df = self.get_df(name)
@@ -140,3 +140,4 @@ class FluxDataset(Dataset):
 
         self.data = (df-df.mean())/df.std()
         self.data = pd.concat([self.data, pd.DataFrame({'label' : labels})], axis=1)
+        self.data.fillna(0.0, inplace=True)
