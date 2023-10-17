@@ -14,6 +14,7 @@ parser.add_argument("-b", "--beta", default=1, type=float)
 parser.add_argument("-s", "--step", default=1, type=int)
 parser.add_argument("--start", default=0, type=int)
 parser.add_argument("--title", default='Plot')
+parser.add_argument("--save_file")
 args = parser.parse_args()
 
 n = args.end - args.start
@@ -38,5 +39,8 @@ if args.labels != None:
     plt.legend()
 
 plt.title(args.title)
-plt.show()
+if parser.save_file is None:
+    plt.show()
+else:
+    plt.savefig(args.save_file)
 
