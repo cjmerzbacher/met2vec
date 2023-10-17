@@ -10,6 +10,22 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-e", "1",
+                "-d", ".\\data\\samples\\small_human\\",
+                "--join", "outer",
+                "--n_emb", "16",
+                "--n_lay", "6",
+                "./data/models/test/"
+            ]
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
             "justMyCode": true
         },
         {

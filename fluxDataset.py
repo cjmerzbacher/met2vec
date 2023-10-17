@@ -63,7 +63,7 @@ class FluxDataset(Dataset):
         return self.data.shape[0]
     
     def __getitem__(self, idx):
-        return self.data['label'].values[idx], torch.Tensor(self.data.drop(columns='label').values[idx])
+        return self.labels[idx], self.values[idx]
     
     def find_renaming(self):
         self.renaming_dicts = {}
@@ -139,5 +139,10 @@ class FluxDataset(Dataset):
             df = pd.concat([df, sample_df], join=self.join, ignore_index=True)
 
         self.data = (df-df.mean())/df.std()
+        self.data.fillna(0, inplace=True)
+
+        self.values = torch.Tensor(self.data.values)
+        self.labels = labels
+
         self.data = pd.concat([self.data, pd.DataFrame({'label' : labels})], axis=1)
-        self.data.fillna(0.0, inplace=True)
+
