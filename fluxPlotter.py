@@ -111,7 +111,7 @@ def main():
             pca = PCA()
             data = pca.fit_transform(data)
 
-    for name in tqdm(fd.data['label'].unique(), disable=not args.verbose, desc='Plottig data'):
+    for name in tqdm(sorted(fd.data['label'].unique(), key=lambda name: plot_config[LABLE_CONFIG][name]['label']), disable=not args.verbose, desc='Plottig data'):
         config = plot_config[LABLE_CONFIG][name]
         label_data = data[fd.data['label'] == name]
 
