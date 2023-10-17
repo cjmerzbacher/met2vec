@@ -39,7 +39,7 @@ if args.labels != None:
     plt.legend()
 
 plt.title(args.title)
-if parser.save_file is None:
+if args.save_file is None:
     plt.show()
 else:
     plt.savefig(args.save_file)
