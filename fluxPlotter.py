@@ -25,6 +25,7 @@ def get_args():
     parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
     parser.add_argument('-e', '--encoder')
     parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
+    parser.add_argument('--perplexity', type=float, default=30.0)
 
     parser.add_argument('-s', '--save_plot')
     parser.add_argument('-t', '--title', default="")
@@ -60,6 +61,14 @@ def load_plot_config(fd : FluxDataset, args):
         plot_config['figsize'] = (10, 8) 
     if not 'dot_size' in plot_config:
         plot_config['dot_size'] = 1.0
+    if not 'ldot_size' in plot_config:
+        plot_config['ldot_size'] = 30.0
+    if not 'lfontsize' in plot_config:
+        plot_config['lfontsize'] = 8.0
+    if not 'lbbox' in plot_config:
+        plot_config['lbbox'] = None
+    if not 'plot_width' in plot_config:
+        plot_config['plot_width'] = 1.0
 
     with open(args.plot_config_path, 'w') as plot_config_file:
         json.dump(plot_config, plot_config_file, indent=4)
@@ -83,6 +92,7 @@ def main():
     encoder = load_encoder(fd, args)
 
     plt.figure(figsize=plot_config['figsize'])
+    ax = plt.subplot(111)
 
     data = fd.data.drop(columns='label').values
     if encoder is not None:
@@ -94,7 +104,7 @@ def main():
             pass
         case 'tsne':
             print('Fitting tsne...')
-            tsne = TSNE()
+            tsne = TSNE(perplexity=args.perplexity)
             data = tsne.fit_transform(data)
         case 'pca':
             print("Fitting PCA...")
@@ -105,14 +115,20 @@ def main():
         config = plot_config[LABLE_CONFIG][name]
         label_data = data[fd.data['label'] == name]
 
-        plt.scatter(label_data[:,0], label_data[:,1],
+        ax.scatter(label_data[:,0], label_data[:,1],
                     color=config['color'],
                     marker=config['marker'],
                     label=config['label'],
                     s=plot_config['dot_size'])
     
     plt.title = args.title
-    plt.legend()
+    legend = plt.legend(fontsize=plot_config['lfontsize'], bbox_to_anchor=plot_config['lbbox'])
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * plot_config['plot_width'], box.height])
+
+    for handle in legend.legend_handles:
+        handle.set_sizes([plot_config['ldot_size']])
 
     if args.save_plot is None:
         plt.show()
