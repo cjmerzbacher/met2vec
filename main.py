@@ -45,7 +45,7 @@ print(f"Using device {device}...")
 
 # Load dataset
 print("Loading dataset...")
-fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux, join=args.join)
+fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True)
 dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
 n_in = int(fd.data.shape[1]) - 1
 
