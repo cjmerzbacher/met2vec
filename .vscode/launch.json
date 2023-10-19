@@ -5,18 +5,53 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: fluxPlotter.py",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "fluxPlotter.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args" : [
+                "./data/samples/small_human/",
+                "-p", "tsne",
+                "-j", "outer",
+                "--perplexity", "100"
+            ]
+        },
+        {
+            "name": "Python: fluxPlotter.py (with VAE)",
+            "type": "python",
+            "request": "launch",
+            "program": "fluxPlotter.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args" : [
+                "./data/samples/small_human/",
+                "-p", "tsne",
+                "-j", "outer",
+                "--perplexity", "100",
+                "-v", "./data/models/test/",
+                "--vae_sample", "true"
+            ]
+        },
+        {
+            "name": "Python: main.py",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-e", "1",
-                "-d", ".\\data\\samples\\small_human\\",
-                "--join", "outer",
-                "--n_emb", "16",
-                "--n_lay", "6",
+                "-e",
+                "1",
+                "-d",
+                ".\\data\\samples\\small_human\\",
+                "--join",
+                "outer",
+                "--n_emb",
+                "16",
+                "--n_lay",
+                "6",
                 "./data/models/test/"
             ]
         },
@@ -28,25 +63,5 @@
             "console": "integratedTerminal",
             "justMyCode": true
         },
-        {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "plotting.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "scatter",
-                ".\\data\\samples\\",
-                "--preprocessing",
-                "none",
-                "-M",
-                "50",
-                "--model",
-                ".\\data\\models\\test\\encoder0.pth",
-                ".\\data\\models\\test\\args.json",
-                ".\\data\\plots\\test.png"
-            ]
-        }
     ]
 }

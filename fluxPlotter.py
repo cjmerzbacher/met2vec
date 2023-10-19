@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from fluxDataset import FluxDataset
-from vae import make_VAE_from_args, VAE
+from vae import make_VAE
 from tqdm import tqdm
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -18,12 +18,13 @@ LABLE_CONFIG = 'lable_config'
 
 def get_args():
     parser = argparse.ArgumentParser('Flux Plotter')
-    parser.add_argument('-v', '--verbose', type=bool, default=False)
     parser.add_argument('dataset')
     parser.add_argument('-n', '--dataset_size', type=int, default=1024)
     parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
     parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
-    parser.add_argument('-e', '--encoder')
+    parser.add_argument('-v', '--vae_folder')
+    parser.add_argument('--vae_version', type=int)
+    parser.add_argument('--vae_sample', type=bool, default=False)
     parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     parser.add_argument('--perplexity', type=float, default=30.0)
 
@@ -75,29 +76,24 @@ def load_plot_config(fd : FluxDataset, args):
 
     return plot_config
 
-def load_encoder(fd, args):
-    if args.encoder is None:
-        return
-
-    vae = make_VAE_from_args(fd.data.shape[1] - 1, os.path.join(os.path.dirname(args.encoder), 'args.json'))
-    vae.encoder.load_state_dict(torch.load(args.encoder).state_dict())
-
-    return vae.encoder
-
-
 def main():
     args = get_args()
-    fd = FluxDataset(args.dataset, args.dataset_size, args.dataset_join, args.verbose, args.dataset_reload_aux)
+    fd = FluxDataset(args.dataset, args.dataset_size, args.dataset_join, True, args.dataset_reload_aux)
     plot_config = load_plot_config(fd, args)
-    encoder = load_encoder(fd, args)
+
+    if args.vae_folder is None:
+        vae = None
+    else:
+        print("Loading VAE...")
+        vae = make_VAE(args.vae_folder, args.vae_version) 
 
     plt.figure(figsize=plot_config['figsize'])
     ax = plt.subplot(111)
 
     data = fd.data.drop(columns='label').values
-    if encoder is not None:
-        data = encoder(torch.Tensor(data)).detach().cpu().numpy()
-        data = data[:,:data.shape[1] // 2]
+
+    if vae is not None:
+        data = vae.encode(data).detach().cpu().numpy()
 
     match args.preprocessing:
         case 'none':
@@ -111,7 +107,7 @@ def main():
             pca = PCA()
             data = pca.fit_transform(data)
 
-    for name in tqdm(sorted(fd.data['label'].unique(), key=lambda name: plot_config[LABLE_CONFIG][name]['label']), disable=not args.verbose, desc='Plottig data'):
+    for name in tqdm(sorted(fd.data['label'].unique(), key=lambda name: plot_config[LABLE_CONFIG][name]['label']), desc='Plottig data'):
         config = plot_config[LABLE_CONFIG][name]
         label_data = data[fd.data['label'] == name]
 
