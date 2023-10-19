@@ -99,8 +99,8 @@ def make_VAE(folder : str, load_version : int = None) -> VAE:
         print(f'Unable to load VAE model .pth file not found for version {load_version}')
         return None
 
-    encoder_path = sorted(encoder_files)[0]
-    decoder_path = sorted(decoder_files)[0]
+    encoder_path = sorted(encoder_files)[-1]
+    decoder_path = sorted(decoder_files)[-1]
 
     print(f"Loading model...")
     print(f"Encoder path -> {encoder_path}")
