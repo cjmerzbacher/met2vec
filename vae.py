@@ -5,6 +5,9 @@ import numpy as np
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+def format_input(x):
+    return torch.Tensor(x).to(device)
+
 class VAE:
     def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01):
         self.n_in = n_in
@@ -36,11 +39,14 @@ class VAE:
         ]
         self.decoder : nn.Module = nn.Sequential(*decoder).float()
 
+        self.to(device)
+
     def to(self, device):
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
 
     def get_dist(self, x):
+        x = format_input(x)
         y = self.encoder(torch.Tensor(x))
         self.mu = y[:,:self.n_emb]
         self.sigma = torch.log(1.0 + torch.exp(y[:,self.n_emb:])) #Soft plus
@@ -48,7 +54,7 @@ class VAE:
         return self.mu, self.sigma
     
     def encode(self, x, sample=True):
-        global device
+        x = format_input(x)
 
         mu, sigma = self.get_dist(x) 
         epsilon = torch.normal(torch.zeros(sigma.size()), torch.ones(sigma.size())).to(device)
@@ -57,13 +63,15 @@ class VAE:
 
 
     def encode_decode(self, x):
-        global device
-
+        x = format_input(x)
         z = self.encode(x)
         y = self.decoder(z)
         return y
 
     def loss(self, x, y):
+        x = format_input(x)
+        y = format_input(y)
+
         # Reconstruction loss
         loss_reconstruction = torch.sum(torch.pow(x - y, 2.0), dim=1) 
         loss_reconstruction = torch.mean(loss_reconstruction)
