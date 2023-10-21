@@ -47,12 +47,11 @@ print(f"Using device {device}...")
 # Load dataset
 print("Loading dataset...")
 fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, test_size=args.test_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True)
-dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
-n_in = int(fd.values.shape[1])
+n_in = fd.values.shape[1]
 
 # Load VAE
 print("Loading VAE...")
 vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope)
 
 trainer = VAETrainer(args)
-trainer.train(vae, dl, fd.load_sample)
+trainer.train(vae, fd)

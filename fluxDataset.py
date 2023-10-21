@@ -161,6 +161,7 @@ class FluxDataset(Dataset):
             [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if name in f]
 
             def sample_drop(n):
+                n = min(n, len(df.index))
                 sample = df.sample(n)
                 df.drop(sample.index, inplace=True)
                 return sample
@@ -173,7 +174,7 @@ class FluxDataset(Dataset):
             save_pkl(joinp(self.train_pkl_folder, f'{name}.pkl'), train_df)
 
             n_saved = 0 
-            while len(df.index) > samples_per_file:
+            while len(df.index) != 0:
                 sample_df = sample_drop(samples_per_file)
                 save_pkl(joinp(self.test_pkl_folder, f'{name}_{n_saved}.pkl'), sample_df)
                 n_saved += 1

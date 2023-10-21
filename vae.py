@@ -82,7 +82,6 @@ class VAE:
         loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
         loss_divergence = torch.mean(loss_divergence)
 
-
         loss = loss_reconstruction + loss_divergence
          
         return loss, loss_reconstruction.detach().cpu().numpy(), loss_divergence.detach().cpu().numpy()
