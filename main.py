@@ -22,6 +22,7 @@ parser.add_argument("-n", "--dataset_size", default=65536, type=int, help='The s
 parser.add_argument("--join", choices=['inner', 'outer'], default='inner', help="How the different reaction sets should be joined.")
 parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
 parser.add_argument("--reload_dataset_aux", type=bool, default=False, help="Used to set reload_aux on the flux dataset.")
+parser.add_argument("--test_size", type=int, default=2048, help='The size of the test set.')
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -45,13 +46,13 @@ print(f"Using device {device}...")
 
 # Load dataset
 print("Loading dataset...")
-fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True)
+fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, test_size=args.test_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True)
 dl = DataLoader(fd, batch_size=args.batch_size, shuffle=True);
-n_in = int(fd.data.shape[1]) - 1
+n_in = int(fd.values.shape[1])
 
 # Load VAE
 print("Loading VAE...")
 vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope)
 
 trainer = VAETrainer(args)
-trainer.train(vae, dl, fd.reload_mix)
+trainer.train(vae, dl, fd.load_sample)

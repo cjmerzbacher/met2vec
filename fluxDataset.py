@@ -19,6 +19,10 @@ RENAME_DICT_FILE = ".renaming.json"
 JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
 DEFAULT_DATASET_SIZE = 65536
+DEFAULT_TEST_SIZE = 2048
+
+rm = os.unlink
+joinp = os.path.join
 
 def get_name_from_file(file : str):
     return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,]*_[0-9|k]+.csv', file).group())
@@ -40,31 +44,39 @@ def get_non_zero_columns(df : pd.DataFrame):
     return df.columns[non_zeros]
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
-    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, join='inner', verbose=False, reload_aux=False):
+    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, test_size=DEFAULT_TEST_SIZE, join='inner', verbose=False, reload_aux=False):
         '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
-        self.path = path
-        self.dataset_size = dataset_size
+        self.set_folder(path)
         self.join = join
-        self.folder = os.path.dirname(path)
-        self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
         self.verbose = verbose
-
         self.reload = reload_aux
 
-        self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
-        self.files = {get_name_from_file(f) : f for f in self.files}
-
+        # Find renamings and joins
         self.find_renaming()
         self.find_joins()
 
-        self.reload_mix()
+        # Load data into current
+        if not self.make_tmp_files(dataset_size, test_size):
+            print("Loading FluxDataset failed")
+            return
+        self.load_sample()
 
     def __len__(self):
         return self.data.shape[0]
     
     def __getitem__(self, idx):
-        return self.labels[idx], self.values[idx]
+        return self.labels[idx], torch.Tensor(self.values[idx])
     
+    def set_folder(self, path : str):
+        self.path = path
+        self.folder = os.path.dirname(path)
+        self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
+        self.test_pkl_folder = os.path.join(self.pkl_folder, 'test')
+        self.train_pkl_folder = os.path.join(self.pkl_folder, 'train')
+
+        self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
+        self.files = {get_name_from_file(f) : f for f in self.files}
+
     def find_renaming(self):
         self.renaming_dicts = {}
         if len(self.files) < 2:
@@ -75,7 +87,7 @@ class FluxDataset(Dataset):
             with open(renaming_file_path, 'r') as file:
                 self.renaming_dicts = json.load(file)
         except:
-            pass
+            self.renaming_dicts = {}
 
         for name, file in tqdm(self.files.items(), desc='Loading Renaming', disable=not self.verbose):
             gem_file = os.path.join(self.folder, GEM_PATH_FOLDER, f"{name}.xml")
@@ -104,7 +116,7 @@ class FluxDataset(Dataset):
                 pickle.dump(df, pkl_file)
 
         return df.rename(columns=self.renaming_dicts[name])
-
+    
     def find_joins(self):
         join_path = os.path.join(self.folder, JOIN_FILE)
         if os.path.exists(join_path) and not self.reload:
@@ -127,22 +139,68 @@ class FluxDataset(Dataset):
             with open(join_path, 'w') as join_file:
                 json.dump(self.joins, join_file, indent=4)
 
-    def reload_mix(self):
+    def make_tmp_files(self, dataset_size : int, test_size : int):
+        samples_per_file = dataset_size // len(self.files)
+        test_per_file = test_size // len(self.files)
+
+        ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
+
+        ensure_exists(self.test_pkl_folder)
+        ensure_exists(self.train_pkl_folder)
+
+        if not os.path.exists(self.test_pkl_folder):
+            os.makedirs(self.test_pkl_folder)
+
+        for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
+            df = self.get_df(name)
+            if len(df.index) < samples_per_file + test_per_file:
+                print(f'Unable to make tmp files! Sample "{name}" ({len(df.index)}) to small: spf {samples_per_file}, ts {test_size}.')
+                return False
+
+            [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if name in f]
+            [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if name in f]
+
+            def sample_drop(n):
+                sample = df.sample(n)
+                df.drop(sample.index, inplace=True)
+                return sample
+            
+            def save_pkl(path, obj):
+                with open(path, 'wb') as file:
+                    pickle.dump(obj, file)
+        
+            train_df = sample_drop(test_per_file)
+            save_pkl(joinp(self.train_pkl_folder, f'{name}.pkl'), train_df)
+
+            n_saved = 0 
+            while len(df.index) > samples_per_file:
+                sample_df = sample_drop(samples_per_file)
+                save_pkl(joinp(self.test_pkl_folder, f'{name}_{n_saved}.pkl'), sample_df)
+                n_saved += 1
+
+        return True
+
+    def get_single_sample(self, name : str, is_test=False):
+        folder = self.test_pkl_folder if is_test else self.train_pkl_folder
+        paths = [joinp(folder, f) for f in os.listdir(folder) if name in f]
+        path = random.sample(paths, 1)[0]
+
+        with open(path, 'rb') as file:
+            return pickle.load(file)
+            
+
+    def load_sample(self, is_test=False):
         df = pd.DataFrame(columns=self.joins[self.join])
         labels = []
-        for name in tqdm(self.files, desc='Loading mix...', disable=not self.verbose):
-            sample_df = self.get_df(name)
-            n_sample = min(self.dataset_size // len(self.files), len(sample_df))
+        for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
+            tmp_sample_df = self.get_single_sample(name, is_test)
+            labels += [name] * len(tmp_sample_df.index)
+            df = pd.concat([df, tmp_sample_df], join=self.join, ignore_index=True)
 
-            sample_df = sample_df.sample(n_sample)
-            labels += [name] * n_sample
-            df = pd.concat([df, sample_df], join=self.join, ignore_index=True)
+        df = (df-df.mean(numeric_only=True))/df.std(numeric_only=True)
+        df.fillna(0, inplace=True)
 
-        self.data = (df-df.mean())/df.std()
-        self.data.fillna(0, inplace=True)
-
-        self.values = torch.Tensor(self.data.values)
+        self.values = df.values
+        self.data = pd.concat([df, pd.DataFrame({'label' : labels})], axis=1)
         self.labels = labels
-
-        self.data = pd.concat([self.data, pd.DataFrame({'label' : labels})], axis=1)
 

@@ -47,7 +47,7 @@ class VAE:
 
     def get_dist(self, x):
         x = format_input(x)
-        y = self.encoder(torch.Tensor(x))
+        y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
         self.sigma = torch.log(1.0 + torch.exp(y[:,self.n_emb:])) #Soft plus
 
