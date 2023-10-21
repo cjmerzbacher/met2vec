@@ -171,12 +171,12 @@ class FluxDataset(Dataset):
                     pickle.dump(obj, file)
         
             train_df = sample_drop(test_per_file)
-            save_pkl(joinp(self.train_pkl_folder, f'{name}.pkl'), train_df)
+            save_pkl(joinp(self.test_pkl_folder, f'{name}.pkl'), train_df)
 
             n_saved = 0 
-            while len(df.index) != 0:
+            while len(df.index) > 0.8 * samples_per_file:
                 sample_df = sample_drop(samples_per_file)
-                save_pkl(joinp(self.test_pkl_folder, f'{name}_{n_saved}.pkl'), sample_df)
+                save_pkl(joinp(self.train_pkl_folder, f'{name}_{n_saved}.pkl'), sample_df)
                 n_saved += 1
 
         return True

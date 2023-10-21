@@ -48,7 +48,7 @@
                 "--n_emb", "16",
                 "--n_lay", "6",
                 "./data/models/test/",
-                "--test_size","100",
+                "--test_size","50",
                 "-n", "100",
                 "-b", "10",
                 "--save_losses_on", "5",
