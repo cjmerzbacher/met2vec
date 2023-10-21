@@ -21,6 +21,7 @@ parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The direct
 parser.add_argument("-n", "--dataset_size", default=65536, type=int, help='The size of the dataset to be loaded for each epoch.')
 parser.add_argument("--join", choices=['inner', 'outer'], default='inner', help="How the different reaction sets should be joined.")
 parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
+parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the number of losses saved, this allows evaluations which are a multiple to be saved.")
 parser.add_argument("--reload_dataset_aux", type=bool, default=False, help="Used to set reload_aux on the flux dataset.")
 parser.add_argument("--test_size", type=int, default=2048, help='The size of the test set.')
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
