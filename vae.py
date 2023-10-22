@@ -8,42 +8,26 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def format_input(x):
     return torch.Tensor(x).to(device)
 
+def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool = False) -> nn.Module:
+    model = []
+    sizes = [round(s) for s in np.linspace(n_in, n_out, n_lay)]
+    for v_in, v_out in zip(sizes[0:-2], sizes[1:-1]):
+        model += [nn.Linear(v_in, v_out), nn.LeakyReLU(negative_slope=lrelu_slope)]
+        if batch_norm: model += [nn.BatchNorm1d(v_out)]
+    model += [nn.Linear(sizes[-2], sizes[-1])]
+    model = nn.Sequential(*model).float()
+    model.to(device)
+    return model
+
+
 class VAE:
-    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01):
+    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01, batch_norm : bool = False):
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay
 
-        encoder_sizes = [round(i) for i in np.linspace(n_in, n_emb * 2, n_lay)]
-        encoder = []
-        for v_in, v_out in zip(encoder_sizes[0:-2], encoder_sizes[1:-1]):
-            encoder += [
-                nn.Linear(v_in, v_out),
-                nn.ReLU()
-            ]
-        encoder += [
-            nn.Linear(encoder_sizes[-2], encoder_sizes[-1])
-        ]
-        self.encoder : nn.Module = nn.Sequential(*encoder).float()
-
-
-        decoder_sizes = [round(i) for i in np.linspace(n_in, n_emb, n_lay)]
-        decoder = []
-        for v_in, v_out in zip(decoder_sizes[-1:1:-1], decoder_sizes[-2:0:-1]):
-            decoder += [
-                nn.Linear(v_in, v_out),
-                nn.LeakyReLU(negative_slope=lrelu_slope)
-            ]
-        decoder += [
-            nn.Linear(decoder_sizes[1], decoder_sizes[0])
-        ]
-        self.decoder : nn.Module = nn.Sequential(*decoder).float()
-
-        self.to(device)
-
-    def to(self, device):
-        self.encoder = self.encoder.to(device)
-        self.decoder = self.decoder.to(device)
+        self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm)
+        self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm)
 
     def get_dist(self, x):
         x = format_input(x)

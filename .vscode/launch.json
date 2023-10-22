@@ -53,6 +53,7 @@
                 "-b", "10",
                 "--save_losses_on", "5",
                 "-r", "2",
+                "--batch_norm", "true",
             ]
         },
         {

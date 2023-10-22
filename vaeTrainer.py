@@ -15,7 +15,6 @@ class VAETrainer:
         self.args = args
 
     def train(self, vae : VAE, fd : FluxDataset):
-        vae.to(device)
         e_size = len(str(self.args.epochs - 1))
         with open(self.args.losses_file, "w+") as file:
             file.write("loss,reconstruction_loss,divergence_loss,test_loss\n")
