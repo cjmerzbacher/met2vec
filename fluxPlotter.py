@@ -17,6 +17,7 @@ LABEL_CONFIG = 'lable_config'
 def get_args():
     parser = argparse.ArgumentParser('Flux Plotter')
     parser.add_argument('dataset')
+    parser.add_subparsers(dest='command')
     
     parser.add_argument('-n', '--dataset_size', type=int, default=1024)
     parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
@@ -24,9 +25,10 @@ def get_args():
     parser.add_argument('-v', '--vae_folder')
     parser.add_argument('--vae_version', type=int)
     parser.add_argument('--vae_sample', type=bool, default=False)
+
+
     parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     parser.add_argument('--perplexity', type=float, default=30.0)
-
     parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
     parser.add_argument('--cluster_after_vae', type=bool, default=True)
 
@@ -67,44 +69,33 @@ def get_clustering_plotting_config(clustering, plot_config, plotting_data):
     
     return [(plotting_data[np.array(clustering) == i], {'label' : i, 'color' : '#000000', 'marker' : 'o'}) for i in np.unique(clustering)]
 
-
 def load_plot_config(fd : FluxDataset, args):
-    plot_config = {LABEL_CONFIG : {}}
     try:
         with open(args.plot_config_path, 'r') as plot_config_file:
             plot_config = json.load(plot_config_file)
     except:
-        pass
+        plot_config = {}
+    
+    def add(name, value, dic):
+        if name not in dic: dic[name] = value
+
+    add('figsize', (10, 8), plot_config)
+    add('dot_size',1.0, plot_config)
+    add('ldot_size', 30.0, plot_config)
+    add('lfontsize', 8.0, plot_config)
+    add('lbbox', None, plot_config)
+    add('plot_width',1.0, plot_config)
+    add(LABEL_CONFIG, {}, plot_config)
 
     for name in fd.data['label'].unique():
-        if not name in plot_config[LABEL_CONFIG]:
-            plot_config[LABEL_CONFIG][name] = {}
-        config = plot_config[LABEL_CONFIG][name]
-        if 'color' not in config:
-            config['color'] = '#FF00FF'
-        if 'marker' not in config:
-            config['marker'] = 'o'
-        if 'label' not in config:
-            config['label'] = name
-
-    if not 'dpi' in plot_config:
-        plot_config['dpi'] = 100 
-    if not 'figsize' in plot_config:
-        plot_config['figsize'] = (10, 8) 
-    if not 'dot_size' in plot_config:
-        plot_config['dot_size'] = 1.0
-    if not 'ldot_size' in plot_config:
-        plot_config['ldot_size'] = 30.0
-    if not 'lfontsize' in plot_config:
-        plot_config['lfontsize'] = 8.0
-    if not 'lbbox' in plot_config:
-        plot_config['lbbox'] = None
-    if not 'plot_width' in plot_config:
-        plot_config['plot_width'] = 1.0
+        label_config = plot_config[LABEL_CONFIG]
+        add(name, {}, label_config)
+        add('color', '#FF00FF', label_config[name])
+        add('marker', 'o', label_config[name])
+        add('label', name, label_config[name])
 
     with open(args.plot_config_path, 'w') as plot_config_file:
         json.dump(plot_config, plot_config_file, indent=4)
-
     return plot_config
 
 def main():

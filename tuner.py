@@ -32,7 +32,7 @@ def parse_hyper_parameter(hyperparameter : list[str]):
 def get_args():
     parser = argparse.ArgumentParser('Tuner', 'Tuner is used to test hyperparameters.')
     parser.add_argument("main_folder", type=str, help='The folder which will be used to save data during the training and tuning process.')
-    subparsers = parser.add_subparsers(dest='command', help='sub-command help')
+    subparsers = parser.add_subparsers(dest='command', help='')
 
     # setup command
     parser_setup = subparsers.add_parser(SETUP, help='Setup folder for tuner instance to run in.')
