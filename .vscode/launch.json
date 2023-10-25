@@ -50,6 +50,7 @@
                 "-v", "./data/models/test/",
                 "--vae_sample", "true",
                 "--dataset_size", "300",
+                "--dataset_skip_tmp", "true",
             ]
         },
         {

@@ -23,6 +23,7 @@ def get_args():
     parent_parser.add_argument('-n', '--dataset_size', type=int, default=1024)
     parent_parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
     parent_parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
+    parent_parser.add_argument('--dataset_skip_tmp', default=False, type=bool)
     parent_parser.add_argument('-v', '--vae_folder')
     parent_parser.add_argument('--vae_version', type=int)
     parent_parser.add_argument('--vae_sample', type=bool, default=False)
@@ -150,6 +151,15 @@ def scatter_plot(args, fd, plot_config, vae, ax):
                     label=cluster_config['label'],
                     s=plot_config['dot_size'])
 
+    plt.title = args.title
+    legend = plt.legend(fontsize=plot_config['lfontsize'], bbox_to_anchor=plot_config['lbbox'])
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * plot_config['plot_width'], box.height])
+
+    for handle in legend.legend_handles:
+        handle.set_sizes([plot_config['ldot_size']])
+
 def ari_plot(args, fd, vae, ax : plt.Axes):
     options = []
     options.append(args.clusterings)
@@ -189,7 +199,7 @@ def ari_plot(args, fd, vae, ax : plt.Axes):
 
 def main():
     args = get_args()
-    fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux)
+    fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux, args.dataset_skip_tmp)
     plot_config = load_plot_config(fd, args)
     vae = None if args.vae_folder is None else make_VAE(args.vae_folder, args.vae_version) 
 
@@ -202,14 +212,6 @@ def main():
         case 'ari':
             ari_plot(args, fd, vae, ax)
 
-    plt.title = args.title
-    legend = plt.legend(fontsize=plot_config['lfontsize'], bbox_to_anchor=plot_config['lbbox'])
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * plot_config['plot_width'], box.height])
-
-    for handle in legend.legend_handles:
-        handle.set_sizes([plot_config['ldot_size']])
 
     if args.save_plot is None:
         plt.show()

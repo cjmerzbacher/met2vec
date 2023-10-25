@@ -44,7 +44,7 @@ def get_non_zero_columns(df : pd.DataFrame):
     return df.columns[non_zeros]
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
-    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, test_size=DEFAULT_TEST_SIZE, join='inner', verbose=False, reload_aux=False):
+    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, test_size=DEFAULT_TEST_SIZE, join='inner', verbose=False, reload_aux=False, skip_tmp=False):
         '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
         self.set_folder(path)
         self.join = join
@@ -56,9 +56,10 @@ class FluxDataset(Dataset):
         self.find_joins()
 
         # Load data into current
-        if not self.make_tmp_files(dataset_size, test_size):
-            print("Loading FluxDataset failed")
-            return
+        if not skip_tmp:
+            if not self.make_tmp_files(dataset_size, test_size):
+                print("Loading FluxDataset failed")
+                return
         self.load_sample()
 
     def __len__(self):
