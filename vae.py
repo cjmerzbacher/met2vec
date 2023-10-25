@@ -44,6 +44,10 @@ class VAE:
         epsilon = torch.normal(torch.zeros(sigma.size()), torch.ones(sigma.size())).to(device)
 
         return mu + ((sigma * epsilon) if sample else 0.0)
+    
+    def decode(self, x):
+        x = format_input(x)
+        return self.decoder(x)
 
 
     def encode_decode(self, x):
