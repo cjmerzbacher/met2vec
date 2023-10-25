@@ -62,7 +62,6 @@ pytest==7.4.2
 python-dateutil==2.8.2
 python-libsbml==5.20.1
 pytz==2023.3
-pywin32==306
 pyzmq==25.1.1
 rich==13.5.2
 ruamel.yaml==0.17.32
