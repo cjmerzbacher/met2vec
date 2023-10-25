@@ -31,7 +31,26 @@
                 "-j", "outer",
                 "--perplexity", "100",
                 "-v", "./data/models/test/",
-                "--vae_sample", "true"
+                "--vae_sample", "true",
+                "--dataset_size", "300",
+            ]
+        },
+        {
+            "name": "Python: fluxPlotter.py (with VAE, kmeans)",
+            "type": "python",
+            "request": "launch",
+            "program": "fluxPlotter.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args" : [
+                "./data/samples/small_human/",
+                "-p", "tsne",
+                "-j", "outer",
+                "--perplexity", "100",
+                "-v", "./data/models/test/",
+                "--vae_sample", "true",
+                "--dataset_size", "300",
+                "--clustering", "kmeans",
             ]
         },
         {
@@ -54,6 +73,7 @@
                 "--save_losses_on", "5",
                 "-r", "2",
                 "--batch_norm", "true",
+                "--dropout", "0.5"
             ]
         },
         {

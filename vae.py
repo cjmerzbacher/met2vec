@@ -8,11 +8,11 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def format_input(x):
     return torch.Tensor(x).to(device)
 
-def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool = False) -> nn.Module:
+def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
     model = []
     sizes = [round(s) for s in np.linspace(n_in, n_out, n_lay)]
     for v_in, v_out in zip(sizes[0:-2], sizes[1:-1]):
-        model += [nn.Linear(v_in, v_out), nn.LeakyReLU(negative_slope=lrelu_slope)]
+        model += [nn.Linear(v_in, v_out), nn.LeakyReLU(negative_slope=lrelu_slope), nn.Dropout(dropout_p)]
         if batch_norm: model += [nn.BatchNorm1d(v_out)]
     model += [nn.Linear(sizes[-2], sizes[-1])]
     model = nn.Sequential(*model).float()
@@ -21,13 +21,13 @@ def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float
 
 
 class VAE:
-    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01, batch_norm : bool = False):
+    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01, batch_norm : bool = False, dropout_p : float = 0.0):
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay
 
-        self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm)
-        self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm)
+        self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
+        self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)
 
     def get_dist(self, x):
         x = format_input(x)

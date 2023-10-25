@@ -1,24 +1,23 @@
-import pandas as pd
-import numpy as np
 import argparse
 import json
 import os
+import numpy as np
 import matplotlib.pyplot as plt
-import torch
 
+from sklearn.cluster import KMeans, DBSCAN
 from fluxDataset import FluxDataset
-from vae import make_VAE
-from tqdm import tqdm
+from vae import make_VAE, VAE
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 PLOT_CONFIG_PATH = '.plotconfig.json'
-LABLE_CONFIG = 'lable_config'
+LABEL_CONFIG = 'lable_config'
 
 
 def get_args():
     parser = argparse.ArgumentParser('Flux Plotter')
     parser.add_argument('dataset')
+    
     parser.add_argument('-n', '--dataset_size', type=int, default=1024)
     parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
     parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
@@ -27,6 +26,9 @@ def get_args():
     parser.add_argument('--vae_sample', type=bool, default=False)
     parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     parser.add_argument('--perplexity', type=float, default=30.0)
+
+    parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
+    parser.add_argument('--cluster_after_vae', type=bool, default=True)
 
     parser.add_argument('-s', '--save_plot')
     parser.add_argument('-t', '--title', default="")
@@ -37,8 +39,37 @@ def get_args():
 
     return args
 
+def get_clustering(fd,  clustering_type, vae : VAE = None, vae_sample=True) -> list:
+    data = fd.data.drop(columns='label').values
+    if vae:
+        data = vae.encode(data, sample=vae_sample).detach().cpu().numpy()
+
+    labels = fd.data['label'].unique()
+    match clustering_type:
+        case "none":
+            return [sample['label'] for sample in fd.data.iloc]
+        case "kmeans":
+            print("Fitting kmeans...")
+            kmeans = KMeans(len(labels), n_init='auto').fit(data)
+            return kmeans.labels_
+        case "dbscan":
+            print("Fitting dbscan...")
+            dbscan = DBSCAN(min_samples=len(labels)).fit(data)
+            return dbscan.labels_
+
+def get_clustering_plotting_config(clustering, plot_config, plotting_data):
+    if len(clustering) == 0:
+        return []
+    
+    print(f"{clustering[0]} {type(clustering[0])}c0")
+    if type(clustering[0]) == str:
+        return [(plotting_data[np.array(clustering) == n], plot_config[LABEL_CONFIG][n]) for n in np.unique(clustering)]
+    
+    return [(plotting_data[np.array(clustering) == i], {'label' : i, 'color' : '#000000', 'marker' : 'o'}) for i in np.unique(clustering)]
+
+
 def load_plot_config(fd : FluxDataset, args):
-    plot_config = {LABLE_CONFIG : {}}
+    plot_config = {LABEL_CONFIG : {}}
     try:
         with open(args.plot_config_path, 'r') as plot_config_file:
             plot_config = json.load(plot_config_file)
@@ -46,9 +77,9 @@ def load_plot_config(fd : FluxDataset, args):
         pass
 
     for name in fd.data['label'].unique():
-        if not name in plot_config[LABLE_CONFIG]:
-            plot_config[LABLE_CONFIG][name] = {}
-        config = plot_config[LABLE_CONFIG][name]
+        if not name in plot_config[LABEL_CONFIG]:
+            plot_config[LABEL_CONFIG][name] = {}
+        config = plot_config[LABEL_CONFIG][name]
         if 'color' not in config:
             config['color'] = '#FF00FF'
         if 'marker' not in config:
@@ -78,22 +109,19 @@ def load_plot_config(fd : FluxDataset, args):
 
 def main():
     args = get_args()
-    fd = FluxDataset(args.dataset, args.dataset_size, args.dataset_join, True, args.dataset_reload_aux)
+    fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux)
     plot_config = load_plot_config(fd, args)
-
-    if args.vae_folder is None:
-        vae = None
-    else:
-        print("Loading VAE...")
-        vae = make_VAE(args.vae_folder, args.vae_version) 
+    vae = None if args.vae_folder is None else make_VAE(args.vae_folder, args.vae_version) 
 
     plt.figure(figsize=plot_config['figsize'])
     ax = plt.subplot(111)
 
     data = fd.data.drop(columns='label').values
+    clustering_data = data
 
     if vae is not None:
         data = vae.encode(data).detach().cpu().numpy()
+        clustering_data = data if args.cluster_after_vae else clustering_data
 
     match args.preprocessing:
         case 'none':
@@ -106,15 +134,17 @@ def main():
             print("Fitting PCA...")
             pca = PCA()
             data = pca.fit_transform(data)
+    
+    clustering = get_clustering(fd, args.clustering, vae if args.cluster_after_vae else None, args.vae_sample)
+    clusters = get_clustering_plotting_config(clustering, plot_config, data) 
 
-    for name in tqdm(sorted(fd.data['label'].unique(), key=lambda name: plot_config[LABLE_CONFIG][name]['label']), desc='Plottig data'):
-        config = plot_config[LABLE_CONFIG][name]
-        label_data = data[fd.data['label'] == name]
+    for cluster in clusters:
+        cluster_data, cluster_config  = cluster
 
-        ax.scatter(label_data[:,0], label_data[:,1],
-                    color=config['color'],
-                    marker=config['marker'],
-                    label=config['label'],
+        ax.scatter(cluster_data[:,0], cluster_data[:,1],
+                    color=cluster_config['color'],
+                    marker=cluster_config['marker'],
+                    label=cluster_config['label'],
                     s=plot_config['dot_size'])
     
     plt.title = args.title

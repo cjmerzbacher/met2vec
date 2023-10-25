@@ -17,7 +17,8 @@ parser.add_argument("--n_emb", default=128, type=int, help="The number of embedi
 parser.add_argument("--n_lay", default=5, type=int, help="The number of layers.")
 parser.add_argument("--lr", default=0.0001, type=float, help="The step size / learning rate used in SGD.")
 parser.add_argument("--lrelu_slope", type=float, default=0.0, help="The lrelu-slop used in the VAE.")
-parser.add_argument("--batch_norm", type=bool, default=False)
+parser.add_argument("--batch_norm", type=bool, default=False, help="Wether or not batch norm will be applied imbetween layers")
+parser.add_argument("--dropout", default=0.0, type=float, help="The probability of a node being dropped out while training")
 parser.add_argument("-d" ,"--dataset", required=True, type=str, help="The directory or file the dataset is saved in.")
 parser.add_argument("-n", "--dataset_size", default=65536, type=int, help='The size of the dataset to be loaded for each epoch.')
 parser.add_argument("--join", choices=['inner', 'outer'], default='inner', help="How the different reaction sets should be joined.")
@@ -53,7 +54,7 @@ n_in = fd.values.shape[1]
 
 # Load VAE
 print("Loading VAE...")
-vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope, args.batch_norm)
+vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope, args.batch_norm, args.dropout)
 
 trainer = VAETrainer(args)
 trainer.train(vae, fd)
