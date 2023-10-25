@@ -30,7 +30,7 @@ def get_args():
     parent_parser.add_argument('-t', '--title')
     parent_parser.add_argument('-s', '--save_plot')
     parent_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=[1.0, 1.0, 1.0])
-    parent_parser.add_argument('--dbscan_mins', type=float, nargs=3, default=[5, 5, 5])
+    parent_parser.add_argument('--dbscan_mins', type=int, nargs=3, default=[5, 5, 5])
 
     # main parser
     parser = argparse.ArgumentParser('Flux Plotter')
