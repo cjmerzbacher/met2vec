@@ -144,7 +144,7 @@ def scatter_plot(args, fd, plot_config, vae, ax):
         data = vae.encode(data).detach().cpu().numpy()
 
     plotting_data = scatter_preprocessing(data, args)
-    clustering = get_clustering(fd, args.clustering, vae, args.vae_stage, args.vae_sample, args.dbscan_parsm)
+    clustering = get_clustering(fd, args.clustering, vae, args.vae_stage, args.vae_sample, args.dbscan_params)
     clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
 
     for cluster in clusters:
