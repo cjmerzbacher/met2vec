@@ -29,7 +29,8 @@ def get_args():
     parent_parser.add_argument('--vae_sample', type=bool, default=False)
     parent_parser.add_argument('-t', '--title')
     parent_parser.add_argument('-s', '--save_plot')
-    parent_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=5.0)
+    parent_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=[1.0, 1.0, 1.0])
+    parent_parser.add_argument('--dbscan_mins', type=float, nargs=3, default=[5, 5, 5])
 
     # main parser
     parser = argparse.ArgumentParser('Flux Plotter')
@@ -50,13 +51,15 @@ def get_args():
     args = parser.parse_args()
     args.folder = os.path.dirname(args.dataset)
     args.plot_config_path = os.path.join(args.folder, PLOT_CONFIG_PATH)
-    if type(args.dbscan_eps) == float: args.dbscan_eps = [args.dbscan_eps] * 3
-    args.dbscan_eps = {'pre' : args.dbscan_eps[0], 'emb' : args.dbscan_eps[0], 'post' : args.dbscan_eps[0]}
+    args.dbscan_params = {
+        'pre'  : (args.dbscan_eps[0], args.dbscan_mins[0]),
+        'emb'  : (args.dbscan_eps[0], args.dbscan_mins[0]),
+        'post' : (args.dbscan_eps[0], args.dbscan_mins[0])}
 
     return args
 
 
-def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'emb', vae_sample=True, dbscan_eps : float = [0.5, 0.5, 0.5]) -> list:
+def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'emb', vae_sample=True, dbscan_params=None) -> list:
 
     # Get the correct data to cluster on
     data = fd.data.drop(columns='label').values
@@ -76,7 +79,8 @@ def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'em
             return kmeans.labels_
         case "dbscan":
             print("Fitting dbscan...")
-            dbscan = DBSCAN(eps=dbscan_eps[vae_stage]).fit(data)
+            eps, mins = dbscan_params[vae_stage] if dbscan_params != None else (1.0, 5)
+            dbscan = DBSCAN(eps=eps, min_samples=mins).fit(data)
             return dbscan.labels_
 
 def scatter_preprocessing(data, args):
@@ -140,7 +144,7 @@ def scatter_plot(args, fd, plot_config, vae, ax):
         data = vae.encode(data).detach().cpu().numpy()
 
     plotting_data = scatter_preprocessing(data, args)
-    clustering = get_clustering(fd, args.clustering, vae, args.vae_stage, args.vae_sample, args.dbscan_eps)
+    clustering = get_clustering(fd, args.clustering, vae, args.vae_stage, args.vae_sample, args.dbscan_parsm)
     clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
 
     for cluster in clusters:
@@ -168,7 +172,7 @@ def ari_plot(args, fd, vae, ax : plt.Axes):
     clusterings = []
     names = []
     for instance in product(*options):
-        clustering = get_clustering(fd, clustering_type=instance[0], vae=vae, vae_stage=instance[1], vae_sample=args.vae_sample, dbscan_eps=args.dbscan_eps)
+        clustering = get_clustering(fd, clustering_type=instance[0], vae=vae, vae_stage=instance[1], vae_sample=args.vae_sample, dbscan_params=args.dbscan_params)
         clusterings.append(clustering)
         print(clustering)
         names.append('-'.join(instance))
