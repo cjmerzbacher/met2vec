@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import distinctipy
 
 from itertools import product
+from tqdm import tqdm
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import adjusted_rand_score
 from fluxDataset import FluxDataset
@@ -47,6 +48,7 @@ def get_args():
     ari_parser = subparsers.add_parser('ari', parents=[parent_parser])
     ari_parser.add_argument('-c', '--clusterings', nargs='+', default=['kmeans', 'dbscan'])
     ari_parser.add_argument('--vae_stages', nargs='+', default=['pre', 'emb', 'post'])
+    ari_parser.add_argument('--repeat', default=1, type=int)
 
     args = parser.parse_args()
     args.folder = os.path.dirname(args.dataset)
@@ -74,11 +76,9 @@ def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'em
         case "none":
             return [sample['label'] for sample in fd.data.iloc]
         case "kmeans":
-            print("Fitting kmeans...")
             kmeans = KMeans(len(labels), n_init='auto').fit(data)
             return kmeans.labels_
         case "dbscan":
-            print("Fitting dbscan...")
             eps, mins = dbscan_params[vae_stage] if dbscan_params != None else (1.0, 5)
             dbscan = DBSCAN(eps=eps, min_samples=mins).fit(data)
             return dbscan.labels_
@@ -169,32 +169,54 @@ def ari_plot(args, fd, vae, ax : plt.Axes):
     options.append(args.clusterings)
     options.append(args.vae_stages if vae else ['pre'])
 
-    clusterings = []
+    clustering_sets = []
     names = []
-    for instance in product(*options):
-        clustering = get_clustering(fd, clustering_type=instance[0], vae=vae, vae_stage=instance[1], vae_sample=args.vae_sample, dbscan_params=args.dbscan_params)
-        clusterings.append(clustering)
-        print(clustering)
-        names.append('-'.join(instance))
-    
-    clusterings.append(get_clustering(fd, 'none'))
-    names.append('labels')
-    n_clusterings = len(clusterings)
 
-    ari_scores = np.zeros((n_clusterings, n_clusterings))
-    for i in range(len(clusterings)):
-        for j in range(len(clusterings)):
-            ari_scores[i,j] = adjusted_rand_score(clusterings[i], clusterings[j])
+    instances = list(product(*options)) + [('none', 'pre')]
+
+    for instance in tqdm(instances, position=1):
+        name = '-'.join(instance)
+        names.append(name)
+        clustering_set = []
+
+        repeat = args.repeat if instance[0] != 'none' else 1
+        with tqdm(range(repeat), desc=f'Repeating {name}', disable=repeat == 1, position=0) as t:
+            for i in t:
+                clustering = get_clustering(fd, 
+                    clustering_type=instance[0], 
+                    vae=vae, 
+                    vae_stage=instance[1], 
+                    vae_sample=args.vae_sample, 
+                    dbscan_params=args.dbscan_params)
+                clustering_set.append(clustering)
+                
+                n_clusters = len(set(clustering)) - (1 if -1 in clustering else 0)
+                n_outliers = list(clustering).count(1)
+                t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
+ 
+        clustering_sets.append(clustering_set)
+    
+    n_cluster_sets = len(instances)
+
+    
+    ari_scores = np.zeros((n_cluster_sets, n_cluster_sets))
+    ari_std = np.zeros((n_cluster_sets, n_cluster_sets))
+    for i in range(n_cluster_sets):
+        for j in range(n_cluster_sets):
+            scores = [adjusted_rand_score(s1, s2) for s1, s2 in tqdm(product(clustering_sets[i], clustering_sets[j]), desc='calculating scores')]
+            ari_scores[i,j] = np.mean(scores)
+            ari_std[i,j] = np.std(scores)
 
     ax.imshow(ari_scores)
-    ax.set_xticks(np.arange(n_clusterings), labels=names)
-    ax.set_yticks(np.arange(n_clusterings), labels=names)
+    ax.set_xticks(np.arange(n_cluster_sets), labels=names)
+    ax.set_yticks(np.arange(n_cluster_sets), labels=names)
 
     plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
 
-    for i in range(len(clusterings)):
-        for j in range(len(clusterings)):
-            ax.text(j, i, f'{ari_scores[i,j]:.2f}', ha='center', va='center', color='w')
+    for i in range(n_cluster_sets):
+        for j in range(n_cluster_sets):
+            text =f'{ari_scores[i,j]:.2f}' + (f'$\pm${ari_std[i,j]:.2f}' if args.repeat != 1 and ari_std[i,j] > 0.005 else '')
+            ax.text(j, i, text, ha='center', va='center', color='w')
 
     plt.tight_layout()
 

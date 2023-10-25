@@ -51,6 +51,8 @@
                 "--vae_sample", "true",
                 "--dataset_size", "300",
                 "--dataset_skip_tmp", "true",
+                "--repeat", "40",
+                "--"
             ]
         },
         {
