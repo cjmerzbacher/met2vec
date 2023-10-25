@@ -41,6 +41,7 @@ def get_args():
 
     return args
 
+
 def get_clustering(fd,  clustering_type, vae : VAE = None, vae_sample=True) -> list:
     data = fd.data.drop(columns='label').values
     if vae:
@@ -59,15 +60,28 @@ def get_clustering(fd,  clustering_type, vae : VAE = None, vae_sample=True) -> l
             dbscan = DBSCAN(min_samples=len(labels)).fit(data)
             return dbscan.labels_
 
+def scatter_preprocessing(data, args):
+    match args.preprocessing:
+        case 'none':
+            pass
+        case 'tsne':
+            print('Fitting tsne...')
+            tsne = TSNE(perplexity=args.perplexity)
+            return tsne.fit_transform(data)
+        case 'pca':
+            print("Fitting PCA...")
+            pca = PCA()
+            return pca.fit_transform(data)
+
 def get_clustering_plotting_config(clustering, plot_config, plotting_data):
     if len(clustering) == 0:
         return []
     
-    print(f"{clustering[0]} {type(clustering[0])}c0")
     if type(clustering[0]) == str:
         return [(plotting_data[np.array(clustering) == n], plot_config[LABEL_CONFIG][n]) for n in np.unique(clustering)]
     
     return [(plotting_data[np.array(clustering) == i], {'label' : i, 'color' : '#000000', 'marker' : 'o'}) for i in np.unique(clustering)]
+
 
 def load_plot_config(fd : FluxDataset, args):
     try:
@@ -98,6 +112,7 @@ def load_plot_config(fd : FluxDataset, args):
         json.dump(plot_config, plot_config_file, indent=4)
     return plot_config
 
+
 def main():
     args = get_args()
     fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux)
@@ -114,20 +129,9 @@ def main():
         data = vae.encode(data).detach().cpu().numpy()
         clustering_data = data if args.cluster_after_vae else clustering_data
 
-    match args.preprocessing:
-        case 'none':
-            pass
-        case 'tsne':
-            print('Fitting tsne...')
-            tsne = TSNE(perplexity=args.perplexity)
-            data = tsne.fit_transform(data)
-        case 'pca':
-            print("Fitting PCA...")
-            pca = PCA()
-            data = pca.fit_transform(data)
-    
+    plotting_data = scatter_preprocessing(data, args)
     clustering = get_clustering(fd, args.clustering, vae if args.cluster_after_vae else None, args.vae_sample)
-    clusters = get_clustering_plotting_config(clustering, plot_config, data) 
+    clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
 
     for cluster in clusters:
         cluster_data, cluster_config  = cluster
