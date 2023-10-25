@@ -191,7 +191,7 @@ def ari_plot(args, fd, vae, ax : plt.Axes):
                 clustering_set.append(clustering)
                 
                 n_clusters = len(set(clustering)) - (1 if -1 in clustering else 0)
-                n_outliers = list(clustering).count(1)
+                n_outliers = list(clustering).count(-1)
                 t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
  
         clustering_sets.append(clustering_set)
