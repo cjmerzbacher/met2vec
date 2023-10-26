@@ -90,8 +90,9 @@
                 "-v", "./data/models/test/",
                 "--vae_sample", "true",
                 "--dataset_size", "300",
-                "--vae_stage", "emb",
+                "--cluster_stage", "emb",
                 "--clustering", "dbscan",
+                "--plot_stage", "pre",
             ]
         },
         {

@@ -42,7 +42,8 @@ def get_args():
     scatter_parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     scatter_parser.add_argument('--perplexity', type=float, default=30.0)
     scatter_parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
-    scatter_parser.add_argument('--vae_stage', choices=['pre', 'emb', 'post'], default='emb')
+    scatter_parser.add_argument('--cluster_stage', choices=['pre', 'emb', 'post'], default='emb')
+    scatter_parser.add_argument('--plot_stage', choices=['pre', 'emb', 'post'], default='emb')
 
     # ari
     ari_parser = subparsers.add_parser('ari', parents=[parent_parser])
@@ -55,21 +56,24 @@ def get_args():
     args.plot_config_path = os.path.join(args.folder, PLOT_CONFIG_PATH)
     args.dbscan_params = {
         'pre'  : (args.dbscan_eps[0], args.dbscan_mins[0]),
-        'emb'  : (args.dbscan_eps[0], args.dbscan_mins[0]),
-        'post' : (args.dbscan_eps[0], args.dbscan_mins[0])}
+        'emb'  : (args.dbscan_eps[1], args.dbscan_mins[1]),
+        'post' : (args.dbscan_eps[2], args.dbscan_mins[2])}
 
     return args
 
 
-def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'emb', vae_sample=True, dbscan_params=None) -> list:
-
-    # Get the correct data to cluster on
+def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False):
     data = fd.data.drop(columns='label').values
-    if vae and vae_stage != 'pre':
+    if vae and stage != 'pre':
         data = vae.encode(data, sample=vae_sample)
-        if vae_stage == 'post':
+        if stage == 'post':
             data = vae.decode(data)
         data = data.detach().cpu().numpy()
+    return data
+
+
+def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'emb', vae_sample=True, dbscan_params=None) -> list:
+    data = get_data(fd, vae_stage, vae, vae_sample)
 
     labels = fd.data['label'].unique()
     match clustering_type:
@@ -138,15 +142,16 @@ def load_plot_config(fd : FluxDataset, args):
 
 
 def scatter_plot(args, fd, plot_config, vae, ax):
-    data = fd.data.drop(columns='label').values
+    plotting_data = get_data(fd, args.plot_stage, vae, args.vae_sample)
 
-    if vae is not None:
-        data = vae.encode(data).detach().cpu().numpy()
-
-    plotting_data = scatter_preprocessing(data, args)
     print(f"Fitting {args.clustering}...")
-    clustering = get_clustering(fd, args.clustering, vae, args.vae_stage, args.vae_sample, args.dbscan_params)
+    clustering = get_clustering(fd, args.clustering, vae, args.cluster_stage, args.vae_sample, args.dbscan_params)
     clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
+
+    n_clusters = len(clusters)
+    n_outliers = list(clustering).count(-1)
+
+    print(f"clusters -> {n_clusters} n_outliers -> {n_outliers}")
 
     for cluster in clusters:
         cluster_data, cluster_config  = cluster
