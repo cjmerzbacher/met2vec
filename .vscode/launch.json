@@ -51,8 +51,9 @@
                 "--vae_sample", "true",
                 "--dataset_size", "300",
                 "--dataset_skip_tmp", "true",
+                "-c", "kmeans",
+                "--vae_stages", "emb",
                 "--repeat", "40",
-                "--"
             ]
         },
         {

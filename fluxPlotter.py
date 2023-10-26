@@ -170,8 +170,7 @@ def scatter_plot(args, fd, plot_config, vae, ax):
         handle.set_sizes([plot_config['ldot_size']])
 
 def ari_plot(args, fd, vae, ax : plt.Axes):
-    options = []
-    options.append(args.clusterings)
+    options = [args.clusterings]
     options.append(args.vae_stages if vae else ['pre'])
 
     clustering_sets = []
@@ -179,51 +178,55 @@ def ari_plot(args, fd, vae, ax : plt.Axes):
 
     instances = list(product(*options)) + [('none', 'pre')]
 
-    for instance in tqdm(instances, position=1):
-        name = '-'.join(instance)
-        names.append(name)
-        clustering_set = []
+    for (clustering, vae_stage) in tqdm(instances, position=1):
+        names.append(f"{clustering}-{vae_stage}")
+        clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
+    
+    ari_scores, ari_std = get_clustering_score_distribution(clustering_sets)
+    plot_comparison(ari_scores, names, names, ari_std)
 
-        repeat = args.repeat if instance[0] != 'none' else 1
-        with tqdm(range(repeat), desc=f'Repeating {name}', disable=repeat == 1, position=0) as t:
-            for i in t:
-                clustering = get_clustering(fd, 
-                    clustering_type=instance[0], 
-                    vae=vae, 
-                    vae_stage=instance[1], 
-                    vae_sample=args.vae_sample, 
-                    dbscan_params=args.dbscan_params)
-                clustering_set.append(clustering)
+def get_clustering_set(fd, clustering_type, vae_stage, vae, args):
+    clustering_set = []
+    repeat = args.repeat if clustering_type != 'none' else 1
+    with tqdm(range(repeat), desc=f'Repeating {clustering_type}-{vae_stage}', disable=repeat == 1, position=0) as t:
+        for _ in t:
+            clustering = get_clustering(fd, clustering_type, vae, vae_stage, args.vae_sample, args.dbscan_params)
+            clustering_set.append(clustering)
                 
-                n_clusters = len(set(clustering)) - (1 if -1 in clustering else 0)
-                n_outliers = list(clustering).count(-1)
-                t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
- 
-        clustering_sets.append(clustering_set)
-    
-    n_cluster_sets = len(instances)
+            n_outliers = list(clustering).count(-1)
+            n_clusters = len(set(clustering)) - (1 if n_outliers > 0 else 0)
 
-    
-    ari_scores = np.zeros((n_cluster_sets, n_cluster_sets))
-    ari_std = np.zeros((n_cluster_sets, n_cluster_sets))
-    for i in range(n_cluster_sets):
-        for j in range(n_cluster_sets):
-            scores = [adjusted_rand_score(s1, s2) for s1, s2 in tqdm(product(clustering_sets[i], clustering_sets[j]), desc='calculating scores')]
-            ari_scores[i,j] = np.mean(scores)
-            ari_std[i,j] = np.std(scores)
+            t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
+    return clustering_set
 
-    ax.imshow(ari_scores)
-    ax.set_xticks(np.arange(n_cluster_sets), labels=names)
-    ax.set_yticks(np.arange(n_cluster_sets), labels=names)
+def plot_comparison(scores, names_x, names_y, std = None):
+    ax = plt.subplot(111)
+    ax.imshow(scores)
+
+    ax.set_xticks(np.arange(scores.shape[0]), labels=names_x)
+    ax.set_yticks(np.arange(scores.shape[1]), labels=names_y)
 
     plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-
-    for i in range(n_cluster_sets):
-        for j in range(n_cluster_sets):
-            text =f'{ari_scores[i,j]:.2f}' + (f'$\pm${ari_std[i,j]:.2f}' if args.repeat != 1 and ari_std[i,j] > 0.005 else '')
-            ax.text(j, i, text, ha='center', va='center', color='w')
+    for i in range(scores.shape[0]):
+        for j in range(scores.shape[1]):
+            text =f'{scores[i,j]:.2f}' + (f'$\pm${std[i,j]:.2f}' if std[i,j] > 0.005 else '')
+            ax.text(i, j, text, ha='center', va='center', color='w')
 
     plt.tight_layout()
+
+def get_clustering_score_distribution(clustering_sets, score = adjusted_rand_score):
+    n_cluster_sets = len(clustering_sets)
+    scores = np.zeros((n_cluster_sets, n_cluster_sets))
+    std = np.zeros((n_cluster_sets, n_cluster_sets))
+    for i in range(n_cluster_sets):
+        for j in range(n_cluster_sets):
+            score_dist = [score(s1, s2) for s1, s2 in tqdm(product(clustering_sets[i], clustering_sets[j]), desc='calculating scores')]
+            scores[i,j] = np.mean(score_dist)
+            std[i,j] = np.std(score_dist)
+
+    return scores, std
+
+    
 
 
 
