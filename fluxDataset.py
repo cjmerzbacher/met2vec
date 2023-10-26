@@ -88,6 +88,7 @@ class FluxDataset(Dataset):
             with open(renaming_file_path, 'r') as file:
                 self.renaming_dicts = json.load(file)
         except:
+            if self.verbose: print("No renaming dict found...")
             self.renaming_dicts = {}
 
         for name, file in tqdm(self.files.items(), desc='Loading Renaming', disable=not self.verbose):

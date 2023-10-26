@@ -17,6 +17,11 @@ from sklearn.decomposition import PCA
 PLOT_CONFIG_PATH = '.plotconfig.json'
 LABEL_CONFIG = 'lable_config'
 
+PRE = 'pre'
+EMB = 'emb'
+REC = 'rec'
+VAE_STAGES = [PRE, EMB, REC]
+
 
 def get_args():
     parent_parser = argparse.ArgumentParser('Parent Parser', add_help=False)
@@ -42,37 +47,42 @@ def get_args():
     scatter_parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     scatter_parser.add_argument('--perplexity', type=float, default=30.0)
     scatter_parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
-    scatter_parser.add_argument('--cluster_stage', choices=['pre', 'emb', 'post'], default='emb')
-    scatter_parser.add_argument('--plot_stage', choices=['pre', 'emb', 'post'], default='emb')
+    scatter_parser.add_argument('--cluster_stage', choices=VAE_STAGES, default=EMB)
+    scatter_parser.add_argument('--plot_stage', choices=VAE_STAGES, default=EMB)
 
     # ari
     ari_parser = subparsers.add_parser('ari', parents=[parent_parser])
     ari_parser.add_argument('-c', '--clusterings', nargs='+', default=['kmeans', 'dbscan'])
-    ari_parser.add_argument('--vae_stages', nargs='+', default=['pre', 'emb', 'post'])
+    ari_parser.add_argument('--vae_stages', nargs='+', default=VAE_STAGES)
     ari_parser.add_argument('--repeat', default=1, type=int)
+
+    # gmm
+    gmm_parser = subparsers.add_parser('gmm', parents=[parent_parser])
+    gmm_parser.add_argument("--gmm_stage", choices=VAE_STAGES)
+
 
     args = parser.parse_args()
     args.folder = os.path.dirname(args.dataset)
     args.plot_config_path = os.path.join(args.folder, PLOT_CONFIG_PATH)
     args.dbscan_params = {
-        'pre'  : (args.dbscan_eps[0], args.dbscan_mins[0]),
-        'emb'  : (args.dbscan_eps[1], args.dbscan_mins[1]),
-        'post' : (args.dbscan_eps[2], args.dbscan_mins[2])}
+        PRE  : (args.dbscan_eps[0], args.dbscan_mins[0]),
+        EMB  : (args.dbscan_eps[1], args.dbscan_mins[1]),
+        REC : (args.dbscan_eps[2], args.dbscan_mins[2])}
 
     return args
 
 
 def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False):
     data = fd.data.drop(columns='label').values
-    if vae and stage != 'pre':
+    if vae and stage != PRE:
         data = vae.encode(data, sample=vae_sample)
-        if stage == 'post':
+        if stage == REC:
             data = vae.decode(data)
         data = data.detach().cpu().numpy()
     return data
 
 
-def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'emb', vae_sample=True, dbscan_params=None) -> list:
+def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = EMB, vae_sample=True, dbscan_params=None) -> list:
     data = get_data(fd, vae_stage, vae, vae_sample)
 
     labels = fd.data['label'].unique()
@@ -139,51 +149,9 @@ def load_plot_config(fd : FluxDataset, args):
     return plot_config
 
 
-def scatter_plot(args, fd, plot_config, vae, ax):
-    plotting_data = get_data(fd, args.plot_stage, vae, args.vae_sample)
-    plotting_data = apply_preprocessing(plotting_data, args.preprocessing, args.perplexity)
 
-    print(f"Fitting {args.clustering}...")
-    clustering = get_clustering(fd, args.clustering, vae, args.cluster_stage, args.vae_sample, args.dbscan_params)
-    clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
 
-    n_clusters = len(clusters)
-    n_outliers = list(clustering).count(-1)
 
-    print(f"clusters -> {n_clusters} n_outliers -> {n_outliers}")
-
-    for cluster in clusters:
-        cluster_data, cluster_config  = cluster
-        ax.scatter(cluster_data[:,0], cluster_data[:,1],
-                    color=cluster_config['color'],
-                    marker=cluster_config['marker'],
-                    label=cluster_config['label'],
-                    s=plot_config['dot_size'])
-
-    plt.title = args.title
-    legend = plt.legend(fontsize=plot_config['lfontsize'], bbox_to_anchor=plot_config['lbbox'])
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * plot_config['plot_width'], box.height])
-
-    for handle in legend.legend_handles:
-        handle.set_sizes([plot_config['ldot_size']])
-
-def ari_plot(args, fd, vae, ax : plt.Axes):
-    options = [args.clusterings]
-    options.append(args.vae_stages if vae else ['pre'])
-
-    clustering_sets = []
-    names = []
-
-    instances = list(product(*options)) + [('none', 'pre')]
-
-    for (clustering, vae_stage) in tqdm(instances, position=1):
-        names.append(f"{clustering}-{vae_stage}")
-        clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
-    
-    ari_scores, ari_std = get_clustering_score_distribution(clustering_sets)
-    plot_comparison(ari_scores, names, names, ari_std)
 
 def get_clustering_set(fd, clustering_type, vae_stage, vae, args):
     clustering_set = []
@@ -226,25 +194,78 @@ def get_clustering_score_distribution(clustering_sets, score = adjusted_rand_sco
 
     return scores, std
 
+# Main Functions
+
+def scatter_plot(args, fd, plot_config, vae):
+    ax = plt.subplot(111)
+
+    plotting_data = get_data(fd, args.plot_stage, vae, args.vae_sample)
+    plotting_data = apply_preprocessing(plotting_data, args.preprocessing, args.perplexity)
+
+    print(f"Fitting {args.clustering}...")
+    clustering = get_clustering(fd, args.clustering, vae, args.cluster_stage, args.vae_sample, args.dbscan_params)
+    clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
+
+    n_clusters = len(clusters)
+    n_outliers = list(clustering).count(-1)
+
+    print(f"clusters -> {n_clusters} n_outliers -> {n_outliers}")
+
+    for cluster in clusters:
+        cluster_data, cluster_config  = cluster
+        ax.scatter(cluster_data[:,0], cluster_data[:,1],
+                    color=cluster_config['color'],
+                    marker=cluster_config['marker'],
+                    label=cluster_config['label'],
+                    s=plot_config['dot_size'])
+
+    plt.title = args.title
+    legend = plt.legend(fontsize=plot_config['lfontsize'], bbox_to_anchor=plot_config['lbbox'])
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * plot_config['plot_width'], box.height])
+
+    for handle in legend.legend_handles:
+        handle.set_sizes([plot_config['ldot_size']])
+
+
+def ari_plot(args, fd, vae):
+    options = [args.clusterings]
+    options.append(args.vae_stages if vae else [PRE])
+
+    clustering_sets = []
+    names = []
+
+    instances = list(product(*options)) + [('none', PRE)]
+
+    for (clustering, vae_stage) in tqdm(instances, position=1):
+        names.append(f"{clustering}-{vae_stage}")
+        clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
     
+    ari_scores, ari_std = get_clustering_score_distribution(clustering_sets)
+    plot_comparison(ari_scores, names, names, ari_std)
 
 
+def gmm_plot(args, fd, vae):
+    print("gmm")
 
 
 def main():
     args = get_args()
     fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux, args.dataset_skip_tmp)
-    plot_config = load_plot_config(fd, args)
     vae = None if args.vae_folder is None else make_VAE(args.vae_folder, args.vae_version) 
 
+    # set up figure
+    plot_config = load_plot_config(fd, args)
     plt.figure(figsize=plot_config['figsize'])
-    ax = plt.subplot(111)
 
     match args.command:
         case 'scatter':
-            scatter_plot(args, fd, plot_config, vae, ax)
+            scatter_plot(args, fd, plot_config, vae)
         case 'ari':
-            ari_plot(args, fd, vae, ax)
+            ari_plot(args, fd, vae)
+        case 'gmm':
+            gmm_plot(args, fd, vae)
 
 
     if args.save_plot is None:
