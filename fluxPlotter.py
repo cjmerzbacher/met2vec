@@ -87,16 +87,14 @@ def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = 'em
             dbscan = DBSCAN(eps=eps, min_samples=mins).fit(data)
             return dbscan.labels_
 
-def scatter_preprocessing(data, args):
-    match args.preprocessing:
+def apply_preprocessing(data, preprocessing : str, perplexity : float = 30):
+    match preprocessing:
         case 'none':
             return data
         case 'tsne':
-            print('Fitting tsne...')
-            tsne = TSNE(perplexity=args.perplexity)
+            tsne = TSNE(perplexity=perplexity)
             return tsne.fit_transform(data)
         case 'pca':
-            print("Fitting PCA...")
             pca = PCA()
             return pca.fit_transform(data)
 
@@ -143,6 +141,7 @@ def load_plot_config(fd : FluxDataset, args):
 
 def scatter_plot(args, fd, plot_config, vae, ax):
     plotting_data = get_data(fd, args.plot_stage, vae, args.vae_sample)
+    plotting_data = apply_preprocessing(plotting_data, args.preprocessing, args.perplexity)
 
     print(f"Fitting {args.clustering}...")
     clustering = get_clustering(fd, args.clustering, vae, args.cluster_stage, args.vae_sample, args.dbscan_params)
