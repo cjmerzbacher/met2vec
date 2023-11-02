@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: FBASampler",
+            "type": "python",
+            "request": "launch",
+            "program": "FBASampler.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args" : [
+                "./data/samples/test",
+                
+            ]
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
@@ -22,7 +34,12 @@
             "args": [
                 "gmm",
                 "./data/samples/small_human/",
-                "--dataset_size", "300",
+                "--dataset_size",
+                "300",
+                "-v",
+                "./data/models/test/",
+                "-j",
+                "outer",
             ]
         },
         {

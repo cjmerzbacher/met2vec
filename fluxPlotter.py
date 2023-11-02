@@ -9,6 +9,7 @@ from itertools import product
 from tqdm import tqdm
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import adjusted_rand_score
+from sklearn.mixture import GaussianMixture
 from fluxDataset import FluxDataset
 from vae import make_VAE, VAE
 from sklearn.manifold import TSNE
@@ -58,7 +59,8 @@ def get_args():
 
     # gmm
     gmm_parser = subparsers.add_parser('gmm', parents=[parent_parser])
-    gmm_parser.add_argument("--gmm_stage", choices=VAE_STAGES)
+    gmm_parser.add_argument("--gmm_stage", choices=VAE_STAGES, default=EMB)
+    gmm_parser.add_argument("--n_components", default=1, type=int)
 
 
     args = parser.parse_args()
@@ -72,8 +74,12 @@ def get_args():
     return args
 
 
-def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False):
-    data = fd.data.drop(columns='label').values
+def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None):
+    if label is None:
+        data = fd.values
+    else:
+        data = fd[label]
+
     if vae and stage != PRE:
         data = vae.encode(data, sample=vae_sample)
         if stage == REC:
@@ -148,11 +154,6 @@ def load_plot_config(fd : FluxDataset, args):
         json.dump(plot_config, plot_config_file, indent=4)
     return plot_config
 
-
-
-
-
-
 def get_clustering_set(fd, clustering_type, vae_stage, vae, args):
     clustering_set = []
     repeat = args.repeat if clustering_type != 'none' else 1
@@ -177,20 +178,23 @@ def plot_comparison(scores, names_x, names_y, std = None):
     plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     for i in range(scores.shape[0]):
         for j in range(scores.shape[1]):
-            text =f'{scores[i,j]:.2f}' + (f'$\pm${std[i,j]:.2f}' if std[i,j] > 0.005 else '')
+            text =f'{scores[i,j]:.2f}'
+            if std != None and std[i,j] > 0.005:
+                text += f'$\pm${std[i,j]:.2f}'
+
             ax.text(i, j, text, ha='center', va='center', color='w')
 
     plt.tight_layout()
 
-def get_clustering_score_distribution(clustering_sets, score = adjusted_rand_score):
-    n_cluster_sets = len(clustering_sets)
-    scores = np.zeros((n_cluster_sets, n_cluster_sets))
-    std = np.zeros((n_cluster_sets, n_cluster_sets))
-    for i in range(n_cluster_sets):
-        for j in range(n_cluster_sets):
-            score_dist = [score(s1, s2) for s1, s2 in tqdm(product(clustering_sets[i], clustering_sets[j]), desc='calculating scores')]
-            scores[i,j] = np.mean(score_dist)
-            std[i,j] = np.std(score_dist)
+def get_score_distribution(X, score = adjusted_rand_score):
+    n = len(X)
+    scores = np.zeros((n, n))
+    std = np.zeros((n, n))
+    for (i, j) in tqdm([(i, j) for i in range(n) for j in range(n)], desc='Calculating dist'):
+        combinations = [(X[i], X[j])] if type(X[i]) != list else [(x1, x2) for x1 in X[i] for x2 in X[j]]
+        score_dist = [score(s1, s2) for s1, s2 in combinations]
+        scores[i,j] = np.mean(score_dist)
+        std[i,j] = np.std(score_dist)
 
     return scores, std
 
@@ -242,12 +246,28 @@ def ari_plot(args, fd, vae):
         names.append(f"{clustering}-{vae_stage}")
         clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
     
-    ari_scores, ari_std = get_clustering_score_distribution(clustering_sets)
+    ari_scores, ari_std = get_score_distribution(clustering_sets)
     plot_comparison(ari_scores, names, names, ari_std)
 
 
 def gmm_plot(args, fd, vae):
-    print("gmm")
+    labels = list(set(fd.labels))
+    gmms = {label : GaussianMixture(args.n_components) for label in labels}
+    data_sets = {label : get_data(fd, args.gmm_stage, vae, args.vae_sample, label) for label in labels}
+
+    for label, gmm in tqdm(gmms.items(), desc='Fitting models'):
+        gmm.fit(data_sets[label])
+
+    def pred(data, ):
+        probs = np.array([gmms[label].score_samples(data).ravel() for label in labels])
+        return np.argmax(probs, axis=0)
+
+    def get_prediction_accuracy(exp_label, data_label):
+        return pred(data_sets[data_label]) == labels.index(exp_label)
+    
+    acc_scores, _ = get_score_distribution(labels, get_prediction_accuracy)
+    plot_comparison(acc_scores, labels, labels)
+
 
 
 def main():

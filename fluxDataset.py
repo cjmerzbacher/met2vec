@@ -66,6 +66,8 @@ class FluxDataset(Dataset):
         return self.data.shape[0]
     
     def __getitem__(self, idx):
+        if type(idx) == str:
+            return self.values[np.array(self.labels) == idx]
         return self.labels[idx], torch.Tensor(self.values[idx])
     
     def set_folder(self, path : str):
@@ -117,7 +119,10 @@ class FluxDataset(Dataset):
             with open(pkl_path, 'wb') as pkl_file:
                 pickle.dump(df, pkl_file)
 
-        return df.rename(columns=self.renaming_dicts[name])
+        if name in self.renaming_dicts:
+            return df.rename(columns=self.renaming_dicts[name])
+        else:
+            return df
     
     def find_joins(self):
         join_path = os.path.join(self.folder, JOIN_FILE)
