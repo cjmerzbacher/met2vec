@@ -273,7 +273,7 @@ def gmm_plot(args, fd, vae):
         return np.argmax(probs, axis=0)
 
     def get_prediction_accuracy(exp_label, data_label):
-        return pred(data_sets[data_label]) == labels.index(exp_label)
+        return np.mean(pred(data_sets[data_label]) == labels.index(exp_label))
     
     acc_scores, _ = get_score_distribution(labels, get_prediction_accuracy)
     plot_comparison(acc_scores, labels, labels, write_scores=args.write_scores)
