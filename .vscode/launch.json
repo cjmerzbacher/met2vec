@@ -38,8 +38,8 @@
                 "300",
                 "-v",
                 "./data/models/test/",
-                "-j",
-                "outer",
+                "-j", "outer",
+                "--write_scores", "true"
             ]
         },
         {

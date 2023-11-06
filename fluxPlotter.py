@@ -23,28 +23,37 @@ EMB = 'emb'
 REC = 'rec'
 VAE_STAGES = [PRE, EMB, REC]
 
+def boolean_string(s):
+    if s.lower() not in {'true', 'false'}:
+        raise ValueError('Not a valid boolean string.')
+    return s.lower() == 'true'
 
 def get_args():
     parent_parser = argparse.ArgumentParser('Parent Parser', add_help=False)
     parent_parser.add_argument('dataset')
     parent_parser.add_argument('-n', '--dataset_size', type=int, default=1024)
     parent_parser.add_argument('-j', '--dataset_join', choices=['inner', 'outer'], default='inner')
-    parent_parser.add_argument('-r', '--dataset_reload_aux', type=bool, default=False)
-    parent_parser.add_argument('--dataset_skip_tmp', default=False, type=bool)
+    parent_parser.add_argument('-r', '--dataset_reload_aux', type=boolean_string, default=False)
+    parent_parser.add_argument('--dataset_skip_tmp', default=False, type=boolean_string)
     parent_parser.add_argument('-v', '--vae_folder')
     parent_parser.add_argument('--vae_version', type=int)
-    parent_parser.add_argument('--vae_sample', type=bool, default=False)
+    parent_parser.add_argument('--vae_sample', type=boolean_string, default=False)
     parent_parser.add_argument('-t', '--title')
     parent_parser.add_argument('-s', '--save_plot')
-    parent_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=[1.0, 1.0, 1.0])
-    parent_parser.add_argument('--dbscan_mins', type=int, nargs=3, default=[5, 5, 5])
+
+    dbscan_parser = argparse.ArgumentParser('DbScan Parameters', add_help=False)
+    dbscan_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=[1.0, 1.0, 1.0])
+    dbscan_parser.add_argument('--dbscan_mins', type=int, nargs=3, default=[5, 5, 5])
+
+    comp_parser = argparse.ArgumentParser('Comp Parser', add_help=False)
+    comp_parser.add_argument('--write_scores', type=boolean_string, default=False)
 
     # main parser
     parser = argparse.ArgumentParser('Flux Plotter')
     subparsers = parser.add_subparsers(dest='command')  
 
     # scatter
-    scatter_parser = subparsers.add_parser('scatter', parents=[parent_parser]) 
+    scatter_parser = subparsers.add_parser('scatter', parents=[parent_parser, dbscan_parser]) 
     scatter_parser.add_argument('-p', '--preprocessing', choices=['none', 'tsne', 'pca'], default='none')
     scatter_parser.add_argument('--perplexity', type=float, default=30.0)
     scatter_parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
@@ -52,24 +61,25 @@ def get_args():
     scatter_parser.add_argument('--plot_stage', choices=VAE_STAGES, default=EMB)
 
     # ari
-    ari_parser = subparsers.add_parser('ari', parents=[parent_parser])
+    ari_parser = subparsers.add_parser('ari', parents=[parent_parser, dbscan_parser, comp_parser])
     ari_parser.add_argument('-c', '--clusterings', nargs='+', default=['kmeans', 'dbscan'])
     ari_parser.add_argument('--vae_stages', nargs='+', default=VAE_STAGES)
     ari_parser.add_argument('--repeat', default=1, type=int)
 
     # gmm
-    gmm_parser = subparsers.add_parser('gmm', parents=[parent_parser])
+    gmm_parser = subparsers.add_parser('gmm', parents=[parent_parser, comp_parser])
     gmm_parser.add_argument("--gmm_stage", choices=VAE_STAGES, default=EMB)
     gmm_parser.add_argument("--n_components", default=1, type=int)
 
-
     args = parser.parse_args()
+
     args.folder = os.path.dirname(args.dataset)
     args.plot_config_path = os.path.join(args.folder, PLOT_CONFIG_PATH)
-    args.dbscan_params = {
-        PRE  : (args.dbscan_eps[0], args.dbscan_mins[0]),
-        EMB  : (args.dbscan_eps[1], args.dbscan_mins[1]),
-        REC : (args.dbscan_eps[2], args.dbscan_mins[2])}
+    if hasattr(args, "dbscan_eps"):
+        args.dbscan_params = {
+            PRE  : (args.dbscan_eps[0], args.dbscan_mins[0]),
+            EMB  : (args.dbscan_eps[1], args.dbscan_mins[1]),
+            REC : (args.dbscan_eps[2], args.dbscan_mins[2])}
 
     return args
 
@@ -168,7 +178,7 @@ def get_clustering_set(fd, clustering_type, vae_stage, vae, args):
             t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
     return clustering_set
 
-def plot_comparison(scores, names_x, names_y, std = None):
+def plot_comparison(scores, names_x, names_y, std = None, write_scores = True):
     ax = plt.subplot(111)
     ax.imshow(scores)
 
@@ -176,13 +186,13 @@ def plot_comparison(scores, names_x, names_y, std = None):
     ax.set_yticks(np.arange(scores.shape[1]), labels=names_y)
 
     plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-    for i in range(scores.shape[0]):
-        for j in range(scores.shape[1]):
-            text =f'{scores[i,j]:.2f}'
-            if std != None and std[i,j] > 0.005:
-                text += f'$\pm${std[i,j]:.2f}'
-
-            ax.text(i, j, text, ha='center', va='center', color='w')
+    if write_scores:
+        for i in range(scores.shape[0]):
+            for j in range(scores.shape[1]):
+                text =f'{scores[i,j]:.2f}'
+                if std != None and std[i,j] > 0.005:
+                    text += f'$\pm${std[i,j]:.2f}'
+                ax.text(i, j, text, ha='center', va='center', color='w')
 
     plt.tight_layout()
 
@@ -247,7 +257,7 @@ def ari_plot(args, fd, vae):
         clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
     
     ari_scores, ari_std = get_score_distribution(clustering_sets)
-    plot_comparison(ari_scores, names, names, ari_std)
+    plot_comparison(ari_scores, names, names, ari_std, args.write_scores)
 
 
 def gmm_plot(args, fd, vae):
@@ -266,7 +276,7 @@ def gmm_plot(args, fd, vae):
         return pred(data_sets[data_label]) == labels.index(exp_label)
     
     acc_scores, _ = get_score_distribution(labels, get_prediction_accuracy)
-    plot_comparison(acc_scores, labels, labels)
+    plot_comparison(acc_scores, labels, labels, write_scores=args.write_scores)
 
 
 
