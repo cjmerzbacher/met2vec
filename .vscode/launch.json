@@ -13,7 +13,8 @@
             "justMyCode": true,
             "args" : [
                 "./data/samples/test",
-                
+                "-t", "10",
+                "-p" 
             ]
         },
         {
