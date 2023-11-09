@@ -25,7 +25,7 @@ rm = os.unlink
 joinp = os.path.join
 
 def get_name_from_file(file : str):
-    return re.sub('_[()0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()]*_[()0-9|k]+.csv', file).group())
+    return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()]*_[0-9|k]+.csv', file).group())
 
 def get_rename_dict(file : str):
     def get_reaction_name(reaction):
