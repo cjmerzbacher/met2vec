@@ -146,6 +146,7 @@ def load_plot_config(fd : FluxDataset, args):
         if name not in dic: dic[name] = value
 
     add('figsize', (10, 8), plot_config)
+    add('dpi', 800, plot_config)
     add('dot_size',1.0, plot_config)
     add('ldot_size', 30.0, plot_config)
     add('lfontsize', 8.0, plot_config)
@@ -153,10 +154,12 @@ def load_plot_config(fd : FluxDataset, args):
     add('plot_width',1.0, plot_config)
     add(LABEL_CONFIG, {}, plot_config)
 
-    for name in fd.data['label'].unique():
+    colors = [distinctipy.get_text_color(c) for c in distinctipy.get_colors(len(fd.data['label'].unique()))]
+
+    for i, name in enumerate(fd.data['label'].unique()):
         label_config = plot_config[LABEL_CONFIG]
         add(name, {}, label_config)
-        add('color', '#FF00FF', label_config[name])
+        add('color', colors[i], label_config[name])
         add('marker', 'o', label_config[name])
         add('label', name, label_config[name])
 
@@ -178,12 +181,15 @@ def get_clustering_set(fd, clustering_type, vae_stage, vae, args):
             t.set_postfix({'clusters':n_clusters, 'outliers':n_outliers})
     return clustering_set
 
-def plot_comparison(scores, names_x, names_y, std = None, write_scores = True):
+def plot_comparison(scores, names_x, names_y, std = None, write_scores = True, xlabel="", ylabel=""):
     ax = plt.subplot(111)
     ax.imshow(scores)
 
     ax.set_xticks(np.arange(scores.shape[0]), labels=names_x)
     ax.set_yticks(np.arange(scores.shape[1]), labels=names_y)
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
     plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     if write_scores:
@@ -192,7 +198,7 @@ def plot_comparison(scores, names_x, names_y, std = None, write_scores = True):
                 text =f'{scores[i,j]:.2f}'
                 if std != None and std[i,j] > 0.005:
                     text += f'$\pm${std[i,j]:.2f}'
-                ax.text(i, j, text, ha='center', va='center', color='w')
+                ax.text(j, i, text, ha='center', va='center', color='w')
 
     plt.tight_layout()
 
@@ -257,7 +263,7 @@ def ari_plot(args, fd, vae):
         clustering_sets.append(get_clustering_set(fd, clustering, vae_stage, vae, args))
     
     ari_scores, ari_std = get_score_distribution(clustering_sets)
-    plot_comparison(ari_scores, names, names, ari_std, args.write_scores)
+    plot_comparison(ari_scores, names, names, ari_std, args.write_scores, )
 
 
 def gmm_plot(args, fd, vae):
@@ -268,7 +274,7 @@ def gmm_plot(args, fd, vae):
     for label, gmm in tqdm(gmms.items(), desc='Fitting models'):
         gmm.fit(data_sets[label])
 
-    def pred(data, ):
+    def pred(data):
         probs = np.array([gmms[label].score_samples(data).ravel() for label in labels])
         return np.argmax(probs, axis=0)
 
@@ -276,7 +282,7 @@ def gmm_plot(args, fd, vae):
         return np.mean(pred(data_sets[data_label]) == labels.index(exp_label))
     
     acc_scores, _ = get_score_distribution(labels, get_prediction_accuracy)
-    plot_comparison(acc_scores, labels, labels, write_scores=args.write_scores)
+    plot_comparison(acc_scores, labels, labels, write_scores=args.write_scores, xlabel="True Label", ylabel="Prediction")
 
 
 
@@ -302,8 +308,6 @@ def main():
         plt.show()
     else:
         plt.savefig(args.save_plot, dpi=plot_config['dpi'])
-
- 
 
 if __name__ == '__main__':
     main()

@@ -100,10 +100,8 @@ def make_VAE(folder : str, load_version : int = None) -> VAE:
     n_emb = list(decoder.children())[0].in_features
     n_lay = len([l for l in decoder.children() if type(l) == nn.modules.linear.Linear])
 
-    
     vae =  VAE(n_in, n_emb, n_lay)
     vae.encoder = encoder
     vae.decoder = decoder
-
 
     return vae

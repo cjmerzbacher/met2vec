@@ -40,7 +40,8 @@
                 "-v",
                 "./data/models/test/",
                 "-j", "outer",
-                "--write_scores", "true"
+                "--write_scores", "true",
+                "--n_components", "4",
             ]
         },
         {
