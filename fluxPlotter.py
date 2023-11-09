@@ -40,6 +40,7 @@ def get_args():
     parent_parser.add_argument('--vae_sample', type=boolean_string, default=False)
     parent_parser.add_argument('-t', '--title')
     parent_parser.add_argument('-s', '--save_plot')
+    parent_parser.add_argument('--reload_plot_config', action='store_true', default=False)
 
     dbscan_parser = argparse.ArgumentParser('DbScan Parameters', add_help=False)
     dbscan_parser.add_argument('--dbscan_eps', type=float, nargs=3, default=[1.0, 1.0, 1.0])
@@ -141,20 +142,23 @@ def load_plot_config(fd : FluxDataset, args):
             plot_config = json.load(plot_config_file)
     except:
         plot_config = {}
+
+    if args.reload_plot_config:
+        plot_config = {}
     
     def add(name, value, dic):
         if name not in dic: dic[name] = value
 
     add('figsize', (10, 8), plot_config)
     add('dpi', 800, plot_config)
-    add('dot_size',1.0, plot_config)
+    add('dot_size',3.0, plot_config)
     add('ldot_size', 30.0, plot_config)
     add('lfontsize', 8.0, plot_config)
     add('lbbox', None, plot_config)
     add('plot_width',1.0, plot_config)
     add(LABEL_CONFIG, {}, plot_config)
 
-    colors = [distinctipy.get_text_color(c) for c in distinctipy.get_colors(len(fd.data['label'].unique()))]
+    colors = distinctipy.get_colors(len(fd.data['label'].unique()))
 
     for i, name in enumerate(fd.data['label'].unique()):
         label_config = plot_config[LABEL_CONFIG]

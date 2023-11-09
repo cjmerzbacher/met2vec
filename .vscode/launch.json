@@ -66,6 +66,7 @@
                 "true",
                 "--dataset_size",
                 "300",
+                "--reload_plot_config"
             ]
         },
         {
