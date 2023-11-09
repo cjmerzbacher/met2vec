@@ -4,6 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import distinctipy
+import colormaps as cmaps
 
 from itertools import product
 from tqdm import tqdm
@@ -59,6 +60,7 @@ def get_args():
     scatter_parser.add_argument('--perplexity', type=float, default=30.0)
     scatter_parser.add_argument('--clustering', choices=['none', 'kmeans', 'dbscan'], default='none')
     scatter_parser.add_argument('--cluster_stage', choices=VAE_STAGES, default=EMB)
+    scatter_parser.add_argument('--color_tag')
     scatter_parser.add_argument('--plot_stage', choices=VAE_STAGES, default=EMB)
 
     # ari
@@ -125,15 +127,35 @@ def apply_preprocessing(data, preprocessing : str, perplexity : float = 30):
             pca = PCA()
             return pca.fit_transform(data)
 
-def get_clustering_plotting_config(clustering, plot_config, plotting_data):
+def get_plot_cluster(clustering, plot_config, plotting_data, args):
     if len(clustering) == 0:
         return []
     
-    if type(clustering[0]) == str:
-        return [(plotting_data[np.array(clustering) == n], plot_config[LABEL_CONFIG][n]) for n in np.unique(clustering)]
+    if type(clustering[0]) != str:
+        colors = distinctipy.get_colors(len(np.unique(clustering)))
+        plot_clusters = [(plotting_data[np.array(clustering) == i], {'label' : i, 'color' : colors[i], 'marker' : 'o'}) for i in np.unique(clustering)]
+        return plot_clusters
+        
+    plot_clusters = [(plotting_data[np.array(clustering) == n], plot_config[LABEL_CONFIG][n]) for n in np.unique(clustering)]
 
-    colors = distinctipy.get_colors(len(np.unique(clustering)))
-    return [(plotting_data[np.array(clustering) == i], {'label' : i, 'color' : colors[i], 'marker' : 'o'}) for i in np.unique(clustering)]
+    if args.color_tag != None:
+        ct = args.color_tag
+        unique_tags = list(np.unique([pc[1]['tags'][ct] for pc in plot_clusters if ct in pc[1]['tags']]))
+        if len(unique_tags) != 0:
+            colors = cmaps.pride.discrete(256).colors
+
+            r = 256 // len(unique_tags)
+            offsets = {tag : 0 for tag in unique_tags}
+
+            for (_, pc) in plot_clusters:
+                if ct in pc['tags']:
+                    tag = pc['tags'][ct]
+                    pc['color'] = colors[unique_tags.index(tag) * r + offsets[tag]]
+                    offsets[tag] += 1
+
+
+    return plot_clusters
+
 
 
 def load_plot_config(fd : FluxDataset, args):
@@ -166,6 +188,7 @@ def load_plot_config(fd : FluxDataset, args):
         add('color', colors[i], label_config[name])
         add('marker', 'o', label_config[name])
         add('label', name, label_config[name])
+        add('tags', {}, label_config[name])
 
     with open(args.plot_config_path, 'w') as plot_config_file:
         json.dump(plot_config, plot_config_file, indent=4)
@@ -228,14 +251,14 @@ def scatter_plot(args, fd, plot_config, vae):
 
     print(f"Fitting {args.clustering}...")
     clustering = get_clustering(fd, args.clustering, vae, args.cluster_stage, args.vae_sample, args.dbscan_params)
-    clusters = get_clustering_plotting_config(clustering, plot_config, plotting_data) 
+    plot_clusters = get_plot_cluster(clustering, plot_config, plotting_data, args) 
 
-    n_clusters = len(clusters)
+    n_clusters = len(plot_clusters)
     n_outliers = list(clustering).count(-1)
 
     print(f"clusters -> {n_clusters} n_outliers -> {n_outliers}")
 
-    for cluster in clusters:
+    for cluster in plot_clusters:
         cluster_data, cluster_config  = cluster
         ax.scatter(cluster_data[:,0], cluster_data[:,1],
                     color=cluster_config['color'],
