@@ -21,7 +21,30 @@ def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float
 
 
 class VAE:
-    def __init__(self, n_in : int, n_emb : int, n_lay : int, lrelu_slope : float = 0.01, batch_norm : bool = False, dropout_p : float = 0.0):
+    def __init__(self, 
+                 n_in : int, 
+                 n_emb : int, 
+                 n_lay : int, 
+                 lrelu_slope : float = 0.01, 
+                 batch_norm : bool = False, 
+                 dropout_p : float = 0.0
+                 ):
+        """Initializes a VAE with the dimensions and hyperparameters given.
+
+        This will construct a VAE with the dimensions and hyperparameters given.
+        For different layers the intermediate layer dimensions are a linear function
+        from the encoder / decoder input size to their respective output sizes.
+
+        Args:
+            n_in: The number of input / reconstruction dimensions.
+            n_emb: The number of dimensions for the embedding space.
+            n_lay: The number of layers in the encoder and decoder.
+            lrelu_slope: The leaky-ReLU slope used.
+            batch_norm: If true batch_norm will be applied between the layers of
+            the encoder and decoder.
+            dropout_p: The dropout percentage used.
+        """
+
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay
@@ -29,7 +52,19 @@ class VAE:
         self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
         self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)
 
-    def get_dist(self, x):
+    def get_dist(self, x : torch.Tensor) -> torch.Tensor:
+        """Gets the distribution values for a given input value.
+
+        The distirbution $P(z\mid x)$ is given as a parameterization for a
+        multivariate gaussian distribution. This is the output from the encoder.
+        
+        Args:
+            x: The input to the encoder.
+
+        Returns:
+            mu: The mean of the distirbution.
+            sigma: The diagonals for the distirbution covariance matrix.
+        """
         x = format_input(x)
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
@@ -37,26 +72,70 @@ class VAE:
 
         return self.mu, self.sigma
     
-    def encode(self, x, sample=True):
+    def encode(self, x : torch.Tensor, sample : bool = True) -> torch.Tensor:
+        """Encodes an embedding into the latent space.
+
+        Args: 
+            x: The input to be encoded.
+
+        Returns:
+            z: The encoding of the input.
+        """
         x = format_input(x)
 
-        mu, sigma = self.get_dist(x) 
-        epsilon = torch.normal(torch.zeros(sigma.size()), torch.ones(sigma.size())).to(device)
+        mu, sigma = self.get_dist(x)
 
-        return mu + ((sigma * epsilon) if sample else 0.0)
+        ones = np.ones(sigma.shape)
+        epsilon = torch.normal(ones, ones * 0).to(device)
+
+        z = mu + ((sigma * epsilon) if sample else 0.0)
+
+        return z
     
-    def decode(self, x):
-        x = format_input(x)
-        return self.decoder(x)
-
-
-    def encode_decode(self, x):
-        x = format_input(x)
-        z = self.encode(x)
+    def decode(self, z : torch.Tensor) -> torch.Tensor:
+        """Decodes a embedding / reconstructs the value embeded.
+        
+        Args:
+            z: A point in the latent space / embedding space.
+            
+        Returns:
+            y: A reconstruciton / decoding of the latent space point.
+        """
+        z = format_input(z)
         y = self.decoder(z)
         return y
 
-    def loss(self, x, y):
+
+    def encode_decode(self, x : torch.Tensor) -> torch.Tensor:
+        """Runs a sample through the network encoding and then decoding it without sampling.
+        
+        Args:
+            x: The input which will be fed into the encoder.
+            
+        Returns:
+            y: The reconstruciton from the decoder.
+        """
+        x = format_input(x)
+
+        z = self.encode(x)
+        y = self.decode(z)
+        return y
+
+    def loss(self, x : torch.Tensor, y : torch.Tensor) -> tuple[torch.Tensor, dict[str,float]]:
+        """Computes the loss for a given x and y.
+        
+        Note x and y should be made by this model, otherwise autograd will not
+        apply gradient properly.
+
+        Args:
+            x: The x value which the network took as input for the encoder.
+            y: The reconstruciton made by the decoder.
+
+        Returns:
+            loss: The overall loss from the network (torch.Tensor).
+            blame: A dictionary describing how different parts of the 
+            loss contributed to the overall loss.
+        """
         x = format_input(x)
         y = format_input(y)
 
@@ -65,17 +144,36 @@ class VAE:
         loss_reconstruction = torch.mean(loss_reconstruction)
 
         # Divergence from N(0, 1)
-        loss_divergence = 0.5 * torch.sum(self.sigma, dim=1) # tr(sigma)
-        loss_divergence += 0.5 * torch.norm(self.mu, dim=1)
+        loss_divergence = 0.5 * torch.sum(self.sigma, dim=1)                      # tr(sigma)
+        loss_divergence += 0.5 * torch.norm(self.mu, dim=1)                       # mu^T @ mu
         loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
         loss_divergence = torch.mean(loss_divergence)
 
         loss = loss_reconstruction + loss_divergence
+
+        blame = {
+            "loss" : loss.numpy(),
+            "loss_divergence" : loss_divergence.numpy(),
+            "loss_reconstruction" : loss_reconstruction.numpy()
+        }
          
-        return loss, loss_reconstruction.detach().cpu().numpy(), loss_divergence.detach().cpu().numpy()
+        return loss, blame
     
 
-def make_VAE(folder : str, load_version : int = None) -> VAE:
+def load_VAE(folder : str, load_version : int = None) -> VAE:
+    """Loads a VAE from a given folder. 
+    
+    The folder should contain encoder{version}.pth 
+    and decoder{version}.pth files. If no load_version is given the highest load
+    version found will be used.
+
+    Args:
+        folder: The folder the VAE will be loaded from
+        load_versio: The version of the VAE that will be loaded.
+
+    Returns:
+        vae: A VAE with weights loaded from the specified folder.
+    """
     def contains_correct_version(f : str, model_part : str):
         return model_part in f and (True if load_version is None else str(load_version) in f)
     
