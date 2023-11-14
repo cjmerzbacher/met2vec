@@ -11,6 +11,8 @@ import pickle
 from cobra.io import read_sbml_model
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from constants import *
+from vae import VAE
 
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
@@ -23,6 +25,7 @@ DEFAULT_TEST_SIZE = 2048
 
 rm = os.unlink
 joinp = os.path.join
+ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
 def get_name_from_file(file : str):
     return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()0-9]*_[0-9|k]+.csv', file).group())
@@ -42,10 +45,33 @@ def get_rename_dict(file : str):
 def get_non_zero_columns(df : pd.DataFrame):
     non_zeros = np.any(df.values != 0.0, axis=0)
     return df.columns[non_zeros]
+
+def make_tmp(path : str, n : int, source_df : pd.DataFrame):
+    """Splits of a tmp file from source df of size n to be stored in path."""
+    sample = source_df.sample(min(n, len(source_df.index)))
+    source_df.drop(index=sample.index, inplace=True)
+    with open(path, 'wb') as file: pickle.dump(sample, file)
+
+
+
+
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
-    def __init__(self, path, dataset_size=DEFAULT_DATASET_SIZE, test_size=DEFAULT_TEST_SIZE, join='inner', verbose=False, reload_aux=False, skip_tmp=False):
-        '''Takes files - a path to a csv file containing the data to be leaded. The data is automatically normalized when loaded.'''
+    def __init__(self, 
+                 path : str, 
+                 dataset_size : int = DEFAULT_DATASET_SIZE, 
+                 test_size : int = DEFAULT_TEST_SIZE, 
+                 join : str ='inner', 
+                 verbose : bool = False, 
+                 reload_aux : bool = False, 
+                 skip_tmp : bool = False):
+        '''Takes files - a path to a csv file containing the data to be leaded. 
+        
+        The data is automatically normalized when loaded.
+        
+        Args:
+            path: The path (.csv file or folder containing .csv files).
+            dataset_size: The size'''
         self.set_folder(path)
         self.join = join
         self.verbose = verbose
@@ -57,9 +83,7 @@ class FluxDataset(Dataset):
 
         # Load data into current
         if not skip_tmp:
-            if not self.make_tmp_files(dataset_size, test_size):
-                print("Loading FluxDataset failed")
-                return
+            self.create_tmp_archive(dataset_size, test_size)
         self.load_sample()
 
     def __len__(self):
@@ -146,47 +170,55 @@ class FluxDataset(Dataset):
             with open(join_path, 'w') as join_file:
                 json.dump(self.joins, join_file, indent=4)
 
-    def make_tmp_files(self, dataset_size : int, test_size : int):
-        samples_per_file = dataset_size // len(self.files)
-        test_per_file = test_size // len(self.files)
+    def create_tmp_archive(self, train_size : int, test_size : int):
+        """Makes tmp files to be used to speed up sample loading.
+        
+        tmp files - These are pickled pd.DataFrame random subsets of the files loaded. 
+        
+        Args:
+            train_size: The size of the train dataset made when a tmp file 
+            from each origional csv file is loaded.
+            test_size: The size of the test dataset made when a tmp file
+            from each origional csv file.
 
-        ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
+        Raises:
+            ValueError: If train_size + test_size is greater than the number of samples
+            for some sample we cannot split the data properly and an error will be thrown
+        """
+        train_per_file = train_size // len(self.files)
+        test_per_file = test_size // len(self.files)
 
         ensure_exists(self.test_pkl_folder)
         ensure_exists(self.train_pkl_folder)
 
-        if not os.path.exists(self.test_pkl_folder):
-            os.makedirs(self.test_pkl_folder)
-
         for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
-            df = self.get_df(name)
-            if len(df.index) < samples_per_file + test_per_file:
-                print(f'Unable to make tmp files! Sample "{name}" ({len(df.index)}) to small: spf {samples_per_file}, ts {test_size}.')
-                return False
+            self.make_tmp_files(name, train_per_file, test_per_file)
 
-            [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if name in f]
-            [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if name in f]
+    def remove_tmp_files(self, name):
+        "Removes tmp files for a certain file name."
+        [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if name in f]
+        [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if name in f]
 
-            def sample_drop(n):
-                n = min(n, len(df.index))
-                sample = df.sample(n)
-                df.drop(sample.index, inplace=True)
-                return sample
-            
-            def save_pkl(path, obj):
-                with open(path, 'wb') as file:
-                    pickle.dump(obj, file)
-        
-            train_df = sample_drop(test_per_file)
-            save_pkl(joinp(self.test_pkl_folder, f'{name}.pkl'), train_df)
+    def make_tmp_files(self, name : str, train : int, test : int):
+        """Makes tmp files for a specific csv file."""
+        df = self.get_df(name)
+        required_samples = train + test
 
-            n_saved = 0 
-            while len(df.index) > 0.8 * samples_per_file:
-                sample_df = sample_drop(samples_per_file)
-                save_pkl(joinp(self.train_pkl_folder, f'{name}_{n_saved}.pkl'), sample_df)
-                n_saved += 1
+        if len(df.index) < required_samples:
+            raise ValueError(
+                f'Unable to make tmp files!' + 
+                f'Sample "{name}" ({len(df.index)}) to small: spf {train}, ts {test}.'
+                )
 
-        return True
+        self.remove_tmp_files(name)
+        make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df) 
+
+        n_saved = 0 
+        while len(df.index) > 0.8 * train:
+            make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df)
+            n_saved += 1
+
+
 
     def get_single_sample(self, name : str, is_test=False):
         folder = self.test_pkl_folder if is_test else self.train_pkl_folder
@@ -212,3 +244,15 @@ class FluxDataset(Dataset):
         self.data = pd.concat([df, pd.DataFrame({'label' : labels})], axis=1)
         self.labels = labels
 
+def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None):
+    if label is None:
+        data = fd.values
+    else:
+        data = fd[label]
+
+    if vae and stage != PRE:
+        data = vae.encode(data, sample=vae_sample)
+        if stage == REC:
+            data = vae.decode(data)
+        data = data.detach().cpu().numpy()
+    return data

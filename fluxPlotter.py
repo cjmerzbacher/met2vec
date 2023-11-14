@@ -8,21 +8,15 @@ import colormaps as cmaps
 
 from itertools import product
 from tqdm import tqdm
-from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import adjusted_rand_score
 from sklearn.mixture import GaussianMixture
-from fluxDataset import FluxDataset
-from vae import make_VAE, VAE
+from fluxDataset import FluxDataset, get_data
+from vae import load_VAE, VAE
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
-PLOT_CONFIG_PATH = '.plotconfig.json'
-LABEL_CONFIG = 'lable_config'
-
-PRE = 'pre'
-EMB = 'emb'
-REC = 'rec'
-VAE_STAGES = [PRE, EMB, REC]
+from management.fluxClustering import get_clustering
+from constants import *
 
 def boolean_string(s):
     if s.lower() not in {'true', 'false'}:
@@ -86,35 +80,6 @@ def get_args():
 
     return args
 
-
-def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None):
-    if label is None:
-        data = fd.values
-    else:
-        data = fd[label]
-
-    if vae and stage != PRE:
-        data = vae.encode(data, sample=vae_sample)
-        if stage == REC:
-            data = vae.decode(data)
-        data = data.detach().cpu().numpy()
-    return data
-
-
-def get_clustering(fd,  clustering_type, vae : VAE = None, vae_stage : str = EMB, vae_sample=True, dbscan_params=None) -> list:
-    data = get_data(fd, vae_stage, vae, vae_sample)
-
-    labels = fd.data['label'].unique()
-    match clustering_type:
-        case "none":
-            return [sample['label'] for sample in fd.data.iloc]
-        case "kmeans":
-            kmeans = KMeans(len(labels), n_init='auto').fit(data)
-            return kmeans.labels_
-        case "dbscan":
-            eps, mins = dbscan_params[vae_stage] if dbscan_params != None else (1.0, 5)
-            dbscan = DBSCAN(eps=eps, min_samples=mins).fit(data)
-            return dbscan.labels_
 
 def apply_preprocessing(data, preprocessing : str, perplexity : float = 30):
     match preprocessing:
@@ -316,7 +281,7 @@ def gmm_plot(args, fd, vae):
 def main():
     args = get_args()
     fd = FluxDataset(args.dataset, args.dataset_size, 0, args.dataset_join, True, args.dataset_reload_aux, args.dataset_skip_tmp)
-    vae = None if args.vae_folder is None else make_VAE(args.vae_folder, args.vae_version) 
+    vae = None if args.vae_folder is None else load_VAE(args.vae_folder, args.vae_version) 
 
     # set up figure
     plot_config = load_plot_config(fd, args)

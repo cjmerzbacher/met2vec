@@ -85,7 +85,7 @@ class VAE:
 
         mu, sigma = self.get_dist(x)
 
-        ones = np.ones(sigma.shape)
+        ones = torch.ones_like(sigma)
         epsilon = torch.normal(ones, ones * 0).to(device)
 
         z = mu + ((sigma * epsilon) if sample else 0.0)
