@@ -21,7 +21,6 @@ def get_args():
     parser.add_argument("-m", "--method", default='optgp', choices=['optgp', 'achr'], help='Sampling method to be used.')
     parser.add_argument("-r", "--replace", action='store_true', default=False, help='Replace existing ')
     parser.add_argument("-t", "--test_repeats", type=int, default=1, help='Repeat sampling')
-
     parser.add_argument("-p", "--print_samples", action='store_true', help="Set to print out a log of all the samples that will be made without sampling.")
     return parser.parse_args()
 
