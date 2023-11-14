@@ -79,7 +79,7 @@ class FluxDataset(Dataset):
 
         # Find renamings and joins
         self.find_renaming()
-        self.find_joins()
+        self.find_joins(self.files)
 
         # Load data into current
         if not skip_tmp:
@@ -100,6 +100,7 @@ class FluxDataset(Dataset):
         self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
         self.test_pkl_folder = os.path.join(self.pkl_folder, 'test')
         self.train_pkl_folder = os.path.join(self.pkl_folder, 'train')
+        self.join_path = os.path.join(self.folder, JOIN_FILE)
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
         self.files = {get_name_from_file(f) : f for f in self.files}
@@ -148,27 +149,30 @@ class FluxDataset(Dataset):
         else:
             return df
     
-    def find_joins(self):
-        join_path = os.path.join(self.folder, JOIN_FILE)
-        if os.path.exists(join_path) and not self.reload:
-            with open(join_path, 'r') as join_file:
+    def find_joins(self, files : list[str]):
+        """Finds the different joints for the dataset.
+        
+        Args:
+            files: The files which the join will be defined over."""
+        if os.path.exists(self.join_path) and not self.reload:
+            with open(self.join_path, 'r') as join_file:
                 self.joins = json.load(join_file)
-        else:
-            inner = set()
-            outer = set()
+            return
 
-            for i, name in tqdm(enumerate(self.files), desc="Making inter_union", disable=not self.verbose):
-                columns = get_non_zero_columns(self.get_df(name))
-                inner = set(columns) if i == 0 else inner.intersection(columns)
-                outer = outer.union(columns)
+        inner, outer = set(), set()
 
-            self.joins = {
-                'inner' : list(inner),
-                'outer' : list(outer)
-            }
+        for i, name in tqdm(enumerate(files), desc="Making inter_union", disable=not self.verbose):
+            columns = get_non_zero_columns(self.get_df(name))
+            inner = set(columns) if i == 0 else inner.intersection(columns)
+            outer = outer.union(columns)
 
-            with open(join_path, 'w') as join_file:
-                json.dump(self.joins, join_file, indent=4)
+        self.joins = {
+            'inner' : list(inner),
+            'outer' : list(outer)
+        }
+
+        with open(self.join_path, 'w') as join_file:
+            json.dump(self.joins, join_file, indent=4)
 
     def create_tmp_archive(self, train_size : int, test_size : int):
         """Makes tmp files to be used to speed up sample loading.
@@ -176,10 +180,8 @@ class FluxDataset(Dataset):
         tmp files - These are pickled pd.DataFrame random subsets of the files loaded. 
         
         Args:
-            train_size: The size of the train dataset made when a tmp file 
-            from each origional csv file is loaded.
-            test_size: The size of the test dataset made when a tmp file
-            from each origional csv file.
+            train_size: The size of the train sample.
+            test_size: The size of the test sample.
 
         Raises:
             ValueError: If train_size + test_size is greater than the number of samples
@@ -218,31 +220,51 @@ class FluxDataset(Dataset):
             make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df)
             n_saved += 1
 
+    def load_tmp_file(self, name : str, is_test=False):
+        """Loads a tmp file for a given name.
+        
+        Args:
+            name: The name of the for which the tmp will be loaded.
+            is_test: If true the test tmp file will be loaded.
 
-
-    def get_single_sample(self, name : str, is_test=False):
+        Raises:
+            FileNotFoundError: If there is no tmp file for name.
+        """
         folder = self.test_pkl_folder if is_test else self.train_pkl_folder
         paths = [joinp(folder, f) for f in os.listdir(folder) if name in f]
-        path = random.sample(paths, 1)[0]
 
+        if len(paths) == 0:
+            raise FileNotFoundError(f"No tmp files found for {name}.")
+
+        path = random.sample(paths, 1)[0]
         with open(path, 'rb') as file:
             return pickle.load(file)
-            
 
-    def load_sample(self, is_test=False):
-        df = pd.DataFrame(columns=self.joins[self.join])
-        labels = []
-        for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
-            tmp_sample_df = self.get_single_sample(name, is_test)
-            labels += [name] * len(tmp_sample_df.index)
-            df = pd.concat([df, tmp_sample_df], join=self.join, ignore_index=True)
-
+    def load_dataFrame(self, df : pd.DataFrame, labels : list[str]) -> None:
+        """Loads in and normalizes a dataFrame."""      
         df = (df-df.mean(numeric_only=True))/df.std(numeric_only=True)
         df.fillna(0, inplace=True)
-
+        
         self.values = df.values
         self.data = pd.concat([df, pd.DataFrame({'label' : labels})], axis=1)
         self.labels = labels
+
+    def load_sample(self, is_test=False) -> None:
+        """Loads a sample into the dataset.
+        
+        Args:
+            is_test: If tre the sample loaded will be the test sample.
+        """
+
+        df = pd.DataFrame(columns=self.joins[self.join])
+        labels = []
+        for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
+            tmp_sample_df = self.load_tmp_file(name, is_test)
+            labels += [name] * len(tmp_sample_df.index)
+            df = pd.concat([df, tmp_sample_df], join=self.join, ignore_index=True)
+
+        self.load_dataFrame(df, labels)
+
 
 def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None):
     if label is None:
