@@ -22,7 +22,7 @@ class VAETrainer:
         def train_batch(i, x):
             optimizer.zero_grad()
             y = vae.encode_decode(x)
-            loss, reconstruction, divergence = vae.loss(x, y)
+            loss, blame = vae.loss(x, y)
             loss.backward()
             optimizer.step()
 
@@ -30,7 +30,7 @@ class VAETrainer:
 
             if i % self.args.save_losses_on == 0:
                 with open(self.args.losses_file, "a+") as file:
-                    file.write(f"{loss},{reconstruction},{divergence},{test_loss}\n")
+                    file.write(f"{loss},{blame['loss_reconstruction']},{blame['loss_divergence']},{test_loss}\n")
 
             return loss
         

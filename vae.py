@@ -151,10 +151,13 @@ class VAE:
 
         loss = loss_reconstruction + loss_divergence
 
+        def to_float(x : torch.Tensor):
+            return x.detach().cpu().numpy()
+
         blame = {
-            "loss" : loss.numpy(),
-            "loss_divergence" : loss_divergence.numpy(),
-            "loss_reconstruction" : loss_reconstruction.numpy()
+            "loss" : to_float(loss),
+            "loss_divergence" : to_float(loss_divergence),
+            "loss_reconstruction" : to_float(loss_reconstruction)
         }
          
         return loss, blame

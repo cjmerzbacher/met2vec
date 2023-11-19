@@ -154,17 +154,15 @@
             ]
         },
         {
-            "name": "Python: main.py",
+            "name": "Python: trainer.py",
             "type": "python",
             "request": "launch",
-            "program": "main.py",
+            "program": "trainer.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-e",
-                "5",
-                "-d",
-                ".\\data\\samples\\small_human\\",
+                "-e", "5",
+                "-d", ".\\data\\samples\\small_human\\",
                 "--join",
                 "outer",
                 "--n_emb",
