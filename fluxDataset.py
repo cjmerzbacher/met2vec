@@ -95,8 +95,24 @@ class FluxDataset(Dataset):
         return self.labels[idx], torch.Tensor(self.values[idx])
     
     def set_folder(self, path : str):
+        """Sets up the folder for the FluxDataset.
+        
+        Just readies the directory creating a pkl_folder (test + train).
+
+        Args:
+            path: The path to a csv file or folder constaining many csv files.
+
+        Raises:
+            FileNotFoundError: If the folder doesn't exist, or there are no files under
+            the path.
+        
+        """
         self.path = path
         self.folder = os.path.dirname(path)
+
+        if not os.path.exists(self.folder):
+            raise FileNotFoundError(f"The folder {self.folder} does not exist and there is no flux data to load.")
+
         self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
         self.test_pkl_folder = os.path.join(self.pkl_folder, 'test')
         self.train_pkl_folder = os.path.join(self.pkl_folder, 'train')
@@ -104,6 +120,10 @@ class FluxDataset(Dataset):
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
         self.files = {get_name_from_file(f) : f for f in self.files}
+
+        if len(self.files) == 0:
+            raise FileNotFoundError(f"The path {self.path} has no .csv files in it.")
+
 
     def find_renaming(self):
         self.renaming_dicts = {}
@@ -153,7 +173,11 @@ class FluxDataset(Dataset):
         """Finds the different joints for the dataset.
         
         Args:
-            files: The files which the join will be defined over."""
+            files: The files which the join will be defined over.
+            
+        Raises:
+
+        """
         if os.path.exists(self.join_path) and not self.reload:
             with open(self.join_path, 'r') as join_file:
                 self.joins = json.load(join_file)
