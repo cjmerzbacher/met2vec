@@ -28,21 +28,35 @@ joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
 def get_name_from_file(file : str):
+    """Extracts the common name between sbml model and the sample file."""
     return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()0-9]*_[0-9|k]+.csv', file).group())
 
-def get_rename_dict(file : str):
+def get_rename_dict(path : str) -> dict[str,str]:
+    """Gets the renaming dict for a given file.
+    
+    This will transform the file path to get the name and path for the reactions.
+    Then the sbml model loaded will be used to generate a dictionary mapping metabolite
+    names to 'reaction_names'.
+    
+    Arguments:
+        path: The path of the sample which will be used to find a model.
+
+    Returns:
+        renaming: A dictionary mapping metabolits names to 'reaction_names'
+    """
     def get_reaction_name(reaction):
         reaction_parts = [f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]
         name = "".join(sorted(reaction_parts))
         return name.replace(",", ".")
 
     try:
-        model = read_sbml_model(file)
+        model = read_sbml_model(path)
     except:
         return None
     return {r.id : get_reaction_name(r) for r in model.reactions}
 
-def get_non_zero_columns(df : pd.DataFrame):
+def get_non_zero_columns(df : pd.DataFrame) -> list[str]:
+    """Get the non-zero column names from a DataFrame."""
     non_zeros = np.any(df.values != 0.0, axis=0)
     return df.columns[non_zeros]
 
@@ -126,6 +140,7 @@ class FluxDataset(Dataset):
 
 
     def find_renaming(self):
+        """Loads the renaming for all metabolites in the samples."""
         self.renaming_dicts = {}
         if len(self.files) < 2:
             return
@@ -149,10 +164,26 @@ class FluxDataset(Dataset):
         with open(renaming_file_path, 'w') as file:
             json.dump(self.renaming_dicts, file)
 
-    def get_pkl_path(self, name : str):
+    def get_pkl_path(self, name : str) -> str:
+        """Get the pkl path for a given name.
+        
+        Arguments:
+            name: The name for the pkl path.
+
+        Returns:
+            path: The path to the pkl file.
+        """
         return os.path.join(self.pkl_folder, f"{name}.pkl")
 
     def get_df(self, name : str) -> pd.DataFrame:
+        """Loads a DataFrame for a given name.
+        
+        Arguments:
+            name: The name of the sample
+
+        Returns:
+            df: The dataframe of a sample for the given name.
+        """
         pkl_path = self.get_pkl_path(name)
         try:
             with open(pkl_path, 'rb') as pkl_file:
@@ -290,7 +321,23 @@ class FluxDataset(Dataset):
         self.load_dataFrame(df, labels)
 
 
-def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None):
+def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None) -> np.Array:
+    """Transforms the data loaded in a FluxDataset through a vae.
+     
+    Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
+    unchanged, transformed into the VAE embedding, or reconstructed from it's VAE embedding.
+    
+    Arguments:
+        fd: The FluxDataset whose sample will be transformed.
+        stage: The stage in the VAE which be output ('pre', 'emb', 'post').
+        vae: The VAE which will be used to transform the data.
+        vae_sample: If true the VAE will sample from the embedding distribution, isntead of using the mean.
+        label: The label for the subset of the FluxDataset that will be transformed. By default the whole
+            sample will be used.
+
+    Return:
+        data: The transformed subset of the FluxDataset sample.
+    """
     if label is None:
         data = fd.values
     else:
