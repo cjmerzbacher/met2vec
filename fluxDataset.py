@@ -157,9 +157,9 @@ class FluxDataset(Dataset):
             self.renaming_dicts = {}
 
         for name, file in tqdm(self.files.items(), desc='Loading Renaming', disable=not self.verbose):
-            gem_file = os.path.join(self.folder, GEM_PATH_FOLDER, f"{name}.xml")
             if name in self.renaming_dicts and not self.reload:
                 continue
+            gem_file = os.path.join(self.folder, GEM_PATH_FOLDER, f"{name}.xml")
             gem_rename_dict = get_rename_dict(gem_file)
             if gem_rename_dict != None:
                 self.renaming_dicts[name] = gem_rename_dict 

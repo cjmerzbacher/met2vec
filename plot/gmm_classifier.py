@@ -11,6 +11,7 @@ from misc.vae import PARSER_LOAD_VAE, load_VAE
 from misc.constants import *
 from misc.fluxDataset import load_fd, make_load_fluxDataset_parser, get_data
 from misc.plot import get_save_plot_parser, plot_comparison, get_title_parser
+from misc.parsing import boolean_string
 
 import matplotlib.pyplot as plt
 import argparse
@@ -23,6 +24,7 @@ parser = argparse.ArgumentParser(parents=[
     get_title_parser(default='GMM Accuracies'),
     ])
 parser.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
+parser.add_argument("--plot_values", type=boolean_string, default=False, help="Whether the values should be plotted")
 args = parser.parse_args()
 
 vae = load_VAE(args)
@@ -58,7 +60,7 @@ for i, test_label in enumerate(test_labels):
 
 fig, ax = plt.subplots(1,1, figsize=(9,9))
 
-plot_comparison(ax, accuracies, test_labels, train_labels, y_label="Test Labels", x_label="Train Labels")
+plot_comparison(ax, accuracies, test_labels, train_labels, y_label="Test Labels", x_label="Train Labels", write_scores=args.plot_values)
 ax.set_title(args.title, fontsize=16)
 
 fig.tight_layout()
