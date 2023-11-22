@@ -15,3 +15,8 @@ JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
 DEFAULT_DATASET_SIZE = 65536
 DEFAULT_TEST_SIZE = 2048
+
+# Dataset Joins
+INNER = 'inner'
+OUTER = 'outer'
+DATASET_JOINS = [INNER, OUTER]

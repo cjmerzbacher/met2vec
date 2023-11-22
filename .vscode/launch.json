@@ -5,16 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: gmm_classifier.py",
+            "type": "python",
+            "request": "launch",
+            "program": "./plot/gmm_classifier.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-v", "./data/models/test/",
+                "-T", "./data/samples/small_human/",
+                "-t", "./data/samples/liver/",
+                "-s", "emb",
+                "--train_size", "300",
+                "--test_size", "100",
+                "--save_plot", "./data/plots/test.png",
+            ]
+        },
+        {
             "name": "Python: FBASampler",
             "type": "python",
             "request": "launch",
             "program": "FBASampler.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args" : [
+            "args": [
                 "./data/samples/test",
-                "-t", "10",
-                "-p" 
+                "-t",
+                "10",
+                "-p"
             ]
         },
         {
@@ -39,9 +57,12 @@
                 "300",
                 "-v",
                 "./data/models/test/",
-                "-j", "outer",
-                "--write_scores", "true",
-                "--n_components", "4",
+                "-j",
+                "outer",
+                "--write_scores",
+                "true",
+                "--n_components",
+                "4",
             ]
         },
         {
@@ -66,7 +87,8 @@
                 "true",
                 "--dataset_size",
                 "300",
-                "--color_tag", "organ",
+                "--color_tag",
+                "organ",
             ]
         },
         {
@@ -163,9 +185,9 @@
             "args": [
                 "-e", "5",
                 "-d", ".\\data\\samples\\small_human\\",
-                "--join", "outer", 
-                "--n_emb","16", 
-                "--n_lay","6", 
+                "--join", "inner",
+                "--n_emb", "16",
+                "--n_lay", "6",
                 "./data/models/test/",
                 "--test_size", "50",
                 "-n", "100",
@@ -174,7 +196,6 @@
                 "-r", "2",
                 "--batch_norm", "true",
                 "--dropout", "0.5",
-                "--reload_dataset_aux", "true"
             ]
         },
         {

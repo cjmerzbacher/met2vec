@@ -11,7 +11,7 @@ import pickle
 from cobra.io import read_sbml_model
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from constants import *
+from misc.constants import *
 from vae import VAE
 
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
@@ -78,7 +78,8 @@ class FluxDataset(Dataset):
                  join : str ='inner', 
                  verbose : bool = False, 
                  reload_aux : bool = False, 
-                 skip_tmp : bool = False):
+                 skip_tmp : bool = False,
+                 columns : list[str] = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
         
         The data is automatically normalized when loaded.
@@ -94,6 +95,10 @@ class FluxDataset(Dataset):
         # Find renamings and joins
         self.find_renaming()
         self.find_joins(self.files)
+        
+        if columns == None:
+            columns = self.joins[join]
+        self.columns = columns
 
         # Load data into current
         if not skip_tmp:
@@ -142,8 +147,6 @@ class FluxDataset(Dataset):
     def find_renaming(self):
         """Loads the renaming for all metabolites in the samples."""
         self.renaming_dicts = {}
-        if len(self.files) < 2:
-            return
 
         try:
             renaming_file_path = os.path.join(self.folder, RENAME_DICT_FILE)
@@ -303,6 +306,7 @@ class FluxDataset(Dataset):
         self.values = df.values
         self.data = pd.concat([df, pd.DataFrame({'label' : labels})], axis=1)
         self.labels = labels
+        self.unique_labels = list(set(labels))
 
     def load_sample(self, is_test=False) -> None:
         """Loads a sample into the dataset.
@@ -311,7 +315,7 @@ class FluxDataset(Dataset):
             is_test: If tre the sample loaded will be the test sample.
         """
 
-        df = pd.DataFrame(columns=self.joins[self.join])
+        df = pd.DataFrame(columns=self.columns)
         labels = []
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
             tmp_sample_df = self.load_tmp_file(name, is_test)
@@ -320,32 +324,14 @@ class FluxDataset(Dataset):
 
         self.load_dataFrame(df, labels)
 
+    def set_columns(self, columns : list[str]):
+        self.columns = columns
 
-def get_data(fd : FluxDataset, stage : str, vae : VAE = None, vae_sample : bool = False, label : str = None) -> np.Array:
-    """Transforms the data loaded in a FluxDataset through a vae.
-     
-    Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
-    unchanged, transformed into the VAE embedding, or reconstructed from it's VAE embedding.
-    
-    Arguments:
-        fd: The FluxDataset whose sample will be transformed.
-        stage: The stage in the VAE which be output ('pre', 'emb', 'post').
-        vae: The VAE which will be used to transform the data.
-        vae_sample: If true the VAE will sample from the embedding distribution, isntead of using the mean.
-        label: The label for the subset of the FluxDataset that will be transformed. By default the whole
-            sample will be used.
+        df_data = {c : self.data[c] for c in columns if c in self.data.columns}
+        df = pd.DataFrame(df_data, columns=columns + ['label'])
+        df.fillna(0, inplace=True)
 
-    Return:
-        data: The transformed subset of the FluxDataset sample.
-    """
-    if label is None:
-        data = fd.values
-    else:
-        data = fd[label]
+        self.data = df
+        self.values = df.drop(columns='label').values
 
-    if vae and stage != PRE:
-        data = vae.encode(data, sample=vae_sample)
-        if stage == REC:
-            data = vae.decode(data)
-        data = data.detach().cpu().numpy()
-    return data
+

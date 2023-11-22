@@ -16,7 +16,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 from management.fluxClustering import get_clustering
-from constants import *
+from misc.constants import *
 
 def boolean_string(s):
     if s.lower() not in {'true', 'false'}:
