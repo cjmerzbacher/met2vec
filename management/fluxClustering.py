@@ -2,7 +2,7 @@
 from sklearn.cluster import KMeans, DBSCAN
 from vae import VAE
 
-from constants import *
+from misc.constants import *
 from fluxDataset import FluxDataset, get_data
 
 def get_clustering(fd : FluxDataset,  clustering_type, vae : VAE = None, vae_stage : str = EMB, vae_sample=True, dbscan_params=None) -> list:
