@@ -32,7 +32,7 @@ def get_score_distribution(X, score = adjusted_rand_score):
     return scores, std
 
 def plot_comparison(ax, scores, names_y, names_x, std = None, write_scores = True, y_label="", x_label=""):
-    ax.imshow(scores)
+    im = ax.imshow(scores)
 
     ax.set_xticks(np.arange(scores.shape[1]), labels=names_x)
     ax.set_yticks(np.arange(scores.shape[0]), labels=names_y)
@@ -48,3 +48,5 @@ def plot_comparison(ax, scores, names_y, names_x, std = None, write_scores = Tru
                 if std != None and std[i,j] > 0.005:
                     text += f'$\pm${std[i,j]:.2f}'
                 ax.text(j, i, text, ha='center', va='center', color='w')
+    else:
+        plt.colorbar(im)

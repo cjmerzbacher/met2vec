@@ -12,6 +12,7 @@ from misc.constants import *
 from misc.fluxDataset import load_fd, make_load_fluxDataset_parser, get_data
 from misc.plot import get_save_plot_parser, plot_comparison, get_title_parser
 from misc.parsing import boolean_string
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import argparse
@@ -54,7 +55,7 @@ def get_prediction_accuracy(exp_label, data_label):
     return np.mean(pred(test_data_sets[data_label]) == train_labels.index(exp_label))
 
 accuracies = np.zeros((nt, nT))
-for i, test_label in enumerate(test_labels):
+for i, test_label in tqdm(list(enumerate(test_labels), desc="Calculating Acc")):
     for j, train_label in enumerate(train_labels):
         accuracies[i,j] = get_prediction_accuracy(train_label, test_label)
 
