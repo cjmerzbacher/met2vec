@@ -33,24 +33,17 @@ def get_name_from_sample_file(file : str):
 
 def get_gem_file(sample_file : str):
     folder = os.path.dirname(sample_file)
-    name = get_gem_file(sample_file)
-    gem_file = os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
+    name = get_name_from_sample_file(sample_file)
+    return os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
     gem_rename_dict = get_rename_dict(gem_file)
     return gem_rename_dict
 
-def get_rename_dict_from_sample_file(sample_file : str) -> dict[str,str]:
-    """Get the cobra model for a geven sample file name.
-    
-    Arguments:
-        sample_file: The file for which the renaming dict will be generated
-        
-    Returns:
-        renaming_dict: The renaming dict for the sample.
-    """
+def get_model_from_sample_file(sample_file : str):
+    """Get the cobra model for a geven sample file name"""
     gem_file = get_gem_file(sample_file)
     try:
         model = read_sbml_model(gem_file)
-        return get_rename_dict(model)
+        return model
     except:
         return None
 
@@ -87,10 +80,6 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame):
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
-def load_models(files):
-    pass
-
-
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
@@ -117,6 +106,7 @@ class FluxDataset(Dataset):
         self.compartments = compartments
 
         # Find renamings and joins
+        self.load_models()
         self.find_renaming()
         self.find_joins(self.files)
         
@@ -166,29 +156,34 @@ class FluxDataset(Dataset):
 
         if len(self.files) == 0:
             raise FileNotFoundError(f"The path {self.path} has no .csv files in it.")
+        
+    def load_models(self):
+        models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
+        if not self.reload:
+            try:
+                with open(models_pkl_path, 'rb') as models_pkl_file:
+                    self.models = pickle.load(models_pkl_file)
+                return
+            except:
+                pass
+        
+        print("Loading models...")
+        self.models = {}
+        for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
+            name = get_name_from_sample_file(file)
+            model = get_model_from_sample_file(file)
+            self.models[name] = model
 
+        with open(models_pkl_path, 'wb') as models_pkl_file:
+            pickle.dump(self.models, models_pkl_file)
 
     def find_renaming(self):
         """Loads the renaming for all metabolites in the samples."""
         self.renaming_dicts = {}
-
-        try:
-            renaming_file_path = os.path.join(self.folder, RENAME_DICT_FILE)
-            with open(renaming_file_path, 'r') as file:
-                self.renaming_dicts = json.load(file)
-        except:
-            if self.verbose: print("No renaming dict found...")
-            self.renaming_dicts = {}
-
-        for name, file in tqdm(self.files.items(), desc='Loading Renaming', disable=not self.verbose):
-            if name in self.renaming_dicts and not self.reload:
-                continue
-            gem_rename_dict = get_rename_dict_from_sample_file(file)
+        for name, model in tqdm(self.models.items(), desc='Creating Renaming', disable=not self.verbose):
+            gem_rename_dict = get_rename_dict(model)
             if gem_rename_dict != None:
                 self.renaming_dicts[name] = gem_rename_dict 
-
-        with open(renaming_file_path, 'w') as file:
-            json.dump(self.renaming_dicts, file)
 
     def get_pkl_path(self, name : str) -> str:
         """Get the pkl path for a given name.

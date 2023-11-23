@@ -13,6 +13,7 @@ GEM_PATH_FOLDER = 'gems'
 RENAME_DICT_FILE = ".renaming.json"
 JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
+MODELS_PKL_FILE = "models.pkl"
 DEFAULT_DATASET_SIZE = 65536
 DEFAULT_TEST_SIZE = 2048
 
