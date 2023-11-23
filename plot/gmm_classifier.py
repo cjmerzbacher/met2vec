@@ -55,7 +55,7 @@ def get_prediction_accuracy(exp_label, data_label):
     return np.mean(pred(test_data_sets[data_label]) == train_labels.index(exp_label))
 
 accuracies = np.zeros((nt, nT))
-for i, test_label in tqdm(list(enumerate(test_labels), desc="Calculating Acc")):
+for i, test_label in tqdm(list(enumerate(test_labels)), desc="Calculating Acc"):
     for j, train_label in enumerate(train_labels):
         accuracies[i,j] = get_prediction_accuracy(train_label, test_label)
 

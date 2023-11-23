@@ -27,11 +27,34 @@ rm = os.unlink
 joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
-def get_name_from_file(file : str):
+def get_name_from_sample_file(file : str):
     """Extracts the common name between sbml model and the sample file."""
     return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()0-9]*_[0-9|k]+.csv', file).group())
 
-def get_rename_dict(path : str) -> dict[str,str]:
+def get_gem_file(sample_file : str):
+    folder = os.path.dirname(sample_file)
+    name = get_gem_file(sample_file)
+    gem_file = os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
+    gem_rename_dict = get_rename_dict(gem_file)
+    return gem_rename_dict
+
+def get_rename_dict_from_sample_file(sample_file : str) -> dict[str,str]:
+    """Get the cobra model for a geven sample file name.
+    
+    Arguments:
+        sample_file: The file for which the renaming dict will be generated
+        
+    Returns:
+        renaming_dict: The renaming dict for the sample.
+    """
+    gem_file = get_gem_file(sample_file)
+    try:
+        model = read_sbml_model(gem_file)
+        return get_rename_dict(model)
+    except:
+        return None
+
+def get_rename_dict(model) -> dict[str,str]:
     """Gets the renaming dict for a given file.
     
     This will transform the file path to get the name and path for the reactions.
@@ -49,9 +72,7 @@ def get_rename_dict(path : str) -> dict[str,str]:
         name = "".join(sorted(reaction_parts))
         return name.replace(",", ".")
 
-    try:
-        model = read_sbml_model(path)
-    except:
+    if model == None:
         return None
     return {r.id : get_reaction_name(r) for r in model.reactions}
 
@@ -66,7 +87,8 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame):
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
-
+def load_models(files):
+    pass
 
 
 class FluxDataset(Dataset):
@@ -79,7 +101,8 @@ class FluxDataset(Dataset):
                  verbose : bool = False, 
                  reload_aux : bool = False, 
                  skip_tmp : bool = False,
-                 columns : list[str] = None):
+                 columns : list[str] = None,
+                 compartments : list[str] = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
         
         The data is automatically normalized when loaded.
@@ -91,6 +114,7 @@ class FluxDataset(Dataset):
         self.join = join
         self.verbose = verbose
         self.reload = reload_aux
+        self.compartments = compartments
 
         # Find renamings and joins
         self.find_renaming()
@@ -138,7 +162,7 @@ class FluxDataset(Dataset):
         self.join_path = os.path.join(self.folder, JOIN_FILE)
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
-        self.files = {get_name_from_file(f) : f for f in self.files}
+        self.files = {get_name_from_sample_file(f) : f for f in self.files}
 
         if len(self.files) == 0:
             raise FileNotFoundError(f"The path {self.path} has no .csv files in it.")
@@ -159,8 +183,7 @@ class FluxDataset(Dataset):
         for name, file in tqdm(self.files.items(), desc='Loading Renaming', disable=not self.verbose):
             if name in self.renaming_dicts and not self.reload:
                 continue
-            gem_file = os.path.join(self.folder, GEM_PATH_FOLDER, f"{name}.xml")
-            gem_rename_dict = get_rename_dict(gem_file)
+            gem_rename_dict = get_rename_dict_from_sample_file(file)
             if gem_rename_dict != None:
                 self.renaming_dicts[name] = gem_rename_dict 
 
