@@ -338,7 +338,7 @@ class FluxDataset(Dataset):
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
             tmp_sample_df = self.load_tmp_file(name, is_test)
             labels += [name] * len(tmp_sample_df.index)
-            df = pd.concat([df, tmp_sample_df], join=self.join, ignore_index=True)
+            df = pd.concat([df, tmp_sample_df], join=self.join)
 
         self.load_dataFrame(df, labels)
 
