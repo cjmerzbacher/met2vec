@@ -26,7 +26,7 @@ def make_load_fluxDataset_parser(name : str = "", path_tag=None):
 
     return parser
 
-def load_fd(args : argparse.Namespace, name : str) -> FluxDataset:
+def load_fd(args : argparse.Namespace, name : str, plot_dataset=False) -> FluxDataset:
     """Load a FluxDataset given its name and args.
     
     Arguments:
@@ -45,7 +45,7 @@ def load_fd(args : argparse.Namespace, name : str) -> FluxDataset:
         f"{prefix}join",
         f"{prefix}reload_aux",
         f"{prefix}skip_tmp",
-    ]])
+    ]], no_reload=plot_dataset)
     
     
 

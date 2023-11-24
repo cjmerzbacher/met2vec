@@ -45,6 +45,11 @@ def get_model_from_sample_file(sample_file : str):
     except:
         return None
 
+def get_reaction_name(reaction):
+    reaction_parts = [f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]
+    name = "".join(sorted(reaction_parts))
+    return name.replace(",", ".")
+
 def get_rename_dict(model) -> dict[str,str]:
     """Gets the renaming dict for a given file.
     
@@ -58,11 +63,6 @@ def get_rename_dict(model) -> dict[str,str]:
     Returns:
         renaming: A dictionary mapping metabolits names to 'reaction_names'
     """
-    def get_reaction_name(reaction):
-        reaction_parts = [f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]
-        name = "".join(sorted(reaction_parts))
-        return name.replace(",", ".")
-
     if model == None:
         return None
     return {r.id : get_reaction_name(r) for r in model.reactions}
@@ -78,6 +78,12 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame):
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
+def get_reactions_in_compartments(models : list, compartments : list[str]) -> list[str]:
+    reactions = set()
+    for m in models:
+        reactions = reactions.union({get_reaction_name(r) for r in m.reactions})
+    return reactions
+
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
@@ -89,7 +95,8 @@ class FluxDataset(Dataset):
                  reload_aux : bool = False, 
                  skip_tmp : bool = False,
                  columns : list[str] = None,
-                 compartments : list[str] = None):
+                 compartments : list[str] = None,
+                 no_reload : bool = False):
         '''Takes files - a path to a csv file containing the data to be leaded. 
         
         The data is automatically normalized when loaded.
@@ -100,8 +107,10 @@ class FluxDataset(Dataset):
         self.set_folder(path)
         self.join = join
         self.verbose = verbose
-        self.reload = reload_aux
+        self.reload_aux = reload_aux
         self.compartments = compartments
+        self.no_reload = no_reload
+        self.dataset_size = dataset_size
 
         # Find renamings and joins
         self.load_models()
@@ -110,10 +119,13 @@ class FluxDataset(Dataset):
         
         if columns == None:
             columns = self.joins[join]
+        if compartments != None:
+            reactions_in_compartments = get_reactions_in_compartments(self.modeks, compartments)
+            columns = list(set(columns).intersection(reactions_in_compartments))
         self.columns = columns
 
         # Load data into current
-        if not skip_tmp:
+        if not (skip_tmp or no_reload):
             self.create_tmp_archive(dataset_size, test_size)
         self.load_sample()
 
@@ -157,7 +169,7 @@ class FluxDataset(Dataset):
         
     def load_models(self):
         models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
-        if not self.reload:
+        if not self.reload_aux:
             try:
                 with open(models_pkl_path, 'rb') as models_pkl_file:
                     self.models = pickle.load(models_pkl_file)
@@ -195,7 +207,7 @@ class FluxDataset(Dataset):
         """
         return os.path.join(self.pkl_folder, f"{name}.pkl")
 
-    def get_df(self, name : str) -> pd.DataFrame:
+    def get_df(self, name : str, n : int = None) -> pd.DataFrame:
         """Loads a DataFrame for a given name.
         
         Arguments:
@@ -205,15 +217,20 @@ class FluxDataset(Dataset):
             df: The dataframe of a sample for the given name.
         """
         pkl_path = self.get_pkl_path(name)
-        try:
-            with open(pkl_path, 'rb') as pkl_file:
-                df = pickle.load(pkl_file)
-        except:
-            df = pd.read_csv(self.files[name], index_col=0, engine='pyarrow')
-            if not os.path.exists(self.pkl_folder):
-                os.makedirs(self.pkl_folder)
-            with open(pkl_path, 'wb') as pkl_file:
-                pickle.dump(df, pkl_file)
+        csv_path = self.files[name]
+
+        if n != None:
+            df = pd.read_csv(csv_path, index_col=0, nrows=n)
+        else:
+            try:
+                with open(pkl_path, 'rb') as pkl_file:
+                    df = pickle.load(pkl_file)
+            except:
+                df = pd.read_csv(csv_path, index_col=0, engine='pyarrow')
+                if not os.path.exists(self.pkl_folder):
+                    os.makedirs(self.pkl_folder)
+                with open(pkl_path, 'wb') as pkl_file:
+                    pickle.dump(df, pkl_file)
 
         if name in self.renaming_dicts:
             return df.rename(columns=self.renaming_dicts[name])
@@ -229,7 +246,7 @@ class FluxDataset(Dataset):
         Raises:
 
         """
-        if os.path.exists(self.join_path) and not self.reload:
+        if os.path.exists(self.join_path) and not self.reload_aux:
             with open(self.join_path, 'r') as join_file:
                 self.joins = json.load(join_file)
             return
@@ -332,18 +349,16 @@ class FluxDataset(Dataset):
         Args:
             is_test: If tre the sample loaded will be the test sample.
         """
-
-        df = pd.DataFrame(columns=self.columns)
+        df = pd.DataFrame(columns=self.columns + ['label'])
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
-            tmp_sample_df = self.load_tmp_file(name, is_test)
+            if self.no_reload:
+                tmp_sample_df = self.get_df(name, n=self.dataset_size // len(self.files))
+            else:
+                tmp_sample_df = self.load_tmp_file(name, is_test)
             tmp_sample_df['label'] = name
-
-            tmp_sample_df.reset_index()
-            df.reset_index()
-            df = pd.concat([df, tmp_sample_df], join='outer', ignore_index=True)
-
-        df = pd.concat([pd.DataFrame(columns=self.columns + ['label']), df], join='inner', ignore_index=True)
-
+            df = pd.concat([df, tmp_sample_df], join='outer')
+            
+        df = df[df.columns.intersection(self.columns + ['label'])]
         self.load_dataFrame(df)
 
     def set_columns(self, columns : list[str]):
