@@ -357,9 +357,10 @@ class FluxDataset(Dataset):
                 tmp_sample_df = self.load_tmp_file(name, is_test)
             tmp_sample_df['label'] = name
 
-            tmp_sample_df.reset_index(drop=True, inplace=True)
-            df.reset_index(drop = True, inplace=True)
-            df = pd.concat([df, tmp_sample_df], join='outer')
+            df = pd.concat([
+                df.reset_index(drop=True), 
+                tmp_sample_df.reset_index(drop=True)
+                ], join='outer')
             
         df = df[df.columns.intersection(self.columns + ['label'])]
         self.load_dataFrame(df)

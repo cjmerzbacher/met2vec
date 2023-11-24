@@ -19,7 +19,6 @@
                 "--train_size", "300",
                 "--test_size", "100",
                 "--save_plot", "./data/plots/test.png",
-                "--train_reload_aux", "true",
             ]
         },
         {
