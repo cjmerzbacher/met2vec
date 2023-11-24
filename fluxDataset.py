@@ -233,7 +233,9 @@ class FluxDataset(Dataset):
                     pickle.dump(df, pkl_file)
 
         if name in self.renaming_dicts:
-            return df.rename(columns=self.renaming_dicts[name])
+            df = df.rename(columns=self.renaming_dicts[name])
+            df = df.groupby(df.columns, axis=1).agg(sum)
+            return df
         else:
             return df
     
