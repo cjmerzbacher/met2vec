@@ -35,8 +35,6 @@ def get_gem_file(sample_file : str):
     folder = os.path.dirname(sample_file)
     name = get_name_from_sample_file(sample_file)
     return os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
-    gem_rename_dict = get_rename_dict(gem_file)
-    return gem_rename_dict
 
 def get_model_from_sample_file(sample_file : str):
     """Get the cobra model for a geven sample file name"""
@@ -165,6 +163,7 @@ class FluxDataset(Dataset):
                     self.models = pickle.load(models_pkl_file)
                 return
             except:
+                print(f"Failed to load {models_pkl_path}")
                 pass
         
         print("Loading models...")
@@ -316,15 +315,16 @@ class FluxDataset(Dataset):
         with open(path, 'rb') as file:
             return pickle.load(file)
 
-    def load_dataFrame(self, df : pd.DataFrame, labels : list[str]) -> None:
+    def load_dataFrame(self, df : pd.DataFrame) -> None:
         """Loads in and normalizes a dataFrame."""      
-        df = (df-df.mean(numeric_only=True))/df.std(numeric_only=True)
-        df.fillna(0, inplace=True)
+        df_num = df.select_dtypes(include='number')
+        df_norm = (df_num-df_num.mean())/df_num.std()
+        df[df_norm.columns] = df_norm
         
-        self.values = df.values
-        self.data = pd.concat([df, pd.DataFrame({'label' : labels})], axis=1)
-        self.labels = labels
-        self.unique_labels = list(set(labels))
+        self.data = df
+        self.values = df_norm.values
+        self.labels = list(df['label'].values)
+        self.unique_labels = list(set(self.labels))
 
     def load_sample(self, is_test=False) -> None:
         """Loads a sample into the dataset.
@@ -334,14 +334,15 @@ class FluxDataset(Dataset):
         """
 
         df = pd.DataFrame(columns=self.columns)
-        labels = []
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
             tmp_sample_df = self.load_tmp_file(name, is_test)
-            labels += [name] * len(tmp_sample_df.index)
+            tmp_sample_df['label'] = name
             df.reset_index()
-            df = pd.concat([df, tmp_sample_df], join=self.join, ignore_index=True)
+            df = pd.concat([df, tmp_sample_df], join='outer', ignore_index=True)
 
-        self.load_dataFrame(df, labels)
+        df = pd.concat([pd.DataFrame(columns=self.columns + ['label']), df], join='inner', ignore_index=True)
+
+        self.load_dataFrame(df)
 
     def set_columns(self, columns : list[str]):
         self.columns = columns
@@ -351,6 +352,7 @@ class FluxDataset(Dataset):
         df.fillna(0, inplace=True)
 
         self.data = df
-        self.values = df.drop(columns='label').values
+        self.values = np.array(df.drop(columns='label').values.astype(float))
+        self.values
 
 
