@@ -4,27 +4,24 @@ import os
 parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
-import numpy as np
-
 from misc.gmms import train_gmms
 from misc.vae import PARSER_LOAD_VAE, load_VAE
 from misc.constants import *
-from misc.fluxDataset import load_fd, make_load_fluxDataset_parser, get_data
-from misc.plot import get_title_parser, get_save_parser
-from misc.parsing import boolean_string
+from misc.fluxDataset import load_fd, get_data
+from misc.parsing import boolean_string, fluxDataset_loading_parser, get_save_parser
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import argparse
 
 parser = argparse.ArgumentParser(parents=[
     PARSER_LOAD_VAE,
-    make_load_fluxDataset_parser("train", "-T"),
-    make_load_fluxDataset_parser("test", "-t"),
+    fluxDataset_loading_parser("train", "-T"),
+    fluxDataset_loading_parser("test", "-t"),
     get_save_parser(),
-    get_title_parser(default='GMM Accuracies'),
     ])
+
 parser.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
 parser.add_argument("--plot_values", type=boolean_string, default=False, help="Whether the values should be plotted")
 args = parser.parse_args()

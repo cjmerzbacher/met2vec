@@ -5,20 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
-def get_save_parser():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--save_path", help="Where output will be saved.")
-
-    return parser
-
-def get_title_parser(name: str = None, default : str = None):
-    name = f"{name}_" if name != None else ""
-
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument(f"--{name}title", default=default)
-
-    return parser
-
 def get_score_distribution(X, score = adjusted_rand_score):
     n = len(X)
     scores = np.zeros((n, n))

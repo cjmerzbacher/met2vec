@@ -15,7 +15,7 @@
                 "-v", "./data/models/test/",
                 "-T", "./data/samples/small_human/",
                 "-t", "./data/samples/liver/",
-                "-s", "emb",
+                "-s", "pre",
                 "--train_size", "300",
                 "--test_size", "100",
                 "--save_path", "./data/plot_data/test.csv",
