@@ -287,6 +287,9 @@ class FluxDataset(Dataset):
         ensure_exists(self.test_pkl_folder)
         ensure_exists(self.train_pkl_folder)
 
+        for name in tqdm(self.files, desc='Clearing tmp archive'):
+            self.remove_tmp_files(name)
+
         for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
             self.make_tmp_files(name, train_per_file, test_per_file)
 
@@ -306,7 +309,7 @@ class FluxDataset(Dataset):
                 f'Sample "{name}" ({len(df.index)}) to small: spf {train}, ts {test}.'
                 )
 
-        self.remove_tmp_files(name)
+        print(f" > Would have removed tmp files for {name}")
         make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df) 
 
         n_saved = 0 
