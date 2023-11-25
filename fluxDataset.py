@@ -295,8 +295,8 @@ class FluxDataset(Dataset):
 
     def remove_tmp_files(self, name):
         "Removes tmp files for a certain file name."
-        [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if name in f]
-        [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if name in f]
+        [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if f.startswith(name)]
+        [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if f.startswith(name)]
 
     def make_tmp_files(self, name : str, train : int, test : int):
         """Makes tmp files for a specific csv file."""
@@ -309,7 +309,6 @@ class FluxDataset(Dataset):
                 f'Sample "{name}" ({len(df.index)}) to small: spf {train}, ts {test}.'
                 )
 
-        print(f" > Would have removed tmp files for {name}")
         make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df) 
 
         n_saved = 0 
@@ -328,7 +327,7 @@ class FluxDataset(Dataset):
             FileNotFoundError: If there is no tmp file for name.
         """
         folder = self.test_pkl_folder if is_test else self.train_pkl_folder
-        paths = [joinp(folder, f) for f in os.listdir(folder) if name in f]
+        paths = [joinp(folder, f) for f in os.listdir(folder) if f.startswith(name)]
 
         if len(paths) == 0:
             raise FileNotFoundError(f"No tmp files found for {name}.")
