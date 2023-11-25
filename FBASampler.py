@@ -38,14 +38,16 @@ def main():
 
     file_indices = [i for i in range(len(save_files)) if args.replace or not os.path.exists(save_files[i])]
 
-    for i in tqdm(file_indices, "Sampleing files", disable=args.print_samples):
-        if args.print_samples:
-            print(f'Sampling from model "{model_files[i]}" -> "{save_files[i]}"')
-            continue
+    with tqdm(file_indices, "Sampleing files", disable=args.print_samples) as t:
+        for i in t:
+            t.set_postfix({"cur" : save_files[i]})
+            if args.print_samples:
+                print(f'Sampling from model "{model_files[i]}" -> "{save_files[i]}"')
+                continue
 
-        model = read_sbml_model(model_files[i])
-        s = sample(model, args.n, method=args.method)
-        s.to_csv(save_files[i])
+            model = read_sbml_model(model_files[i])
+            s = sample(model, args.n, method=args.method)
+            s.to_csv(save_files[i])
 
 if __name__ == '__main__':
     main()
