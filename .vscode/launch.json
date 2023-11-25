@@ -18,7 +18,7 @@
                 "-s", "emb",
                 "--train_size", "300",
                 "--test_size", "100",
-                "--save_plot", "./data/plots/test.png",
+                "--save_path", "./data/plot_data/test.csv",
             ]
         },
         {

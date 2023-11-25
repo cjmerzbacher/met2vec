@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
-def get_save_plot_parser():
+def get_save_parser():
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--save_plot", help="Where the plot will be saved.")
+    parser.add_argument("--save_path", help="Where output will be saved.")
 
     return parser
 
