@@ -48,7 +48,10 @@ nT = len(train_labels)
 test_data_sets = {label : get_data(test_fd, vae, args.stage, sample, label) for label in test_labels}
 
 def pred(data):
-    probs = np.array([gmms[label].score_samples(data).ravel() for label in test_labels])
+    probs = np.array([
+            gmms[label].score_samples(data).ravel() 
+        for label in train_labels])
+
     return np.argmax(probs, axis=0)
 
 def get_prediction_accuracy(exp_label, data_label):
