@@ -18,21 +18,22 @@ def fluxDataset_loading_parser(name : str = "", path_tag=None):
 
     return parser
 
-def get_save_parser():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--save_path", help="Where output will be saved.")
-
-    return parser
-
-def get_title_parser(name: str = None, default : str = None):
-    name = f"{name}_" if name != None else ""
-
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument(f"--{name}title", default=default)
-
-    return parser
-
 def boolean_string(s):
     if s.lower() not in {'true', 'false'}:
         raise ValueError('Not a valid boolean string.')
     return s.lower() == 'true'
+
+# Constant Parsers
+PARSER_STAGE = argparse.ArgumentParser(add_help=False)
+PARSER_STAGE.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
+
+PARSER_LOAD_VAE = argparse.ArgumentParser(add_help=False)
+PARSER_LOAD_VAE.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
+PARSER_LOAD_VAE.add_argument("--vae_version", help="The version of the VAE that will be loaded.")
+
+PARSER_PREP = argparse.ArgumentParser(add_help=False)
+PARSER_PREP.add_argument("--prep", default=NONE, choices=PREPS, help='The preprocessing that will be used on the data.')
+PARSER_PREP.add_argument("--perp", type=float, default=30, help="The perplexit for TSNE (if used).")
+
+PARSER_SAVE = argparse.ArgumentParser(add_help=False)
+PARSER_SAVE.add_argument("--save_path", help="Where output will be saved.")

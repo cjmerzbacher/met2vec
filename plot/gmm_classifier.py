@@ -5,10 +5,10 @@ parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
 from misc.gmms import train_gmms
-from misc.vae import PARSER_LOAD_VAE, load_VAE
-from misc.constants import *
+from misc.vae import load_VAE
 from misc.fluxDataset import load_fd, get_data
-from misc.parsing import boolean_string, fluxDataset_loading_parser, get_save_parser
+from misc.constants import *
+from misc.parsing import *
 from tqdm import tqdm
 
 import numpy as np
@@ -17,13 +17,12 @@ import argparse
 
 parser = argparse.ArgumentParser(parents=[
     PARSER_LOAD_VAE,
+    PARSER_STAGE,
     fluxDataset_loading_parser("train", "-T"),
     fluxDataset_loading_parser("test", "-t"),
-    get_save_parser(),
+    PARSER_SAVE,
     ])
 
-parser.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
-parser.add_argument("--plot_values", type=boolean_string, default=False, help="Whether the values should be plotted")
 args = parser.parse_args()
 
 vae = load_VAE(args)

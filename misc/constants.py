@@ -8,6 +8,13 @@ EMB = 'emb'
 REC = 'rec'
 VAE_STAGES = [PRE, EMB, REC]
 
+# Prep
+TSNE = 'tsne'
+PCA = 'pca'
+NONE = 'none'
+
+PREPS = [TSNE, PCA, NONE]
+
 # Flux Dataset
 GEM_PATH_FOLDER = 'gems'
 RENAME_DICT_FILE = ".renaming.json"

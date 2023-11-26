@@ -7,9 +7,6 @@ from vae import VAE
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-PARSER_LOAD_VAE = argparse.ArgumentParser(add_help=False)
-PARSER_LOAD_VAE.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
-PARSER_LOAD_VAE.add_argument("--vae_version", help="The version of the VAE that will be loaded.")
 
 def load_VAE(args) -> VAE:
     """Loads a VAE from a given folder. 

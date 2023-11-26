@@ -5,6 +5,9 @@ from misc.constants import *
 import argparse
 import numpy as np
 
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+
 def get_name_prefix(name):
     prefix = f"{name}_" if name != "" else ""
     name = f"{name} " if name != "" else "the "
@@ -34,6 +37,16 @@ def load_fd(args : argparse.Namespace, name : str, plot_dataset=False) -> FluxDa
     ]], no_reload=plot_dataset)
     
     
+def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
+    match preprocessing:
+        case 'none':
+            return data
+        case 'tsne':
+            tsne = TSNE(perplexity=perplexity)
+            return tsne.fit_transform(data)
+        case 'pca':
+            pca = PCA()
+            return pca.fit_transform(data)
 
 def get_data(fd : FluxDataset, vae : VAE = None, stage : str = EMB, vae_sample : bool = False, label : str = None) -> np.array:
     """Transforms the data loaded in a FluxDataset through a vae.

@@ -3,7 +3,6 @@ from sklearn.metrics import adjusted_rand_score
 
 import matplotlib.pyplot as plt
 import numpy as np
-import argparse
 
 def get_score_distribution(X, score = adjusted_rand_score):
     n = len(X)
