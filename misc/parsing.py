@@ -37,3 +37,6 @@ PARSER_PREP.add_argument("--perp", type=float, default=30, help="The perplexit f
 
 PARSER_SAVE = argparse.ArgumentParser(add_help=False)
 PARSER_SAVE.add_argument("--save_path", help="Where output will be saved.")
+
+PARSER_SAMPLE = argparse.ArgumentParser(add_help=False)
+PARSER_SAMPLE.add_argument("--sample", default=True, type=boolean_string, help="If the VAE should be used in sample mode.")

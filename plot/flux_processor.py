@@ -17,16 +17,16 @@ parser = argparse.ArgumentParser(parents=[
     PARSER_STAGE,
     PARSER_PREP,
     fluxDataset_loading_parser(),
-    PARSER_SAVE
+    PARSER_SAVE,
+    PARSER_SAMPLE
 ])
 args = parser.parse_args()
 
 vae = load_VAE(args)
 
 fd = load_fd(args, "", True)
-sample = False
 
-data = get_data(fd, vae, args.stage, sample)
+data = get_data(fd, vae, args.stage, args.sample)
 data = prep_data(data, args.prep, args.perp)
 
 if args.prep == None and args.stage != EMB:
