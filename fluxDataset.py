@@ -166,6 +166,9 @@ class FluxDataset(Dataset):
 
         if len(self.files) == 0:
             raise FileNotFoundError(f"The path {self.path} has no .csv files in it.")
+
+        if not os.path.exists(self.pkl_folder):
+            os.makedirs(self.pkl_folder)
         
     def load_models(self):
         models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
@@ -227,8 +230,6 @@ class FluxDataset(Dataset):
                     df = pickle.load(pkl_file)
             except:
                 df = pd.read_csv(csv_path, index_col=0, engine='pyarrow')
-                if not os.path.exists(self.pkl_folder):
-                    os.makedirs(self.pkl_folder)
                 with open(pkl_path, 'wb') as pkl_file:
                     pickle.dump(df, pkl_file)
 
