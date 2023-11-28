@@ -1,4 +1,5 @@
 import os
+import json
 import torch
 import torch.nn as nn
 import argparse
@@ -7,6 +8,9 @@ from vae import VAE
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+def read_VAE_args(path) -> dict[str, str]:
+    with open(path, 'r') as file:
+        return json.load(file)
 
 def load_VAE(args) -> VAE:
     """Loads a VAE from a given folder. 

@@ -8,6 +8,16 @@ EMB = 'emb'
 REC = 'rec'
 VAE_STAGES = [PRE, EMB, REC]
 
+# VAE Config
+ARGS_PATH = 'args.json'
+LOSSES_PATH = 'losses.csv'
+
+# VAE Loss Names
+LOSS = 'loss'
+R_LOSS = 'reconstruction_loss'
+D_LOSS = 'divergence_loss'
+T_LOSS = 'test_loss'
+
 # Prep
 TSNE = 'tsne'
 PCA = 'pca'
