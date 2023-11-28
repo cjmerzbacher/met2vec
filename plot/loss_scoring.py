@@ -30,7 +30,7 @@ avg_over = args.average_over
 loss_ends = []
 for lp, ap in zip(loss_paths, args_paths):
     loss = pd.read_csv(lp)
-    args = read_VAE_args(ap)
+    rargs = read_VAE_args(ap)
 
     n_loss = len(loss)
     if n_loss < avg_over:
@@ -38,7 +38,7 @@ for lp, ap in zip(loss_paths, args_paths):
         quit()
 
     s_loss_end = loss[loss.index > n_loss - avg_over].mean(axis=0)
-    for name, value in args.items():
+    for name, value in rargs.items():
         s_loss_end[name] = value
 
     loss_ends.append(s_loss_end)
