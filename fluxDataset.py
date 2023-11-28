@@ -34,7 +34,7 @@ def get_name_from_sample_file(file : str):
 def get_gem_file(sample_file : str):
     folder = os.path.dirname(sample_file)
     name = get_name_from_sample_file(sample_file)
-    name = re.sub('(_\([0-9]*\))*', '', name)
+    name = re.sub('(_)*(\([0-9]*\))*', '', name)
     return os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
 
 def get_model_from_sample_file(sample_file : str):
