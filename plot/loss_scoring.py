@@ -44,4 +44,4 @@ for lp, ap in zip(loss_paths, args_paths):
     loss_ends.append(s_loss_end)
 
 df = pd.DataFrame(loss_ends)
-df.to_csv(args.save_path)
+df.to_csv(args.save_path, index=False)
