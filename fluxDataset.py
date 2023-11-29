@@ -356,18 +356,16 @@ class FluxDataset(Dataset):
             is_test: If tre the sample loaded will be the test sample.
         """
         df = pd.DataFrame(columns=self.columns + ['label'])
+        sections = []
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
             if self.no_reload:
                 tmp_sample_df = self.get_df(name, n=self.dataset_size // len(self.files))
             else:
                 tmp_sample_df = self.load_tmp_file(name, is_test)
             tmp_sample_df['label'] = name
-
-            df = pd.concat(
-                [df, tmp_sample_df.reset_index(drop=True)], 
-                axis=0, 
-                ignore_index=True)
-            
+            sections.append(tmp_sample_df)
+        
+        df = pd.concat(sections, ignore_index=True)
         df = df[df.columns.intersection(self.columns + ['label'])]
         self.load_dataFrame(df)
 

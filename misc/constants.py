@@ -38,3 +38,6 @@ DEFAULT_TEST_SIZE = 2048
 INNER = 'inner'
 OUTER = 'outer'
 DATASET_JOINS = [INNER, OUTER]
+
+# Clustering
+KMEANS_C = "kmeans_cluster"

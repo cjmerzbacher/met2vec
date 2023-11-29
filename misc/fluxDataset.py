@@ -14,7 +14,7 @@ def get_name_prefix(name):
 
     return name, prefix
 
-def load_fd(args : argparse.Namespace, name : str, plot_dataset=False) -> FluxDataset:
+def load_fd(args : argparse.Namespace, name : str = "", plot_dataset=False) -> FluxDataset:
     """Load a FluxDataset given its name and args.
     
     Arguments:

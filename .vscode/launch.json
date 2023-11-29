@@ -5,16 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: kmeans_cluster.py",
+            "type": "python",
+            "request": "launch",
+            "program": "./plot/kmeans_cluster.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-v", "./data/models/test/",
+                "-d", "./data/samples/small_human",
+                "-s", "emb",
+                "--size", "300",
+                "--join", "inner",
+                "--save_path", "./data/plot_data/test_km.csv",
+            ]
+        },
+        {
             "name": "Python: loss_scoring.py",
             "type": "python",
             "request": "launch",
             "program": "./plot/loss_scoring.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args" : [
+            "args": [
                 "./data/models/test/",
-                "-a", "8",
-                "--save_path", "./data/plot_data/test.csv"
+                "-a",
+                "8",
+                "--save_path",
+                "./data/plot_data/test.csv"
             ]
         },
         {
@@ -28,7 +46,7 @@
                 "-v",
                 "./data/models/test/",
                 "-s",
-                "pre",
+                "emb",
                 "--path",
                 "./data/samples/small_human/",
                 "--prep",
@@ -38,7 +56,7 @@
                 "--join",
                 "inner",
                 "--save_path",
-                "./data/plot_data/test.csv",
+                "./data/plot_data/test_tsne.csv",
             ]
         },
         {
