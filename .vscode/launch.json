@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: ari_score",
+            "type": "python",
+            "request": "launch",
+            "program": "./plot/ari_score.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args" : [
+                "-v", "./data/models/test",
+                "-d", "./data/samples/small_human",
+                "--size", "300",
+                "--join", "inner",
+                "-n", "64",
+                "--bootstrap_n", "1024",
+                "--save_path", "./data/plot_data/test_ari.csv"
+            ]
+        },
+        {
             "name": "Python: kmeans_cluster.py",
             "type": "python",
             "request": "launch",
@@ -12,12 +29,18 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v", "./data/models/test/",
-                "-d", "./data/samples/small_human",
-                "-s", "emb",
-                "--size", "300",
-                "--join", "inner",
-                "--save_path", "./data/plot_data/test_km.csv",
+                "-v",
+                "./data/models/test/",
+                "-d",
+                "./data/samples/small_human",
+                "-s",
+                "emb",
+                "--size",
+                "300",
+                "--join",
+                "inner",
+                "--save_path",
+                "./data/plot_data/test_km.csv",
             ]
         },
         {

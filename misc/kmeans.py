@@ -7,3 +7,9 @@ def get_KMeans_classifications(k, n, data):
         classifications.append(kmeans.labels_)
 
     return classifications
+
+def get_k(args, fd):
+    k = args.k
+    if k == None:
+        k = len(fd.unique_labels)
+    return k

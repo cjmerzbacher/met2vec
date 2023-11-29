@@ -36,7 +36,10 @@ PARSER_PREP.add_argument("--prep", default=NONE, choices=PREPS, help='The prepro
 PARSER_PREP.add_argument("--perp", type=float, default=30, help="The perplexit for TSNE (if used).")
 
 PARSER_SAVE = argparse.ArgumentParser(add_help=False)
-PARSER_SAVE.add_argument("--save_path", help="Where output will be saved.")
+PARSER_SAVE.add_argument("--save_path", help="Where output will be saved.", required=True)
 
 PARSER_SAMPLE = argparse.ArgumentParser(add_help=False)
 PARSER_SAMPLE.add_argument("--sample", default=True, type=boolean_string, help="If the VAE should be used in sample mode.")
+
+PARSER_KMEANS_K = argparse.ArgumentParser(add_help=False)
+PARSER_KMEANS_K.add_argument("-k", type=int, help="The number of cluster, if unset same as number of labels.")

@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from misc.fluxDataset  import load_fd, get_data
 from misc.vae import load_VAE
-from misc.kmeans import get_KMeans_classifications
+from misc.kmeans import get_KMeans_classifications, get_k
 
 from misc.constants import *
 from misc.parsing import *
@@ -30,7 +30,7 @@ fd = load_fd(args, plot_dataset=True)
 
 data = get_data(fd, vae, args.stage, args.sample)
 
-k = args.k if args.k != None else len(fd.unique_labels)
+k = get_k(args, fd)
 kmeans_labels = get_KMeans_classifications(k, 1, data)[0]
 
 df = pd.DataFrame({

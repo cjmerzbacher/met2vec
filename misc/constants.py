@@ -41,3 +41,5 @@ DATASET_JOINS = [INNER, OUTER]
 
 # Clustering
 KMEANS_C = "kmeans_cluster"
+ORIGIONAL = "origional"
+CLUSTERING = "clustering"
