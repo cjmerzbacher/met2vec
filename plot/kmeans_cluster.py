@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from misc.fluxDataset  import load_fd, get_data
 from misc.vae import load_VAE
+from misc.kmeans import get_KMeans_classifications
 
 from misc.constants import *
 from misc.parsing import *
@@ -25,17 +26,15 @@ parser.add_argument("-k", type=int, help="The number of clusers, defualt as many
 args = parser.parse_args()
 
 vae = load_VAE(args)
-fd = load_fd(args)
+fd = load_fd(args, plot_dataset=True)
 
 data = get_data(fd, vae, args.stage, args.sample)
 
 k = args.k if args.k != None else len(fd.unique_labels)
-kmeans = KMeans(k, n_init='auto').fit(data)
+kmeans_labels = get_KMeans_classifications(k, 1, data)[0]
 
 df = pd.DataFrame({
     'label' : fd.labels, 
-    KMEANS_C : kmeans.labels_
+    KMEANS_C : kmeans_labels
 })
-
-df[KMEANS_C] = kmeans.labels_
 df.to_csv(args.save_path, index=False)
