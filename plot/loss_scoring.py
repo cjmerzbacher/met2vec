@@ -37,8 +37,11 @@ avg_over = args.average_over
 
 loss_ends = []
 for lp, ap in zip(loss_paths, args_paths):
-    loss = pd.read_csv(lp)
-    rargs = read_VAE_args(ap)
+    try:
+        loss = pd.read_csv(lp)
+        rargs = read_VAE_args(ap)
+    except:
+        print(f"Unable to load run of '{lp}', '{ap}'.")
 
     n_loss = len(loss)
     if n_loss < avg_over:
