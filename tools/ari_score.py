@@ -31,7 +31,7 @@ parser.add_argument("--bootstrap_n", type=int, default=128, help="Number of boot
 args = parser.parse_args()
 
 vae = load_VAE(args)
-fd = load_fd(args, plot_dataset=True)
+fd = load_fd(args, seed=0)
 
 k = get_k(args, fd)
 n = args.n

@@ -26,7 +26,7 @@ parser.add_argument("-k", type=int, help="The number of clusers, defualt as many
 args = parser.parse_args()
 
 vae = load_VAE(args)
-fd = load_fd(args, plot_dataset=True)
+fd = load_fd(args, seed=0)
 
 data = get_data(fd, vae, args.stage, args.sample)
 

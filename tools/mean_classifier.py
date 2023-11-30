@@ -27,10 +27,10 @@ args = parser.parse_args()
 
 vae = load_VAE(args)
 
-train_fd = load_fd(args, "train", True)
+train_fd = load_fd(args, "train", 0)
 train_columns = train_fd.columns
 
-test_fd = load_fd(args, "test", True)
+test_fd = load_fd(args, "test", 1)
 test_fd.set_columns(train_columns)
 
 test_labels =   test_fd.unique_labels

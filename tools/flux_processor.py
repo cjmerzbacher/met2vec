@@ -24,7 +24,7 @@ args = parser.parse_args()
 
 vae = load_VAE(args)
 
-fd = load_fd(args, "", True)
+fd = load_fd(args, "", seed=0)
 
 data = get_data(fd, vae, args.stage, args.sample)
 data = prep_data(data, args.prep, args.perp)

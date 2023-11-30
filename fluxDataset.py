@@ -8,6 +8,7 @@ import logging
 import json
 import pickle
 
+from numpy.random import RandomState
 from cobra.io import read_sbml_model
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -73,7 +74,7 @@ def get_non_zero_columns(df : pd.DataFrame) -> list[str]:
     non_zeros = np.any(df.values != 0.0, axis=0)
     return df.columns[non_zeros]
 
-def make_tmp(path : str, n : int, source_df : pd.DataFrame):
+def make_tmp(path : str, n : int, source_df : pd.DataFrame, r_state : RandomState):
     """Splits of a tmp file from source df of size n to be stored in path."""
     sample = source_df.sample(min(n, len(source_df.index)))
     source_df.drop(index=sample.index, inplace=True)
@@ -84,6 +85,13 @@ def get_reactions_in_compartments(models : list, compartments : list[str]) -> li
     for m in models:
         reactions = reactions.union({get_reaction_name(r) for r in m.reactions})
     return reactions
+
+def get_random_state(seed, index=0):
+    index %= 2**32
+        
+    if seed == None:
+        return RandomState(random.randint(0, 2**32))
+    return RandomState(seed + index)
 
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
@@ -97,7 +105,7 @@ class FluxDataset(Dataset):
                  skip_tmp : bool = False,
                  columns : list[str] = None,
                  compartments : list[str] = None,
-                 no_reload : bool = False):
+                 seed : int = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
         
         The data is automatically normalized when loaded.
@@ -110,7 +118,7 @@ class FluxDataset(Dataset):
         self.verbose = verbose
         self.reload_aux = reload_aux
         self.compartments = compartments
-        self.no_reload = no_reload
+        self.seed = seed
         self.dataset_size = dataset_size
 
         # Find renamings and joins
@@ -126,7 +134,7 @@ class FluxDataset(Dataset):
         self.columns = columns
 
         # Load data into current
-        if not (skip_tmp or no_reload):
+        if not skip_tmp:
             self.create_tmp_archive(dataset_size, test_size)
         self.load_sample()
 
@@ -310,12 +318,13 @@ class FluxDataset(Dataset):
                 f'Unable to make tmp files!' + 
                 f'Sample "{name}" ({len(df.index)}) to small: spf {train}, ts {test}.'
                 )
-
-        make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df) 
+        
+        rs = get_random_state(self.seed)
+        make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df, rs) 
 
         n_saved = 0 
         while len(df.index) > 0.8 * train:
-            make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df)
+            make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df, rs)
             n_saved += 1
 
     def load_tmp_file(self, name : str, is_test=False):
@@ -334,7 +343,9 @@ class FluxDataset(Dataset):
         if len(paths) == 0:
             raise FileNotFoundError(f"No tmp files found for {name}.")
 
-        path = random.sample(paths, 1)[0]
+        rs = get_random_state(self.seed, hash(name))
+
+        path = paths[rs.randint(0, len(paths))]
         with open(path, 'rb') as file:
             return pickle.load(file)
 
@@ -358,10 +369,7 @@ class FluxDataset(Dataset):
         df = pd.DataFrame(columns=self.columns + ['label'])
         sections = [df]
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
-            if self.no_reload:
-                tmp_sample_df = self.get_df(name, n=self.dataset_size // len(self.files))
-            else:
-                tmp_sample_df = self.load_tmp_file(name, is_test)
+            tmp_sample_df = self.load_tmp_file(name, is_test)
             tmp_sample_df['label'] = name
             sections.append(tmp_sample_df)
         

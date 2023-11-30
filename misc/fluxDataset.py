@@ -14,7 +14,7 @@ def get_name_prefix(name):
 
     return name, prefix
 
-def load_fd(args : argparse.Namespace, name : str = "", plot_dataset=False) -> FluxDataset:
+def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDataset:
     """Load a FluxDataset given its name and args.
     
     Arguments:
@@ -34,7 +34,7 @@ def load_fd(args : argparse.Namespace, name : str = "", plot_dataset=False) -> F
         f"{prefix}verbose",
         f"{prefix}reload_aux",
         f"{prefix}skip_tmp",
-    ]], no_reload=plot_dataset)
+    ]], seed=seed)
     
     
 def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
