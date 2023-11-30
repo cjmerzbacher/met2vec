@@ -326,6 +326,8 @@ class FluxDataset(Dataset):
         while len(df.index) > 0.8 * train:
             make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df, rs)
             n_saved += 1
+            if self.seed != None:
+                break
 
     def load_tmp_file(self, name : str, is_test=False):
         """Loads a tmp file for a given name.
