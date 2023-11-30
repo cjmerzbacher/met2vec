@@ -5,27 +5,52 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: ari_score",
+            "name": "Python: mean_classifier",
             "type": "python",
             "request": "launch",
-            "program": "./plot/ari_score.py",
+            "program": "./tools/mean_classifier.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args" : [
-                "-v", "./data/models/test",
-                "-d", "./data/samples/small_human",
-                "--size", "300",
-                "--join", "inner",
-                "-n", "64",
-                "--bootstrap_n", "1024",
-                "--save_path", "./data/plot_data/test_ari.csv"
+                "-v", "./data/models/test/",
+                "-s", "emb",
+                "-T", "./data/samples/small_human/",
+                "--train_size", "300",
+                "-t", "./data/samples/liver/",
+                "--test_size", "100",
+                "-s", "emb",
+                "--save_path", "./data/plot_data/test_means_class.csv",
+            ]
+        },
+        {
+            "name": "Python: ari_score",
+            "type": "python",
+            "request": "launch",
+            "program": "./tools/ari_score.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-v",
+                "./data/models/test",
+                "-d",
+                "./data/samples/small_human",
+                "--size",
+                "300",
+                "--join",
+                "inner",
+                "-n",
+                "64",
+                "--bootstrap_n",
+                "1024",
+                "--save_path",
+                "./data/plot_data/test_ari.csv"
             ]
         },
         {
             "name": "Python: kmeans_cluster.py",
             "type": "python",
             "request": "launch",
-            "program": "./plot/kmeans_cluster.py",
+            "program": "./tools/kmeans_cluster.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -47,7 +72,7 @@
             "name": "Python: loss_scoring.py",
             "type": "python",
             "request": "launch",
-            "program": "./plot/loss_scoring.py",
+            "program": "./tools/loss_scoring.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -62,7 +87,7 @@
             "name": "Python: flux_processor",
             "type": "python",
             "request": "launch",
-            "program": "./plot/flux_processor.py",
+            "program": "./tools/flux_processor.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -86,7 +111,7 @@
             "name": "Python: gmm_classifier.py",
             "type": "python",
             "request": "launch",
-            "program": "./plot/gmm_classifier.py",
+            "program": "./tools/gmm_classifier.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [

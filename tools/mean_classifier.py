@@ -40,25 +40,25 @@ nt = len(test_labels)
 nT = len(train_labels)
 nd = len(train_columns)
 
-sample = args.vae_sample
+sample = args.sample
 stage = args.stage
 
-means = np.array((nT,nd))
+means = []
 for i, label in enumerate(train_labels):
     data = get_data(train_fd, vae, stage, sample, label)
-    mean = np.mean(data, axis=1)
-    means[i,:] = mean
+    mean = np.mean(data, axis=0)
+    means.append(mean)
+means = np.array(means)
 
 
-test_data_sets = {label : get_data(test_fd, vae, args.stage, sample, label) for label in test_labels}
+test_data_sets = {
+    label : get_data(test_fd, vae, args.stage, sample, label) 
+    for label in test_labels}
 
 def pred(data):
-    data[:,:,None] - means
-    probs = np.array([
-            means[label].ravel() 
-        for label in train_labels])
-
-    return np.argmin(probs, axis=0)
+    diff = data[None,:,:] - means[:,None,:]
+    distances = np.linalg.norm(diff, axis=2)
+    return np.argmin(distances, axis=0)
 
 def get_prediction_accuracy(exp_label, data_label):
     return np.mean(pred(test_data_sets[data_label]) == train_labels.index(exp_label))
