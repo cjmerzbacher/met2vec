@@ -74,9 +74,9 @@ def get_non_zero_columns(df : pd.DataFrame) -> list[str]:
     non_zeros = np.any(df.values != 0.0, axis=0)
     return df.columns[non_zeros]
 
-def make_tmp(path : str, n : int, source_df : pd.DataFrame, r_state : RandomState):
+def make_tmp(path : str, n : int, source_df : pd.DataFrame, random_state : RandomState):
     """Splits of a tmp file from source df of size n to be stored in path."""
-    sample = source_df.sample(min(n, len(source_df.index)))
+    sample = source_df.sample(min(n, len(source_df.index)), random_state=random_state)
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
@@ -100,7 +100,7 @@ class FluxDataset(Dataset):
                  dataset_size : int = DEFAULT_DATASET_SIZE, 
                  test_size : int = DEFAULT_TEST_SIZE, 
                  join : str ='inner', 
-                 verbose : bool = False, 
+                 verbose : bool = True, 
                  reload_aux : bool = False, 
                  skip_tmp : bool = False,
                  columns : list[str] = None,
@@ -128,7 +128,7 @@ class FluxDataset(Dataset):
         
         if columns == None:
             columns = self.joins[join]
-        if compartments != None:
+        else:
             reactions_in_compartments = get_reactions_in_compartments(self.modeks, compartments)
             columns = list(set(columns).intersection(reactions_in_compartments))
         self.columns = columns
