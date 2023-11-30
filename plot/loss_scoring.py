@@ -22,6 +22,14 @@ parser.add_argument("-a", "--average_over", type=int, default=128, help="The num
 args = parser.parse_args()
 
 folders = args.folders
+
+for fo in folders:
+    if fo.endswith('*'):
+        f = fo.removesuffix('*')
+        subfolders = filter(os.path.isdir, [os.path.join(f, sf) for sf in os.listdir(f)])
+        folders.remove(fo)
+        folders += subfolders
+
 loss_paths = [joinp(f, LOSSES_PATH) for f in folders]
 args_paths = [joinp(f, ARGS_PATH) for f in folders]
 
