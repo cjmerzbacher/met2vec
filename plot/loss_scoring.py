@@ -42,6 +42,7 @@ for lp, ap in zip(loss_paths, args_paths):
         rargs = read_VAE_args(ap)
     except:
         print(f"Unable to load run of '{lp}', '{ap}'.")
+        continue
 
     n_loss = len(loss)
     if n_loss < avg_over:
