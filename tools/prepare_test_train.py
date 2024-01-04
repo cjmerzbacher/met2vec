@@ -18,40 +18,42 @@ TRAIN_FOLDER = "train"
 TEST_FOLDER = "test"
 
 source_folder = args.source_folder
-n = args.n
+ns = args.n
 target_folder = args.target_folder
 
-print(f"Coppying Files from {source_folder}")
+print(f"Coppying Files from {source_folder} to {target_folder}")
 files = sorted([file for file in os.listdir(source_folder) if file.endswith(".csv")])
+print(f"{len(files)} files found.") 
 
 if not os.path.exists(target_folder):
-    sys.makedirs(target_folder)
+    os.makedirs(target_folder)
 
-if len(n) == 1:
+if len(ns) == 1:
     target_folders = [target_folder]
 else:
-    target_folders = [os.path.join(target_folder, f"{i}") for i in range(len(n))]
+    target_folders = [os.path.join(target_folder, f"{i}") for i in range(len(ns))]
 
 def cp_files(files, from_, to_):
     for file in files:
         src = os.path.join(from_, file)
         dst = os.path.join(to_, file)
-        shutil.copyfile(src, dst)
+        shutil.copy(src, dst)
 
-for n, target_folder in zip(target_folders, n):
-    train_files = files[:files.n]
-    test_files = files[files.n:]
+for target_folder, n in zip(target_folders, ns):
+    train_files = files[:n]
+    test_files = files[n:]
 
-    print(f"{len(files)} files found.") 
-
-    print("    -> {len(train_files)} train, {len(test_files)} test")
+    print(f"    -> {len(train_files)} train, {len(test_files)} test")
 
     train_folder = os.path.join(target_folder, TRAIN_FOLDER)
     test_folder = os.path.join(target_folder, TEST_FOLDER)
 
-    print("Copying files.")
+    if not os.path.exists(train_folder):
+        os.makedirs(train_folder)
+    if not os.path.exists(test_folder):
+        os.makedirs(test_folder)
 
     cp_files(train_files, source_folder, train_folder)
-    cp_files(test_folder, source_folder, test_folder)
+    cp_files(test_files, source_folder, test_folder)
 
-
+print("Done.")

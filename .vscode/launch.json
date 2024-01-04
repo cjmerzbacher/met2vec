@@ -5,21 +5,42 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: prepare_test_train",
+            "type": "python",
+            "request": "launch",
+            "program": "./tools/prepare_test_train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "./data/samples/small_human/",
+                "1", "2", "3",
+                "./data/samples/small_human_split/",
+            ]
+        },
+        {
             "name": "Python: mean_classifier",
             "type": "python",
             "request": "launch",
             "program": "./tools/mean_classifier.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args" : [
-                "-v", "./data/models/test/",
-                "-s", "emb",
-                "-T", "./data/samples/small_human/",
-                "--train_size", "300",
-                "-t", "./data/samples/liver/",
-                "--test_size", "100",
-                "-s", "emb",
-                "--save_path", "./data/plot_data/test_means_class.csv",
+            "args": [
+                "-v",
+                "./data/models/test/",
+                "-s",
+                "emb",
+                "-T",
+                "./data/samples/small_human/",
+                "--train_size",
+                "300",
+                "-t",
+                "./data/samples/liver/",
+                "--test_size",
+                "100",
+                "-s",
+                "emb",
+                "--save_path",
+                "./data/plot_data/test_means_class.csv",
             ]
         },
         {
@@ -127,7 +148,8 @@
                 "300",
                 "--test_size",
                 "100",
-                "--test_dataset_folder", "./data/samples/small_human",
+                "--test_dataset_folder",
+                "./data/samples/small_human",
                 "--save_path",
                 "./data/plot_data/test.csv",
             ]
