@@ -7,6 +7,8 @@ sys.path.append(parent_dir)
 import argparse
 import shutil
 
+from tqdm import tqdm
+
 parser = argparse.ArgumentParser()
 parser.add_argument("source_folder", help="The folder that will be split.")
 parser.add_argument("n", type=int, nargs='+', help="Ns for train_test_split.")
@@ -33,8 +35,8 @@ if len(ns) == 1:
 else:
     target_folders = [os.path.join(target_folder, f"{i}") for i in range(len(ns))]
 
-def cp_files(files, from_, to_):
-    for file in files:
+def cp_files(files, from_, to_, type):
+    for file in tqdm(files, desc=f"        {type}"):
         src = os.path.join(from_, file)
         dst = os.path.join(to_, file)
         shutil.copy(src, dst)
@@ -53,7 +55,7 @@ for target_folder, n in zip(target_folders, ns):
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
 
-    cp_files(train_files, source_folder, train_folder)
-    cp_files(test_files, source_folder, test_folder)
+    cp_files(train_files, source_folder, train_folder, "train")
+    cp_files(test_files, source_folder, test_folder, "test")
 
 print("Done.")
