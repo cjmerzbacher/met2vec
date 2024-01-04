@@ -27,7 +27,8 @@ parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The nu
 parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the number of losses saved, this allows evaluations which are a multiple to be saved.")
 parser.add_argument("--reload_dataset_aux", type=boolean_string, default=False, help="Used to set reload_aux on the flux dataset.")
 parser.add_argument("--dataset_skip_tmp", type=boolean_string, default=False, help="If true dataset is prevented reloading tmps.")
-parser.add_argument("--test_size", type=int, default=2048, help='The size of the test set.')
+parser.add_argument("--test_dataset_folders", default=[], nargs='*', help="The samples which will be used as test_sets.")
+parser.add_argument("--test_size", type=int, default=2048, help='The size of the test sets.')
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -51,12 +52,18 @@ print(f"Using device {device}...")
 
 # Load dataset
 print("Loading dataset...")
-fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, test_size=args.test_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True, skip_tmp=args.dataset_skip_tmp)
+fd = FluxDataset(args.dataset, dataset_size=args.dataset_size, reload_aux=args.reload_dataset_aux, join=args.join, verbose=True, skip_tmp=args.dataset_skip_tmp)
 n_in = fd.values.shape[1]
+
+# Load test datasets
+test_fds = []
+for test_fd_folder in args.test_dataset_folders:
+    test_fd = FluxDataset(test_fd_folder, args.test_size, join='outer', columns=fd.columns)
+    test_fds.append(test_fd)
 
 # Load VAE
 print("Loading VAE...")
 vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope, args.batch_norm, args.dropout)
 
 trainer = VAETrainer(args)
-trainer.train(vae, fd)
+trainer.train(vae, fd, test_fds)

@@ -22,7 +22,6 @@ RENAME_DICT_FILE = ".renaming.json"
 JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
 DEFAULT_DATASET_SIZE = 65536
-DEFAULT_TEST_SIZE = 2048
 
 rm = os.unlink
 joinp = os.path.join
@@ -98,7 +97,6 @@ class FluxDataset(Dataset):
     def __init__(self, 
                  path : str, 
                  dataset_size : int = DEFAULT_DATASET_SIZE, 
-                 test_size : int = DEFAULT_TEST_SIZE, 
                  join : str ='inner', 
                  verbose : bool = True, 
                  reload_aux : bool = False, 
@@ -135,7 +133,7 @@ class FluxDataset(Dataset):
 
         # Load data into current
         if not skip_tmp:
-            self.create_tmp_archive(dataset_size, test_size)
+            self.create_tmp_archive(dataset_size)
         self.load_sample()
 
     def __len__(self):
@@ -149,7 +147,7 @@ class FluxDataset(Dataset):
     def set_folder(self, path : str):
         """Sets up the folder for the FluxDataset.
         
-        Just readies the directory creating a pkl_folder (test + train).
+        Just readies the directory creating a pkl_folder
 
         Args:
             path: The path to a csv file or folder constaining many csv files.
@@ -166,8 +164,6 @@ class FluxDataset(Dataset):
             raise FileNotFoundError(f"The folder {self.folder} does not exist and there is no flux data to load.")
 
         self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
-        self.test_pkl_folder = os.path.join(self.pkl_folder, 'test')
-        self.train_pkl_folder = os.path.join(self.pkl_folder, 'train')
         self.join_path = os.path.join(self.folder, JOIN_FILE)
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
@@ -278,68 +274,59 @@ class FluxDataset(Dataset):
         with open(self.join_path, 'w') as join_file:
             json.dump(self.joins, join_file, indent=4)
 
-    def create_tmp_archive(self, train_size : int, test_size : int):
+    def create_tmp_archive(self, size: int):
         """Makes tmp files to be used to speed up sample loading.
         
         tmp files - These are pickled pd.DataFrame random subsets of the files loaded. 
         
         Args:
-            train_size: The size of the train sample.
-            test_size: The size of the test sample.
+            size: The size of the sample.
 
         Raises:
-            ValueError: If train_size + test_size is greater than the number of samples
+            ValueError: If size is greater than the number of samples
             for some sample we cannot split the data properly and an error will be thrown
         """
-        train_per_file = train_size // len(self.files)
-        test_per_file = test_size // len(self.files)
-
-        ensure_exists(self.test_pkl_folder)
-        ensure_exists(self.train_pkl_folder)
+        samples_per_file = size // len(self.files)
+        ensure_exists(self.pkl_folder)
 
         for name in tqdm(self.files, desc='Clearing tmp archive'):
             self.remove_tmp_files(name)
 
         for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
-            self.make_tmp_files(name, train_per_file, test_per_file)
+            self.make_tmp_files(name, samples_per_file)
 
     def remove_tmp_files(self, name):
         "Removes tmp files for a certain file name."
-        [rm(joinp(self.test_pkl_folder,  f)) for f in os.listdir(self.test_pkl_folder)  if f.startswith(name)]
-        [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if f.startswith(name)]
+        [rm(joinp(self.pkl_folder, f)) for f in os.listdir(self.pkl_folder) if f.startswith(name)]
 
-    def make_tmp_files(self, name : str, train : int, test : int):
+    def make_tmp_files(self, name : str, samples_per_file : int):
         """Makes tmp files for a specific csv file."""
         df = self.get_df(name)
-        required_samples = train + test
-
-        if len(df.index) < required_samples:
+        if len(df.index) < samples_per_file:
             raise ValueError(
                 f'Unable to make tmp files!' + 
-                f'Sample "{name}" ({len(df.index)}) to small: spf {train}, ts {test}.'
+                f'Sample "{name}" ({len(df.index)}) to small to make {samples_per_file}, sized dataset.'
                 )
         
         rs = get_random_state(self.seed)
-        make_tmp(joinp(self.test_pkl_folder, f"{name}.pkl"), test, df, rs) 
 
         n_saved = 0 
-        while len(df.index) > 0.8 * train:
-            make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), train, df, rs)
+        while len(df.index) > 0.8 * samples_per_file:
+            make_tmp(joinp(self.pkl_folder, f"{name}_{n_saved}.pkl"), samples_per_file, df, rs)
             n_saved += 1
             if self.seed != None:
                 break
 
-    def load_tmp_file(self, name : str, is_test=False):
+    def load_tmp_file(self, name : str):
         """Loads a tmp file for a given name.
         
         Args:
             name: The name of the for which the tmp will be loaded.
-            is_test: If true the test tmp file will be loaded.
 
         Raises:
             FileNotFoundError: If there is no tmp file for name.
         """
-        folder = self.test_pkl_folder if is_test else self.train_pkl_folder
+        folder = self.pkl_folder
         paths = [joinp(folder, f) for f in os.listdir(folder) if f.startswith(name)]
 
         if len(paths) == 0:
@@ -362,16 +349,13 @@ class FluxDataset(Dataset):
         self.labels = list(df['label'].values)
         self.unique_labels = list(set(self.labels))
 
-    def load_sample(self, is_test=False) -> None:
+    def load_sample(self) -> None:
         """Loads a sample into the dataset.
-        
-        Args:
-            is_test: If tre the sample loaded will be the test sample.
         """
         df = pd.DataFrame(columns=self.columns + ['label'])
         sections = [df]
         for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
-            tmp_sample_df = self.load_tmp_file(name, is_test)
+            tmp_sample_df = self.load_tmp_file(name)
             tmp_sample_df['label'] = name
             sections.append(tmp_sample_df)
         

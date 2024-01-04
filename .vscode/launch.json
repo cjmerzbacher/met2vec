@@ -127,6 +127,7 @@
                 "300",
                 "--test_size",
                 "100",
+                "--test_dataset_folder", "./data/samples/small_human",
                 "--save_path",
                 "./data/plot_data/test.csv",
             ]
