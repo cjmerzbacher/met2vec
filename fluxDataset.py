@@ -31,15 +31,14 @@ def get_name_from_sample_file(file : str):
     """Extracts the common name between sbml model and the sample file."""
     return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()0-9]*_[0-9|k]+.csv', file).group())
 
-def get_gem_file(sample_file : str):
-    folder = os.path.dirname(sample_file)
+def get_gem_file(sample_file : str, main_folder : str):
     name = get_name_from_sample_file(sample_file)
     name = re.sub('((_)*\([0-9]*\))*', '', name)
-    return os.path.join(folder, GEM_PATH_FOLDER, f"{name}.xml")
+    return os.path.join(main_folder, GEM_PATH_FOLDER, f"{name}.xml")
 
-def get_model_from_sample_file(sample_file : str):
+def get_model_from_sample_file(sample_file : str, main_folder : str):
     """Get the cobra model for a geven sample file name"""
-    gem_file = get_gem_file(sample_file)
+    gem_file = get_gem_file(sample_file, main_folder)
     try:
         model = read_sbml_model(gem_file)
         return model
@@ -96,7 +95,8 @@ class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
                  path : str, 
-                 dataset_size : int = DEFAULT_DATASET_SIZE, 
+                 dataset_size : int = DEFAULT_DATASET_SIZE,
+                 model_folder : str = None,
                  join : str ='inner', 
                  verbose : bool = True, 
                  reload_aux : bool = False, 
@@ -112,6 +112,7 @@ class FluxDataset(Dataset):
             path: The path (.csv file or folder containing .csv files).
             dataset_size: The size'''
         self.set_folder(path)
+        self.model_folder = model_folder if model_folder != None else self.folder
         self.join = join
         self.verbose = verbose
         self.reload_aux = reload_aux
@@ -120,7 +121,7 @@ class FluxDataset(Dataset):
         self.dataset_size = dataset_size
 
         # Find renamings and joins
-        self.load_models()
+        self.load_models(self.model_folder)
         self.find_renaming()
         self.find_joins(self.files)
         
@@ -175,7 +176,7 @@ class FluxDataset(Dataset):
         if not os.path.exists(self.pkl_folder):
             os.makedirs(self.pkl_folder)
         
-    def load_models(self):
+    def load_models(self, model_folder):
         models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
         if not self.reload_aux:
             try:
@@ -190,7 +191,7 @@ class FluxDataset(Dataset):
         self.models = {}
         for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
             name = get_name_from_sample_file(file)
-            model = get_model_from_sample_file(file)
+            model = get_model_from_sample_file(file, model_folder)
             self.models[name] = model
 
         with open(models_pkl_path, 'wb') as models_pkl_file:

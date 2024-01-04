@@ -43,3 +43,6 @@ PARSER_SAMPLE.add_argument("--sample", default=True, type=boolean_string, help="
 
 PARSER_KMEANS_K = argparse.ArgumentParser(add_help=False)
 PARSER_KMEANS_K.add_argument("-k", type=int, help="The number of cluster, if unset same as number of labels.")
+
+PARSER_MODEL_FOLDER = argparse.ArgumentParser(add_help=False)
+PARSER_MODEL_FOLDER.add_argument("--model_folder", help="If specified, common folder all datasets will used for model files.")
