@@ -177,6 +177,7 @@ class FluxDataset(Dataset):
             raise FileNotFoundError(f"The folder {self.folder} does not exist and there is no flux data to load.")
 
         self.pkl_folder = os.path.join(self.folder, PKL_FOLDER)
+        self.train_pkl_folder = os.path.join(self.pkl_folder, "train")
         self.join_path = os.path.join(self.folder, JOIN_FILE)
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
@@ -308,7 +309,7 @@ class FluxDataset(Dataset):
             for some sample we cannot split the data properly and an error will be thrown
         """
         samples_per_file = size // len(self.files)
-        ensure_exists(self.pkl_folder)
+        ensure_exists(self.train_pkl_folder)
 
         for name in tqdm(self.files, desc='Clearing tmp archive'):
             self.remove_tmp_files(name)
@@ -318,7 +319,7 @@ class FluxDataset(Dataset):
 
     def remove_tmp_files(self, file_name):
         "Removes tmp files for a certain file name."
-        [rm(joinp(self.pkl_folder, f)) for f in os.listdir(self.pkl_folder) if f.startswith(file_name)]
+        [rm(joinp(self.train_pkl_folder, f)) for f in os.listdir(self.train_pkl_folder) if f.startswith(file_name)]
 
     def make_tmp_files(self, name : str, samples_per_file : int):
         """Makes tmp files for a specific csv file."""
@@ -333,7 +334,7 @@ class FluxDataset(Dataset):
 
         n_saved = 0 
         while len(df.index) > 0.8 * samples_per_file:
-            make_tmp(joinp(self.pkl_folder, f"{name}_{n_saved}.pkl"), samples_per_file, df, rs)
+            make_tmp(joinp(self.train_pkl_folder, f"{name}_{n_saved}.pkl"), samples_per_file, df, rs)
             n_saved += 1
             if self.seed != None:
                 break
@@ -347,7 +348,7 @@ class FluxDataset(Dataset):
         Raises:
             FileNotFoundError: If there is no tmp file for name.
         """
-        folder = self.pkl_folder
+        folder = self.train_pkl_folder
         paths = [joinp(folder, f) for f in os.listdir(folder) if f.startswith(name)]
 
         if len(paths) == 0:
