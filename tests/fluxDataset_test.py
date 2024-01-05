@@ -16,5 +16,5 @@ class FluxDatasetTest(TestCase):
 
         assert np.isclose(np.max(self.fd1.values - self.fd2.values), 0)
 
-    def test_dataset_multiple_same_renaming():
+    def test_dataset_multiple_same_renaming(self):
         pass

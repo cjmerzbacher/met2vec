@@ -29,7 +29,8 @@ ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
 def get_name_from_sample_file(file : str):
     """Extracts the common name between sbml model and the sample file."""
-    return re.sub('_[0-9|k]*.csv', '', re.search(r'[a-zA-Z \-_,()0-9]*_[0-9|k]+.csv', file).group())
+    end_pattern = '_[0-9|k]*[\((0-9)*\)]*.csv'
+    return re.sub(end_pattern, '', re.search(f'[a-zA-Z \-_,()0-9]*{end_pattern}', file).group())
 
 def get_gem_file(sample_file : str, main_folder : str):
     name = get_name_from_sample_file(sample_file)
