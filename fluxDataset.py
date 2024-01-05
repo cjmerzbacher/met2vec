@@ -122,7 +122,7 @@ class FluxDataset(Dataset):
         self.dataset_size = dataset_size
 
         # Find renamings and joins
-        self.load_models(self.model_folder)
+        self.load_models()
         self.find_renaming()
         self.find_joins(self.files)
         
@@ -177,7 +177,7 @@ class FluxDataset(Dataset):
         if not os.path.exists(self.pkl_folder):
             os.makedirs(self.pkl_folder)
         
-    def load_models(self, model_folder):
+    def load_models(self):
         print("Loading models...")
 
         models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
@@ -195,7 +195,7 @@ class FluxDataset(Dataset):
         for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
             name = get_name_from_sample_file(file)
             if name not in self.models:
-                model = get_model_from_sample_file(file, model_folder)
+                model = get_model_from_sample_file(file, self.model_folder)
                 self.models[name] = model
 
         print(f"Models loaded:")
