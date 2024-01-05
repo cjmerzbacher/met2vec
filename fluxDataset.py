@@ -27,24 +27,35 @@ rm = os.unlink
 joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
-def get_name_from_sample_file(file : str):
+def get_file_name_from_sample_file(file : str):
+    end_pattern = '.csv'
+    return re.sub(end_pattern, '', re.search(f'[a-zA-Z \-_,()0-9]*_[0-9|k]*[\((0-9)*\)]*{end_pattern}', file).group())
+
+def get_model_name_from_file_name(file : str):
     """Extracts the common name between sbml model and the sample file."""
-    end_pattern = '_[0-9|k]*[\((0-9)*\)]*.csv'
-    return re.sub(end_pattern, '', re.search(f'[a-zA-Z \-_,()0-9]*{end_pattern}', file).group())
+    end_pattern = '_[0-9|k]+[\((0-9)*\)]*'
+    return re.sub(end_pattern, '', file)
 
-def get_gem_file(sample_file : str, main_folder : str):
-    name = get_name_from_sample_file(sample_file)
-    name = re.sub('((_)*\([0-9]*\))*', '', name)
-    return os.path.join(main_folder, GEM_PATH_FOLDER, f"{name}.xml")
+def get_model_name_from_sample_file(file : str):
+    file_name = get_file_name_from_sample_file(file)
+    model_name = get_model_name_from_file_name(file_name)
+    return model_name
 
-def get_model_from_sample_file(sample_file : str, main_folder : str):
-    """Get the cobra model for a geven sample file name"""
-    gem_file = get_gem_file(sample_file, main_folder)
+def get_gem_file(model_name : str, main_folder : str):
+    return os.path.join(main_folder, GEM_PATH_FOLDER, f"{model_name}.xml")
+
+def get_model(model_name : str, main_folder : str):
+    gem_file = get_gem_file(model_name, main_folder)
     try:
         model = read_sbml_model(gem_file)
         return model
     except:
         return None
+
+def get_model_from_sample_file(sample_file : str, main_folder : str):
+    """Get the cobra model for a geven sample file name"""
+    model_name = get_model_name_from_sample_file(sample_file)
+    return get_model(model_name, main_folder)
 
 def get_reaction_name(reaction):
     reaction_parts = [f'{m.name}({m.compartment})[{reaction.metabolites[m]}]' for m in reaction.metabolites]
@@ -169,7 +180,7 @@ class FluxDataset(Dataset):
         self.join_path = os.path.join(self.folder, JOIN_FILE)
 
         self.files = [path] if path.endswith('.csv') else [os.path.join(path,f) for f in os.listdir(path) if f.endswith('.csv')]
-        self.files = {get_name_from_sample_file(f) : f for f in self.files}
+        self.files = {get_file_name_from_sample_file(f) : f for f in self.files}
 
         if len(self.files) == 0:
             raise FileNotFoundError(f"The path {self.path} has no .csv files in it.")
@@ -192,15 +203,15 @@ class FluxDataset(Dataset):
                 print(f"Failed to load {models_pkl_path}")
                 pass
         
-        for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
-            name = get_name_from_sample_file(file)
-            if name not in self.models:
-                model = get_model_from_sample_file(file, self.model_folder)
-                self.models[name] = model
+        model_names = set([get_model_name_from_file_name(fn) for fn in self.files])
+        for model_name in tqdm(model_names, desc="Loading Models", disable=not self.verbose):
+            if model_name not in self.models:
+                model = get_model(model_name, self.model_folder)
+                self.models[model_name] = model
 
         print(f"Models loaded:")
-        for name, model in self.models.items():
-            print(f"    {name} : {'not ' if model == None else ''} found.")
+        for model_name, model in self.models.items():
+            print(f"    {model_name} : {'not ' if model == None else ''} found.")
 
         with open(models_pkl_path, 'wb') as models_pkl_file:
             pickle.dump(self.models, models_pkl_file)
@@ -208,12 +219,12 @@ class FluxDataset(Dataset):
     def find_renaming(self):
         """Loads the renaming for all metabolites in the samples."""
         self.renaming_dicts = {}
-        for name, model in tqdm(self.models.items(), desc='Creating Renaming', disable=not self.verbose):
+        for model_name, model in tqdm(self.models.items(), desc='Creating Renaming', disable=not self.verbose):
             gem_rename_dict = get_rename_dict(model)
             if gem_rename_dict != None:
-                self.renaming_dicts[name] = gem_rename_dict 
+                self.renaming_dicts[model_name] = gem_rename_dict 
 
-    def get_pkl_path(self, name : str) -> str:
+    def get_pkl_path(self, file_name : str) -> str:
         """Get the pkl path for a given name.
         
         Arguments:
@@ -222,9 +233,9 @@ class FluxDataset(Dataset):
         Returns:
             path: The path to the pkl file.
         """
-        return os.path.join(self.pkl_folder, f"{name}.pkl")
+        return os.path.join(self.pkl_folder, f"{file_name}.pkl")
 
-    def get_df(self, name : str, n : int = None) -> pd.DataFrame:
+    def get_df(self, file_name : str, n : int = None) -> pd.DataFrame:
         """Loads a DataFrame for a given name.
         
         Arguments:
@@ -233,8 +244,9 @@ class FluxDataset(Dataset):
         Returns:
             df: The dataframe of a sample for the given name.
         """
-        pkl_path = self.get_pkl_path(name)
-        csv_path = self.files[name]
+        pkl_path = self.get_pkl_path(file_name)
+        csv_path = self.files[file_name]
+        model_name = get_model_name_from_file_name(file_name)
 
         if n != None:
             df = pd.read_csv(csv_path, index_col=0, nrows=n)
@@ -247,8 +259,8 @@ class FluxDataset(Dataset):
                 with open(pkl_path, 'wb') as pkl_file:
                     pickle.dump(df, pkl_file)
 
-        if name in self.renaming_dicts:
-            df = df.rename(columns=self.renaming_dicts[name])
+        if model_name in self.renaming_dicts:
+            df = df.rename(columns=self.renaming_dicts[model_name])
             df = df.groupby(df.columns, axis=1).agg(sum)
             return df
         else:
@@ -304,9 +316,9 @@ class FluxDataset(Dataset):
         for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
             self.make_tmp_files(name, samples_per_file)
 
-    def remove_tmp_files(self, name):
+    def remove_tmp_files(self, file_name):
         "Removes tmp files for a certain file name."
-        [rm(joinp(self.pkl_folder, f)) for f in os.listdir(self.pkl_folder) if f.startswith(name)]
+        [rm(joinp(self.pkl_folder, f)) for f in os.listdir(self.pkl_folder) if f.startswith(file_name)]
 
     def make_tmp_files(self, name : str, samples_per_file : int):
         """Makes tmp files for a specific csv file."""
@@ -363,9 +375,10 @@ class FluxDataset(Dataset):
         """
         df = pd.DataFrame(columns=self.columns + ['label'])
         sections = [df]
-        for name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
-            tmp_sample_df = self.load_tmp_file(name)
-            tmp_sample_df['label'] = name
+        for file_name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
+            model_name = get_model_name_from_file_name(file_name)
+            tmp_sample_df = self.load_tmp_file(file_name)
+            tmp_sample_df['label'] = model_name
             sections.append(tmp_sample_df)
         
         df = pd.concat(sections, ignore_index=True)
