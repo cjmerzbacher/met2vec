@@ -178,22 +178,29 @@ class FluxDataset(Dataset):
             os.makedirs(self.pkl_folder)
         
     def load_models(self, model_folder):
+        print("Loading models...")
+
         models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
+        self.models = {}
+
+        # Try Loading Via Pickle Cache
         if not self.reload_aux:
             try:
                 with open(models_pkl_path, 'rb') as models_pkl_file:
                     self.models = pickle.load(models_pkl_file)
-                return
             except:
                 print(f"Failed to load {models_pkl_path}")
                 pass
         
-        print("Loading models...")
-        self.models = {}
-        for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
-            name = get_name_from_sample_file(file)
-            model = get_model_from_sample_file(file, model_folder)
-            self.models[name] = model
+        if self.models == {}:
+            for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
+                name = get_name_from_sample_file(file)
+                model = get_model_from_sample_file(file, model_folder)
+                self.models[name] = model
+
+        print(f"Models loaded:")
+        for name, model in self.models.items():
+            print(f"    {name} : {'not ' if model == None else ''} found.")
 
         with open(models_pkl_path, 'wb') as models_pkl_file:
             pickle.dump(self.models, models_pkl_file)
