@@ -192,9 +192,9 @@ class FluxDataset(Dataset):
                 print(f"Failed to load {models_pkl_path}")
                 pass
         
-        if self.models == {}:
-            for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
-                name = get_name_from_sample_file(file)
+        for file in tqdm(self.files.values(), desc="Loading Models", disable=not self.verbose):
+            name = get_name_from_sample_file(file)
+            if name not in self.models:
                 model = get_model_from_sample_file(file, model_folder)
                 self.models[name] = model
 
