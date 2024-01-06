@@ -38,6 +38,9 @@ class VAETrainer:
         test_losses = []
         for test_blame in test_blames:
             test_losses.append(test_blame['loss'])
+        if test_losses == []:
+            test_losses = [-1]
+
         test_losses = np.array(test_losses)
 
         test_loss_mean = np.mean(test_losses)
