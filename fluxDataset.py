@@ -214,8 +214,9 @@ class FluxDataset(Dataset):
         for model_name, model in self.models.items():
             print(f"    {model_name} : {'not ' if model == None else ''} found.")
 
-        with open(models_pkl_path, 'wb') as models_pkl_file:
-            pickle.dump(self.models, models_pkl_file)
+        if self.model_folder == self.folder:
+            with open(models_pkl_path, 'wb') as models_pkl_file:
+                pickle.dump(self.models, models_pkl_file)
 
     def find_renaming(self):
         """Loads the renaming for all metabolites in the samples."""
@@ -287,7 +288,7 @@ class FluxDataset(Dataset):
             'inner' : list(inner),
             'outer' : list(outer)
         }
-        
+
     def create_tmp_archive(self, size: int):
         """Makes tmp files to be used to speed up sample loading.
         
