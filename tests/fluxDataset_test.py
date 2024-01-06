@@ -14,7 +14,7 @@ class FluxDatasetTest(TestCase):
         print(self.fd1.renaming_dicts)
         assert self.fd1.renaming_dicts != {}
 
-        assert np.isclose(np.max(self.fd1.values - self.fd2.values), 0)
+        assert np.isclose(np.max(self.fd1.normalized_values - self.fd2.normalized_values), 0)
 
     def test_dataset_multiple_same_renaming(self):
         pass

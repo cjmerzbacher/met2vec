@@ -90,7 +90,7 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame, random_state : Rando
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
-def get_reactions_in_compartments(models : list, compartments : list[str]) -> list[str]:
+def get_reactions_in_compartments(models : list[any], compartments : list[str]) -> list[str]:
     reactions = set()
     for m in models:
         reactions = reactions.union({get_reaction_name(r) for r in m.reactions})
@@ -139,8 +139,8 @@ class FluxDataset(Dataset):
         
         if columns == None:
             columns = self.joins[join]
-        else:
-            reactions_in_compartments = get_reactions_in_compartments(self.modeks, compartments)
+        elif not any([m == None for m in self.models.values()]):
+            reactions_in_compartments = get_reactions_in_compartments(self.models.values(), compartments)
             columns = list(set(columns).intersection(reactions_in_compartments))
         self.columns = columns
 
@@ -154,8 +154,8 @@ class FluxDataset(Dataset):
     
     def __getitem__(self, idx):
         if type(idx) == str:
-            return self.values[np.array(self.labels) == idx]
-        return self.labels[idx], torch.Tensor(self.values[idx])
+            return self.normalized_values[np.array(self.labels) == idx]
+        return self.labels[idx], torch.Tensor(self.normalized_values[idx])
     
     def set_folder(self, path : str):
         """Sets up the folder for the FluxDataset.
@@ -192,7 +192,7 @@ class FluxDataset(Dataset):
     def load_models(self):
         print("Loading models...")
 
-        models_pkl_path = os.path.join(self.folder, PKL_FOLDER, MODELS_PKL_FILE)
+        models_pkl_path = os.path.join(self.model_folder, PKL_FOLDER, MODELS_PKL_FILE)
         self.models = {}
 
         # Try Loading Via Pickle Cache
@@ -276,11 +276,6 @@ class FluxDataset(Dataset):
         Raises:
 
         """
-        if os.path.exists(self.join_path) and not self.reload_aux:
-            with open(self.join_path, 'r') as join_file:
-                self.joins = json.load(join_file)
-            return
-
         inner, outer = set(), set()
 
         for i, name in tqdm(enumerate(files), desc="Making inter_union", disable=not self.verbose):
@@ -292,10 +287,7 @@ class FluxDataset(Dataset):
             'inner' : list(inner),
             'outer' : list(outer)
         }
-
-        with open(self.join_path, 'w') as join_file:
-            json.dump(self.joins, join_file, indent=4)
-
+        
     def create_tmp_archive(self, size: int):
         """Makes tmp files to be used to speed up sample loading.
         
@@ -364,25 +356,23 @@ class FluxDataset(Dataset):
         """Loads in and normalizes a dataFrame."""      
         df_num = df.select_dtypes(include='number')
         df_norm = (df_num-df_num.mean())/df_num.std()
-        df[df_norm.columns] = df_norm
         
         self.data = df
-        self.values = df_norm.values
+        self.normalized_values = df_norm.values
         self.labels = list(df['label'].values)
         self.unique_labels = list(set(self.labels))
 
     def load_sample(self) -> None:
         """Loads a sample into the dataset.
         """
-        df = pd.DataFrame(columns=self.columns + ['label'])
-        sections = [df]
+        sections = [pd.DataFrame(columns=self.columns + ['label'])]
         for file_name in tqdm(self.files, desc='Loading sample', disable=not self.verbose):
             model_name = get_model_name_from_file_name(file_name)
             tmp_sample_df = self.load_tmp_file(file_name)
             tmp_sample_df['label'] = model_name
             sections.append(tmp_sample_df)
         
-        df = pd.concat(sections, ignore_index=True)
+        df = pd.concat(sections, ignore_index=True, sort=False, join='outer').fillna(0)
         df = df[df.columns.intersection(self.columns + ['label'])]
         self.load_dataFrame(df)
 
@@ -394,7 +384,7 @@ class FluxDataset(Dataset):
         df.fillna(0, inplace=True)
 
         self.data = df
-        self.values = np.array(df.drop(columns='label').values.astype(float))
-        self.values
+        self.normalized_values = np.array(df.drop(columns='label').values.astype(float))
+        self.normalized_values
 
 

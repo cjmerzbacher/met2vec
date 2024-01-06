@@ -66,7 +66,7 @@ def get_data(fd : FluxDataset, vae : VAE = None, stage : str = EMB, vae_sample :
         data: The transformed subset of the FluxDataset sample.
     """
     if label is None:
-        data = fd.values
+        data = fd.normalized_values
     else:
         data = fd[label]
 
