@@ -186,7 +186,7 @@
                 "--test_size", "100",
                 "--test_dataset", "./data/samples/small_human_split/0/test/",
                 "--test_model_folder", "./data/samples/small_human/",
-                "-n", "100",
+                "-n", "1000",
                 "-b", "100",
                 "--save_losses_on", "5",
                 "--lr", "0.0004",

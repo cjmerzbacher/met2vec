@@ -146,7 +146,7 @@ class FluxDataset(Dataset):
 
         # Load data into current
         if not skip_tmp:
-            self.create_tmp_archive(dataset_size)
+            self.create_tmp_archive()
         self.load_sample()
 
     def __len__(self):
@@ -289,26 +289,27 @@ class FluxDataset(Dataset):
             'outer' : list(outer)
         }
 
-    def create_tmp_archive(self, size: int):
+    def create_tmp_archive(self):
         """Makes tmp files to be used to speed up sample loading.
         
         tmp files - These are pickled pd.DataFrame random subsets of the files loaded. 
-        
-        Args:
-            size: The size of the sample.
-
-        Raises:
-            ValueError: If size is greater than the number of samples
-            for some sample we cannot split the data properly and an error will be thrown
         """
-        samples_per_file = size // len(self.files)
+        samples_per_file = self.dataset_size // len(self.files)
         ensure_exists(self.train_pkl_folder)
 
         for name in tqdm(self.files, desc='Clearing tmp archive'):
             self.remove_tmp_files(name)
 
+        min_sample_size = samples_per_file
         for name in tqdm(self.files, desc='Making tmps', disable=not self.verbose):
-            self.make_tmp_files(name, samples_per_file)
+            sample_size = self.make_tmp_files(name, samples_per_file)
+            min_sample_size = min(sample_size, min_sample_size)
+
+        if min_sample_size < samples_per_file:
+            new_dataset_size = min_sample_size * len(self.files)
+            print(f"Dataset size too big! min_sample_size {min_sample_size}," + 
+                  f" updating dataset_size {self.dataset_size} -> {new_dataset_size}")
+            self.dataset_size = new_dataset_size
 
     def remove_tmp_files(self, file_name):
         "Removes tmp files for a certain file name."
@@ -318,10 +319,7 @@ class FluxDataset(Dataset):
         """Makes tmp files for a specific csv file."""
         df = self.get_df(name)
         if len(df.index) < samples_per_file:
-            raise ValueError(
-                f'Unable to make tmp files!' + 
-                f'Sample "{name}" ({len(df.index)}) to small to make {samples_per_file}, sized dataset.'
-                )
+            samples_per_file = len(df.index)
         
         rs = get_random_state(self.seed)
 
@@ -331,6 +329,8 @@ class FluxDataset(Dataset):
             n_saved += 1
             if self.seed != None:
                 break
+
+        return samples_per_file
 
     def load_tmp_file(self, name : str):
         """Loads a tmp file for a given name.
