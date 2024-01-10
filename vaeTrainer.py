@@ -32,27 +32,44 @@ class VAETrainer:
 
     def log_init(self) -> None:
         with open(self.args.losses_file, "w+") as file:
-            file.write("loss,reconstruction_loss,divergence_loss,test_loss,test_loss_max\n")
+            file.write(",".join([
+                "loss",
+                "reconstruction_loss",
+                "divergence_loss",
+                "test_loss",
+                "test_loss_max",
+                "test_rec"
+                "test_rec_max"
+                "test_div",
+                "test_div_max\n"
+                ]))
 
     def log(self, blame, test_blames) -> None:
         test_losses = []
+        test_div = []
+        test_rec = []
         for test_blame in test_blames:
             test_losses.append(test_blame['loss'])
-        if test_losses == []:
-            test_losses = [-1]
+            test_div.append(test_blame['loss_divergence'])
+            test_rec.append(test_blame['loss_reconstruction'])
+
+        if test_losses == []: test_losses = [-1]
+        if test_div    == []: test_div    = [-1]
+        if test_rec    == []: test_rec    = [-1]
 
         test_losses = np.array(test_losses)
-
-        test_loss_mean = np.mean(test_losses)
-        test_loss_max = np.max(test_losses)
 
         with open(self.args.losses_file, "a+") as file:
             values = [
                 blame['loss'],
                 blame['loss_reconstruction'],
                 blame['loss_divergence'],
-                test_loss_mean,
-                test_loss_max
+                np.mean(test_losses),
+                np.max(test_losses),
+                np.mean(test_div),
+                np.max(test_div),
+                np.mean(test_rec),
+                np.max(test_rec),
                 ]
             file.write(f"{','.join(map(str,values))}\n")
 
