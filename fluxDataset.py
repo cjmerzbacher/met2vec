@@ -357,6 +357,7 @@ class FluxDataset(Dataset):
         """Loads in and normalizes a dataFrame."""      
         df_num = df.select_dtypes(include='number')
         df_norm = (df_num-df_num.mean())/df_num.std()
+        df_norm.fillna(0, inplace=True)
         
         self.data = df
         self.normalized_values = df_norm.values

@@ -43,9 +43,11 @@ def get_args():
     parser_add.add_argument('name', type=str, help='The argument/name for the hyperparameter.')
     parser_add.add_argument('--type', choices=['str', 'float', 'int'], required=True)
     parser_add.add_argument('--samples', type=int, default=10)
-    parser_add.add_argument('--choices', nargs='+', type=str, default='str')
+    parser_add.add_argument('--choices', nargs='+', type=str)
     parser_add.add_argument('--range', nargs=2, type=float)
     parser_add.add_argument('--erange', nargs=2, type=float)
+    parser_add.add_argument('--dataset', nargs='+', type=str)
+    parser_add.add_argument('--root_folder')
 
     # run command
     parser_run = subparsers.add_parser(RUN, help='Run many intances of the given script to find the effect of the different hyperparameters.')
@@ -95,6 +97,17 @@ def get_erange_values(_min, _max, n, _type):
     _lambda = math.pow(_max / _min, 1.0 / (n - 1))
     return [_type(_min * math.pow(_lambda, i)) for i in range(n)]
 
+def get_dataset_values(subpaths, basepath):
+    datasets = []
+
+    for subpath in subpaths:
+        run_folder = os.path.join(basepath, subpath)
+        train = os.path.join(run_folder, 'train')
+        test = os.path.join(run_folder, 'test')
+        datasets.append(f"{train} --test_dataset {test}")
+
+    return datasets
+
 def str_to_type(_str):
     match _str:
         case 'int':
@@ -108,12 +121,15 @@ def str_to_type(_str):
 def get_hparam_values(hp : dict[str,any]):
     _type = str_to_type(hp['type'])
 
-    if 'range' in hp:
+    if 'range' in hp and 'samples' in hp:
         return get_range_values(*hp['range'], hp['samples'], _type)
-    if 'erange' in hp:
+    if 'erange' in hp and 'samples' in hp:
         return get_erange_values(*hp['erange'], hp['samples'], _type)
     if 'choices' in hp:
         return hp['choices']
+    if 'dataset' in hp and 'root_folder' in hp:
+        return get_dataset_values(hp['dataset'], hp['root_folder'])
+
     
 def get_str_values(hp : dict[str,any]):
     values = get_hparam_values(hp)
@@ -162,16 +178,21 @@ def add(args):
     state = load_state_file(args)
     hyperparameter = {}
 
-    def safe_add(h, a, c):
-        if hasattr(a, c):
-            if getattr(a, c) != None:
-                h[c] = getattr(a, c)
+    def safe_add(c):
+        if hasattr(args, c):
+            if getattr(args, c) != None:
+                hyperparameter[c] = getattr(args, c)
 
-    safe_add(hyperparameter, args, 'type')
-    safe_add(hyperparameter, args, 'samples')
-    safe_add(hyperparameter, args, 'choices')
-    safe_add(hyperparameter, args, 'range')
-    safe_add(hyperparameter, args, 'erange')
+    for c in [
+        'type', 
+        'samples', 
+        'choices', 
+        'range', 
+        'erange', 
+        'dataset', 
+        'root_folder'
+        ]:
+        safe_add(c)
 
     state[HPARAMS][args.name] = hyperparameter
     save_state_file(state, args)

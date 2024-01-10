@@ -38,8 +38,8 @@ class VAETrainer:
                 "divergence_loss",
                 "test_loss",
                 "test_loss_max",
-                "test_rec"
-                "test_rec_max"
+                "test_rec",
+                "test_rec_max",
                 "test_div",
                 "test_div_max\n"
                 ]))
