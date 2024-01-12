@@ -28,12 +28,11 @@ joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
 def get_file_name_from_sample_file(file : str):
-    end_pattern = '.csv'
-    return re.sub(end_pattern, '', re.search(f'[a-zA-Z \-_,()0-9]*_[0-9|k]*[\((0-9)*\)]*{end_pattern}', file).group())
+    return os.path.normpath(file).removesuffix('.csv')
 
 def get_model_name_from_file_name(file : str):
     """Extracts the common name between sbml model and the sample file."""
-    end_pattern = '_[0-9|k]+[\((0-9)*\)]*'
+    end_pattern = r'_([0-9]|k)+(\([0-9]*\))?$'
     return re.sub(end_pattern, '', file)
 
 def get_model_name_from_sample_file(file : str):
