@@ -146,7 +146,7 @@ class VAE:
         # Divergence from N(0, 1)
         loss_divergence = 0.5 * torch.sum(self.sigma, dim=1)                      # tr(sigma)
         loss_divergence += 0.5 * torch.norm(self.mu, dim=1)                       # mu^T @ mu
-        loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.0001), dim=1) #log(sigma)
+        loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.1), dim=1) #log(sigma)
         loss_divergence = torch.mean(loss_divergence)
 
         loss = loss_reconstruction + loss_divergence
