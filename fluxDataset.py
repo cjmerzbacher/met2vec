@@ -28,7 +28,7 @@ joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
 def get_file_name_from_sample_file(file : str):
-    return os.path.normpath(file).removesuffix('.csv')
+    return os.path.basename(file).removesuffix('.csv')
 
 def get_model_name_from_file_name(file : str):
     """Extracts the common name between sbml model and the sample file."""
