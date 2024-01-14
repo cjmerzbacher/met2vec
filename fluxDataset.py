@@ -9,6 +9,7 @@ import json
 import pickle
 
 from numpy.random import RandomState
+from reproducability import get_random_state
 from cobra.io import read_sbml_model
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -17,7 +18,7 @@ from vae import VAE
 
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
-GEM_PATH_FOLDER = 'gems'
+GEM_FOLDER = 'gems'
 RENAME_DICT_FILE = ".renaming.json"
 JOIN_FILE = ".join.json"
 PKL_FOLDER = ".pkl"
@@ -41,7 +42,7 @@ def get_model_name_from_sample_file(file : str):
     return model_name
 
 def get_gem_file(model_name : str, main_folder : str):
-    return os.path.join(main_folder, GEM_PATH_FOLDER, f"{model_name}.xml")
+    return os.path.join(main_folder, GEM_FOLDER, f"{model_name}.xml")
 
 def get_model(model_name : str, main_folder : str):
     gem_file = get_gem_file(model_name, main_folder)
@@ -95,12 +96,6 @@ def get_reactions_in_compartments(models : list[any], compartments : list[str]) 
         reactions = reactions.union({get_reaction_name(r) for r in m.reactions})
     return reactions
 
-def get_random_state(seed, index=0):
-    index %= 2**32
-        
-    if seed == None:
-        return RandomState(random.randint(0, 2**32))
-    return RandomState(seed + index)
 
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
