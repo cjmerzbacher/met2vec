@@ -33,7 +33,7 @@ train_columns = train_fd.columns
 test_fd = load_fd(args, "test", 1)
 test_fd.set_columns(train_columns)
 
-test_labels =   test_fd.unique_labels
+test_labels = test_fd.unique_labels
 train_labels = train_fd.unique_labels
 
 nt = len(test_labels)

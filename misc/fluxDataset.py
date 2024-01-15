@@ -29,7 +29,7 @@ def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDatase
     return FluxDataset(*[args.__dict__[k] for k in [
         f"{prefix}path",
         f"{prefix}size",
-        f"{prefix}test_size",
+        f"{prefix}model_folder",
         f"{prefix}join",
         f"{prefix}verbose",
         f"{prefix}reload_aux",

@@ -34,6 +34,7 @@ MODELS_PKL_FILE = "models.pkl"
 DEFAULT_DATASET_SIZE = 65536
 DEFAULT_TEST_SIZE = 2048
 PKL_FOLDER = '.pkl'
+TRAIN_FOLDER = 'train'
 
 # Dataset Joins
 INNER = 'inner'

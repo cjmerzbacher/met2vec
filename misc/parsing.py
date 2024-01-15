@@ -10,7 +10,7 @@ def fluxDataset_loading_parser(name : str = "", path_tag=None):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(*path_tag, f"--{prefix}path", required=True, help=f"The path {name}dataset will be laoded from.")
     parser.add_argument(f"--{prefix}size", default=65536, type=int, help=f"The size of {name}dataset samples.")
-    parser.add_argument(f"--{prefix}test_size", default=0, type=int, help=f"The size of the test set for {name}dataset.")
+    parser.add_argument(f"--{prefix}model_folder", help=f"If set the model folder used for {name}dataset instead of main folder.")
     parser.add_argument(f"--{prefix}join", default=INNER, choices=DATASET_JOINS, help=f"The join that will be used for {name}dataset.")
     parser.add_argument(f"--{prefix}verbose", default=True, type=boolean_string, help="Whether the dataset will print debug messages")
     parser.add_argument(f"--{prefix}reload_aux", type=boolean_string, default=False, help=f"Whether {name}dataset should reload aux.")

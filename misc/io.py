@@ -7,8 +7,8 @@ def join(folder, subpath, raise_exists=False, make_folder=False):
     if not os.path.exists(joined):
         if raise_exists:
             raise FileNotFoundError(f"'Error {subpath}' not found at '{folder}'!")
-    elif make_folder:
-        os.makedirs(joined)
+        elif make_folder:
+            os.makedirs(joined)
 
     return joined
 

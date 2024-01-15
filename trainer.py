@@ -62,25 +62,20 @@ train_fd = FluxDataset(
     skip_tmp=args.dataset_skip_tmp,
     model_folder=args.model_folder)
 n_in = train_fd.normalized_values.shape[1]
+print(f"    {n_in} columns")
 
 # Load test datasets
-test_fds = []
-test_dataset = args.test_dataset
-if test_dataset != None:
-    test_paths = [os.path.join(test_dataset, f) for f in os.listdir(test_dataset) if f.endswith(".csv")]
-
-    for test_fd_path in test_paths:
-        test_fd = FluxDataset(
-            test_fd_path, 
-            args.test_size, 
-            join='outer', 
-            columns=train_fd.columns,
-            model_folder=args.model_folder)
-        test_fds.append(test_fd)
+test_fd = FluxDataset(
+    args.test_dataset, 
+    args.test_size, 
+    join='outer', 
+    columns=train_fd.columns,
+    model_folder=args.model_folder
+)
 
 # Load VAE
 print("Loading VAE...")
 vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope, args.batch_norm, args.dropout)
 
-trainer = VAETrainer(args, vae, train_fd, test_fds)
+trainer = VAETrainer(args, vae, train_fd, test_fd)
 trainer.train()

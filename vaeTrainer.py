@@ -13,11 +13,11 @@ import os
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class VAETrainer:
-    def __init__(self, args, vae, train_fd, test_fds):
+    def __init__(self, args, vae, train_fd, test_fd):
         self.args = args
         self.vae = vae
         self.train_fd = train_fd
-        self.test_fds = test_fds
+        self.test_fd = test_fd
 
         self.optimizer = optim.Adam(
             [
@@ -37,39 +37,19 @@ class VAETrainer:
                 "reconstruction_loss",
                 "divergence_loss",
                 "test_loss",
-                "test_loss_max",
                 "test_rec",
-                "test_rec_max",
-                "test_div",
-                "test_div_max\n"
+                "test_div\n",
                 ]))
 
-    def log(self, blame, test_blames) -> None:
-        test_losses = []
-        test_div = []
-        test_rec = []
-        for test_blame in test_blames:
-            test_losses.append(test_blame['loss'])
-            test_div.append(test_blame['loss_divergence'])
-            test_rec.append(test_blame['loss_reconstruction'])
-
-        if test_losses == []: test_losses = [-1]
-        if test_div    == []: test_div    = [-1]
-        if test_rec    == []: test_rec    = [-1]
-
-        test_losses = np.array(test_losses)
-
+    def log(self, blame, test_blame) -> None:
         with open(self.args.losses_file, "a+") as file:
             values = [
                 blame['loss'],
                 blame['loss_reconstruction'],
                 blame['loss_divergence'],
-                np.mean(test_losses),
-                np.max(test_losses),
-                np.mean(test_div),
-                np.max(test_div),
-                np.mean(test_rec),
-                np.max(test_rec),
+                test_blame['loss'],
+                test_blame['loss_reconstruction'],
+                test_blame['loss_divergence'],
                 ]
             file.write(f"{','.join(map(str,values))}\n")
 
@@ -87,20 +67,11 @@ class VAETrainer:
         return blame
 
     def test_vae(self) -> list[dict[str,float]]:
-        def test_single(test_fd : FluxDataset):
-            x = test_fd.normalized_values
-            y = self.vae.encode_decode(x)
-            test_blame = self.vae.loss(x, y)[1]
-            return test_blame
+        x = self.test_fd.normalized_values
+        y = self.vae.encode_decode(x)
+        test_blame = self.vae.loss(x, y)[1]
+        return test_blame
         
-        test_blames = []
-
-        for test_fd in self.test_fds:
-            test_blame = test_single(test_fd)
-            test_blames.append(test_blame)
-
-        return test_blames
-
     def train(self) -> None:
         e_size = len(str(self.args.epochs - 1))
         self.log_init()
@@ -115,8 +86,8 @@ class VAETrainer:
                     t.set_description(f"Epoch [{e:{e_size}}] loss={blame['loss']:.4e}")
                     
                     if i % self.args.save_losses_on == 0:
-                        test_blames = self.test_vae()
-                        self.log(blame, test_blames)
+                        test_blame = self.test_vae()
+                        self.log(blame, test_blame)
             
             if e % self.args.save_on == 0:
                 self.save_model(e)
