@@ -8,11 +8,11 @@
 # $4 - The tuner folder that will be used.
 
 read -a splits <<< "$3"
-
+n=${#splits[@]}
 
 echo "Samples folder    : $1"
 echo "Split folder      : $2"
-echo "Splits            : $3 (${#splits[@]})"
+echo "Splits            : $3 ($n)"
 echo "Tuner folder      : $4"
 echo "Epochs (testing)  : $5"
 echo ""
@@ -20,6 +20,11 @@ echo "Current commit:"
 git rev-parse HEAD
 
 sleep .5
+
+split_folders=""
+for ((i=0;i<n;i++)) do
+    split_folders="$split_folders $i"
+done
 
 echo ""
 echo "1) Preparing $2 with splits from $1..."
@@ -31,7 +36,7 @@ echo ""
 echo "2) Preparing tuner at $4 ..."
 
 python tuner.py $4 setup
-python tuner.py $4 add dataset --dataset $3 --root_folder $2 --type str
+python tuner.py $4 add dataset --dataset $split_folders --root_folder $2 --type str
 
 echo ""
 echo "Tuner Status:"
@@ -41,7 +46,7 @@ echo ""
 echo "3) Running tuner..."
 echo ""
 
-python tuner.py $4 run "python trainer.py -e $5 -b 128 -s $5 --n_emb 48 --n_lay 4 --lr 0.0004 --lrelu_slope 0.1 --model_folder $1 -n 65536 --join inner --test_size 4096"
+python tuner.py $4 run "python trainer.py -e $5 -b 128 -s $5 --n_emb 48 --n_lay 4 --lr 0.0004 --lrelu_slope 0.1 --model_folder $1 --test_dataset $2/test/ -n 65536 --join inner --test_size 4096"
 
 echo ""
 echo "Done."

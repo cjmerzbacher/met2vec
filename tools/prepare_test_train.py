@@ -16,7 +16,6 @@ parser.add_argument("target_folder", help="Folder that samples will be created i
 
 args = parser.parse_args()
 
-TRAIN_FOLDER = "train"
 TEST_FOLDER = "test"
 
 source_folder = args.source_folder
@@ -36,26 +35,22 @@ else:
     target_folders = [os.path.join(target_folder, f"{i}") for i in range(len(ns))]
 
 def cp_files(files, from_, to_, type):
+    if not os.path.exists(to_):
+        os.makedirs(to_)
+
     for file in tqdm(files, desc=f"        {type}"):
         src = os.path.join(from_, file)
         dst = os.path.join(to_, file)
         shutil.copy(src, dst)
 
-for target_folder, n in zip(target_folders, ns):
+test_folder = os.path.join(target_folder, TEST_FOLDER)
+test_files = files[max(ns):]
+print(f"    -> {len(test_files)} test at {test_folder}")
+cp_files(test_files, source_folder, test_folder, "test")
+
+for train_folder, n in zip(target_folders, ns):
     train_files = files[:n]
-    test_files = files[n:]
-
-    print(f"    -> {len(train_files)} train, {len(test_files)} test")
-
-    train_folder = os.path.join(target_folder, TRAIN_FOLDER)
-    test_folder = os.path.join(target_folder, TEST_FOLDER)
-
-    if not os.path.exists(train_folder):
-        os.makedirs(train_folder)
-    if not os.path.exists(test_folder):
-        os.makedirs(test_folder)
-
+    print(f"    -> {len(train_files)} train at {train_folder}")
     cp_files(train_files, source_folder, train_folder, "train")
-    cp_files(test_files, source_folder, test_folder, "test")
 
 print("Done.")
