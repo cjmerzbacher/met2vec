@@ -208,7 +208,11 @@ def run(args):
     state = load_state_file(args)
     while state[SCRIPTS_RUN] < len(state[ARG_SETS]):
         arg_set = state[ARG_SETS][state[SCRIPTS_RUN]]
-        os.system(f"{args.script} {arg_set[ARG_STR]}")
+        script = f"{args.script} {arg_set[ARG_STR]}"
+        
+        print(f"\nRunning Script '{script}'\n\n")
+        os.system(script)
+
         state[SCRIPTS_RUN] += 1
         save_state_file(state, args)
 
