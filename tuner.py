@@ -102,9 +102,7 @@ def get_dataset_values(subpaths, basepath):
 
     for subpath in subpaths:
         run_folder = os.path.join(basepath, subpath)
-        train = os.path.join(run_folder, 'train')
-        test = os.path.join(run_folder, 'test')
-        datasets.append(f"{train}")
+        datasets.append(run_folder)
 
     return datasets
 

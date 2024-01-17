@@ -29,7 +29,7 @@ done
 echo ""
 echo "1) Preparing $2 with splits from $1..."
 echo ""
-rm -rf "$2*"
+rm -rf $2/*
 python ./tools/prepare_test_train.py $1 $3 $2
 
 echo ""

@@ -13,9 +13,7 @@
             "justMyCode": true,
             "args": [
                 "./data/samples/small_human/",
-                "1",
-                "2",
-                "3",
+                "1", "2",
                 "./data/samples/small_human_split/",
             ]
         },
