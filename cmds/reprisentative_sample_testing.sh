@@ -46,7 +46,7 @@ echo ""
 echo "3) Running tuner..."
 echo ""
 
-python tuner.py $4 run "python trainer.py -e $5 -b 128 -s $5  --n_emb 48 --n_lay 4 --lr 0.0004 --lrelu_slope 0.1 --model_folder $1 --test_dataset $2/test/ -n 65536 --join inner --test_size 4096"
+python tuner.py $4 run "python trainer.py -e $5 -b 128 --save_on 0 --n_emb 32 --n_lay 5 --lr 0.0004 --lrelu_slope 0.1 --model_folder $1 --test_dataset $2/test/ -n 65536 --join inner --test_size 4096 --refresh_data_on 0"
 
 echo ""
 echo "Done."

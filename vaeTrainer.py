@@ -25,7 +25,7 @@ class VAETrainer:
         self.epochs = args.epochs
         self.e_size = len(str(self.epochs - 1))
 
-        self.vae = vae
+        self.vae : VAE = vae
         self.train_fd = train_fd
         self.test_fd = test_fd
 
@@ -65,9 +65,11 @@ class VAETrainer:
                 ]
             file.write(f"{','.join(map(str,values))}\n")
 
-    def save_model(self, e) -> None:
-        torch.save(self.vae.encoder, os.path.join(self.args.main_folder, f"encoder{e}.pth"))
-        torch.save(self.vae.decoder, os.path.join(self.args.main_folder, f"decoder{e}.pth"))
+    def save_model(self, epoch) -> None:
+        torch.save(self.vae.encoder, os.path.join(self.args.main_folder, f"encoder{epoch}.pth"))
+        torch.save(self.vae.decoder, os.path.join(self.args.main_folder, f"decoder{epoch}.pth"))
+
+
 
     def train_batch(self, x : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
