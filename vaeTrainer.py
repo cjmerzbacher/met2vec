@@ -12,9 +12,19 @@ import os
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+def divides(a, b):
+    if a == 0:
+        return False
+    return b % a == 0
+
+
 class VAETrainer:
     def __init__(self, args, vae, train_fd, test_fd):
         self.args = args
+
+        self.epochs = args.epochs
+        self.e_size = len(str(self.epochs - 1))
+
         self.vae = vae
         self.train_fd = train_fd
         self.test_fd = test_fd
@@ -33,6 +43,7 @@ class VAETrainer:
     def log_init(self) -> None:
         with open(self.args.losses_file, "w+") as file:
             file.write(",".join([
+                "epoch",
                 "loss",
                 "reconstruction_loss",
                 "divergence_loss",
@@ -41,9 +52,10 @@ class VAETrainer:
                 "test_div\n",
                 ]))
 
-    def log(self, blame, test_blame) -> None:
+    def log(self, epoch, blame, test_blame) -> None:
         with open(self.args.losses_file, "a+") as file:
             values = [
+                epoch,
                 blame['loss'],
                 blame['loss_reconstruction'],
                 blame['loss_divergence'],
@@ -73,23 +85,31 @@ class VAETrainer:
         return test_blame
         
     def train(self) -> None:
-        e_size = len(str(self.args.epochs - 1))
         self.log_init()
 
-        for e in range(self.args.epochs):
-            if e % self.args.refresh_data_on == 0:
-                self.train_fd.load_sample()
-
-            with tqdm(self.data_loader) as t:
-                for i, (_, batch) in enumerate(t):
-                    blame = self.train_batch(batch)
-                    t.set_description(f"Epoch [{e:{e_size}}] loss={blame['loss']:.4e}")
-                    
-                    if i % self.args.save_losses_on == 0:
-                        test_blame = self.test_vae()
-                        self.log(blame, test_blame)
-            
-            if e % self.args.save_on == 0:
-                self.save_model(e)
-
+        for e in range(self.epochs):
+            self.epoch(e)
         self.save_model(e)
+
+    def epoch(self, epoch):
+        
+        if divides(self.args.refresh_data_on, epoch):
+            self.train_fd.load_sample()
+
+        with tqdm(self.data_loader) as t:
+            for i, (_, X) in enumerate(t):
+                desc = self.batch(epoch, i, X)
+                t.set_description(desc)
+            
+        if divides(self.args.save_on, epoch):
+            self.save_model(epoch)
+
+    def batch(self, epoch, batch, X):
+        blame = self.train_batch(X)
+
+        if divides(self.args.save_losses_on, batch):
+            test_blame = self.test_vae()
+            self.log(epoch, blame, test_blame)
+
+        return f"[{epoch+1:{self.e_size}}/{self.epochs}] loss={blame['loss']:.4e}"
+                
