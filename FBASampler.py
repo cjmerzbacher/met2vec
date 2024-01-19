@@ -27,7 +27,11 @@ def get_args():
 
 def get_save_models(folder, n, repeats):
     model_files = get_model_files(folder)
-    save_files = [jp(folder, f"{f[:-4]}_{n}.csv") for f in model_files]
+
+    save_files = [
+        jp(folder, f"{os.path.basename(f)[:-4]}_{n}.csv") 
+        for f in model_files
+    ]
 
     if repeats != 1:
         model_files = model_files * repeats
@@ -52,7 +56,7 @@ def get_sample(model_file, n, k, method):
     elif method == "achr":
         sampler = ACHRSampler(model, k)
 
-    s = sampler.sample(n)
+    return sampler.sample(n)
 
 def run_sampling(args, sampled_save_models):
     with tqdm(sampled_save_models, "Sampleing files") as t:
@@ -62,7 +66,7 @@ def run_sampling(args, sampled_save_models):
             t.set_description(f"{save_file_bn} <- {model_file_bn}")
 
             s = get_sample(model_file, args.n, args.k, args.method)
-            s.save
+            s.to_csv(save_file)
 
 
 def main():
