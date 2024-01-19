@@ -41,3 +41,7 @@ def safe_json_dump(path, obj, show=False):
     except Exception as e:
         if show:
             print(f"Failed pickle dump, {e}")
+
+def save_args(folder, args):
+    with open(os.path.join(folder, "args.json"), "w+") as file:
+        json.dump(vars(args), file, indent=4)

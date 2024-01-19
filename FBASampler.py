@@ -2,6 +2,7 @@ from cobra.io import read_sbml_model
 from cobra.sampling import sample, OptGPSampler, ACHRSampler
 from tqdm import tqdm
 from itertools import product
+from misc.io import save_args
 
 import logging
 import argparse
@@ -68,9 +69,9 @@ def run_sampling(args, sampled_save_models):
             s = get_sample(model_file, args.n, args.k, args.method)
             s.to_csv(save_file)
 
-
 def main():
     args = get_args()
+    save_args(args.folder, args)
 
     save_models = get_save_models(args.folder, args.n, args.repeats)
 

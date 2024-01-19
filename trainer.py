@@ -7,6 +7,7 @@ from vae import VAE
 from vaeTrainer import VAETrainer
 from torch.utils.data import DataLoader
 from misc.parsing import boolean_string
+from misc.io import save_args
 from fluxDataset import FluxDataset
 
 # Get arguments
@@ -44,8 +45,7 @@ if not os.path.exists(args.main_folder):
 args.losses_file = os.path.join(args.main_folder, "losses.csv")
 
 # Save args
-with open(os.path.join(args.main_folder, "args.json"), "w+") as file:
-    json.dump(vars(args), file, indent=4)
+save_args(args.main_folder, args)
 
 # Check device
 device = "cuda" if torch.cuda.is_available() else "cpu"
