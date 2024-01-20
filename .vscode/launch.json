@@ -30,12 +30,9 @@
                 "-T", "./data/samples/small_human/",
                 "--train_size", "300",
                 "-t", "./data/samples/liver/",
-                "--test_size",
-                "100",
-                "-s",
-                "emb",
-                "--save_path",
-                "./data/plot_data/test_means_class.csv",
+                "--test_size", "100",
+                "-s", "emb",
+                "--save_path", "./data/plot_data/test_means_class.csv",
             ]
         },
         {
@@ -63,18 +60,12 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v",
-                "./data/models/test/",
-                "-d",
-                "./data/samples/small_human",
-                "-s",
-                "emb",
-                "--size",
-                "300",
-                "--join",
-                "inner",
-                "--save_path",
-                "./data/plot_data/test_km.csv",
+                "-v", "./data/models/test/",
+                "-d", "./data/samples/small_human",
+                "-s", "emb",
+                "--size", "300",
+                "--join", "inner",
+                "--save_path", "./data/plot_data/test_km.csv",
             ]
         },
         {
@@ -86,10 +77,8 @@
             "justMyCode": true,
             "args": [
                 "./data/models/test/",
-                "-a",
-                "8",
-                "--save_path",
-                "./data/plot_data/test.csv"
+                "-a", "8",
+                "--save_path", "./data/plot_data/test.csv"
             ]
         },
         {
@@ -100,20 +89,13 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v",
-                "./data/models/test/",
-                "-s",
-                "emb",
-                "--path",
-                "./data/samples/small_human/",
-                "--prep",
-                "tsne",
-                "--size",
-                "300",
-                "--join",
-                "inner",
-                "--save_path",
-                "./data/plot_data/test_tsne.csv",
+                "-v", "./data/models/test/",
+                "-s", "emb",
+                "--path", "./data/samples/small_human/",
+                "--prep", "tsne",
+                "--size", "300",
+                "--join", "inner",
+                "--save_path", "./data/plot_data/test_tsne.csv",
             ]
         },
         {
@@ -124,22 +106,13 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v",
-                "./data/models/test/",
-                "-T",
-                "./data/samples/small_human/",
-                "-t",
-                "./data/samples/liver/",
-                "-s",
-                "pre",
-                "--train_size",
-                "300",
-                "--test_size",
-                "100",
-                "--test_dataset_folder",
-                "./data/samples/small_human",
-                "--save_path",
-                "./data/plot_data/test.csv",
+                "-v", "./data/models/test/",
+                "-T", "./data/samples/small_human/",
+                "-t", "./data/samples/liver/",
+                "-s", "pre",
+                "--train_size", "300",
+                "--test_size", "100",
+                "--save_path", "./data/plot_data/test.csv",
             ]
         },
         {
@@ -170,15 +143,11 @@
                 "--n_emb", "16",
                 "--n_lay", "6",
                 "./data/models/test/",
-                "--test_size", "100",
+                "--lrelu_slope", "0.1",
                 "--test_dataset", "./data/samples/small_human_split/test/",
-                "-n", "1000",
-                "-b", "100",
                 "--save_losses_on", "5",
                 "--lr", "0.0004",
                 "-r", "4",
-                "--save_losses_on", "0",
-                "--save_on", "0"
             ]
         },
         {
