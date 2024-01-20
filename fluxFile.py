@@ -26,6 +26,13 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame, random_state : Rando
     source_df.drop(index=sample.index, inplace=True)
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
+def get_n_temps(n_samples, samples_per_file):
+    if n_samples < samples_per_file:
+        samples_per_file = n_samples
+        return 1
+    else:
+        return n_samples // samples_per_file + 1
+
 
 class FluxFile:
     def __init__(self, path : str, model_main_folder : str = None, model : FluxModel = None, seed : int = None):
@@ -48,14 +55,18 @@ class FluxFile:
 
         self.model_name = get_model_name(self.file_name)
 
-    def get_nonzero_columns(self):
+    def get_columns(self, non_zero=False):
         df = self.get_df()
 
-        non_zeros = np.any(df.values != 0.0, axis=0)
-        return df.columns[non_zeros]
+        if non_zero:
+            non_zeros = np.any(df.values != 0.0, axis=0)
+            return df.columns[non_zeros]
+        else:
+            return df.columns
+        
 
     def make_df_pkl(self):
-        df = pd.read_csv(self.path)
+        df = pd.read_csv(self.path,index_col=0)
         safe_pkl_dump(self.pkl_path, df)
         return df
 
@@ -79,14 +90,9 @@ class FluxFile:
     
     def make_tmps(self, samples_per_file : int) -> int:
         df = self.get_df()
-
-        if len(df.index) < samples_per_file:
-            samples_per_file = len(df.index)
-            n = 1
-        else:
-            n = len(df.index) // samples_per_file + 1
-
+        n = get_n_temps(len(df.index), samples_per_file)
         rs = self.get_rs()
+        self.clear_tmp_files()
 
         for i in range(n):
             make_tmp(
@@ -104,13 +110,20 @@ class FluxFile:
 
         return samples_per_file
     
-    def load_tmp_file(self):
-        paths = [
-            os.path.join(self.pkl_folder, f)
-            for f in os.listdir(self.pkl_folder)
+    def clear_tmp_files(self):
+        paths = self.get_tmp_paths()
+        for path in paths:
+            os.unlink(path)
+
+    def get_tmp_paths(self):
+        return [
+            os.path.join(self.train_pkl_folder, f)
+            for f in os.listdir(self.train_pkl_folder)
             if f.startswith(self.file_name)
         ]
-
+    
+    def load_tmp_file(self):
+        paths = self.get_tmp_paths()
         rs = self.get_rs()
         path = paths[rs.randint(0, len(paths))]
         with open(path, 'rb') as file:

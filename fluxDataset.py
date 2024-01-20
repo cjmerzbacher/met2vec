@@ -32,8 +32,6 @@ class FluxDataset(Dataset):
                  model_folder : str = None,
                  join : str ='inner', 
                  verbose : bool = True, 
-                 reload_aux : bool = False, 
-                 skip_tmp : bool = False,
                  columns : list[str] = None,
                  seed : int = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
@@ -48,7 +46,6 @@ class FluxDataset(Dataset):
 
         self.join = join
         self.verbose = verbose
-        self.reload_aux = reload_aux
         self.seed = seed
         self.dataset_size = dataset_size
 
@@ -61,8 +58,7 @@ class FluxDataset(Dataset):
         self.columns = columns
 
         # Load data into current
-        if not skip_tmp:
-            self.create_tmp_archive()
+        self.create_tmp_archive()
         self.load_sample()
 
     def __len__(self):
@@ -136,7 +132,7 @@ class FluxDataset(Dataset):
         inner, outer = set(), set()
 
         for i, ff in tqdm(enumerate(self.flux_files.values()), desc="Making inter_union"):
-            columns = ff.get_nonzero_columns()
+            columns = ff.get_columns(non_zero=False)
             inner = set(columns) if i == 0 else inner.intersection(columns)
             outer = outer.union(columns)
 

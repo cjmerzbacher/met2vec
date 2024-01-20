@@ -32,8 +32,6 @@ def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDatase
         f"{prefix}model_folder",
         f"{prefix}join",
         f"{prefix}verbose",
-        f"{prefix}reload_aux",
-        f"{prefix}skip_tmp",
     ]], seed=seed)
     
     

@@ -37,7 +37,7 @@ class VAETrainer:
             lr=self.args.lr
         )
 
-        self.data_loader = DataLoader(self.train_fd, batch_size=self.args.batch_size)
+        self.data_loader = DataLoader(self.train_fd, batch_size=self.args.batch_size, shuffle=True)
 
 
     def log_init(self) -> None:

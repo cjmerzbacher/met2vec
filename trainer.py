@@ -27,8 +27,6 @@ parser.add_argument("-n", "--dataset_size", default=65536, type=int, help='The s
 parser.add_argument("--join", choices=['inner', 'outer'], default='inner', help="How the different reaction sets should be joined.")
 parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The number of epochs between changing the mix files (if used).")
 parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the number of losses saved, this allows evaluations which are a multiple to be saved.")
-parser.add_argument("--reload_dataset_aux", type=boolean_string, default=False, help="Used to set reload_aux on the flux dataset.")
-parser.add_argument("--dataset_skip_tmp", type=boolean_string, default=False, help="If true dataset is prevented reloading tmps.")
 parser.add_argument("--test_dataset", help="The samples which will be used as test_sets.")
 parser.add_argument("--test_size", type=int, default=2048, help='The size of the test sets.')
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
@@ -56,10 +54,8 @@ print("Loading dataset...")
 train_fd = FluxDataset(
     args.dataset, 
     dataset_size=args.dataset_size, 
-    reload_aux=args.reload_dataset_aux, 
     join=args.join, 
     verbose=True, 
-    skip_tmp=args.dataset_skip_tmp,
     model_folder=args.model_folder)
 n_in = train_fd.normalized_values.shape[1]
 print(f"    {n_in} columns")
