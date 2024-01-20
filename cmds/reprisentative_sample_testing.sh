@@ -6,6 +6,7 @@
 # $2 - A folder where many samples will have their split forms.
 # $3 - The split numbers that will be used "a b c ... z"
 # $4 - The tuner folder that will be used.
+# $5 - The number of epochs the VAEs will be run for.
 
 read -a splits <<< "$3"
 n=${#splits[@]}
