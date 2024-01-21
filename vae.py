@@ -68,7 +68,8 @@ class VAE:
         x = format_input(x)
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
-        self.sigma = torch.log(1.0 + torch.exp(y[:,self.n_emb:])) #Soft plus
+        self.log_sigma = y[:,self.n_emb:]
+        self.sigma = torch.exp(self.log_sigma)
 
         return self.mu, self.sigma
     
@@ -146,7 +147,7 @@ class VAE:
         # Divergence from N(0, 1)
         loss_divergence = 0.5 * torch.sum(self.sigma, dim=1)                      # tr(sigma)
         loss_divergence += 0.5 * torch.norm(self.mu, dim=1)                       # mu^T @ mu
-        loss_divergence -= 0.5 * torch.sum(torch.log(self.sigma + 0.1), dim=1)    #log(sigma)
+        loss_divergence -= 0.5 * torch.sum(self.log_sigma, dim=1)                 #log(sigma)
         loss_divergence = torch.mean(loss_divergence)
 
         loss = loss_reconstruction + loss_divergence
