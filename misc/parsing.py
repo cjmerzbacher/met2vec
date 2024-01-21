@@ -28,6 +28,7 @@ PARSER_STAGE.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage i
 PARSER_LOAD_VAE = argparse.ArgumentParser(add_help=False)
 PARSER_LOAD_VAE.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
 PARSER_LOAD_VAE.add_argument("--vae_version", help="The version of the VAE that will be loaded.")
+PARSER_LOAD_VAE.add_argument("--legacy_vae", type=boolean_string, help="If the VAE used legacy sigma encoding.", default=False)
 
 PARSER_PREP = argparse.ArgumentParser(add_help=False)
 PARSER_PREP.add_argument("--prep", default=NONE, choices=PREPS, help='The preprocessing that will be used on the data.')

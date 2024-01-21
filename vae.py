@@ -27,7 +27,8 @@ class VAE:
                  n_lay : int, 
                  lrelu_slope : float = 0.01, 
                  batch_norm : bool = False, 
-                 dropout_p : float = 0.0
+                 dropout_p : float = 0.0,
+                 legacy_vae : bool = False,
                  ):
         """Initializes a VAE with the dimensions and hyperparameters given.
 
@@ -43,11 +44,13 @@ class VAE:
             batch_norm: If true batch_norm will be applied between the layers of
             the encoder and decoder.
             dropout_p: The dropout percentage used.
+            legacy_vae: Whether or not the VAE used the old output sigma instead of log sigma.
         """
 
         self.n_in = n_in
         self.n_emb = n_emb
         self.n_lay = n_lay
+        self.legacy_vae = legacy_vae
 
         self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
         self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)
@@ -68,8 +71,13 @@ class VAE:
         x = format_input(x)
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
+
         self.log_sigma = y[:,self.n_emb:]
         self.sigma = torch.exp(self.log_sigma)
+
+        if  self.legacy_vae:
+            self.sigma = y[:,self.n_emb:]
+            self.log_sigma = torch.log(1 + self.sigma)
 
         return self.mu, self.sigma
     

@@ -2,15 +2,21 @@ import os
 import json
 import torch
 import torch.nn as nn
-import argparse
 
+from argparse import Namespace
 from vae import VAE
+from misc.constants import *
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def read_VAE_args(path) -> dict[str, str]:
     with open(path, 'r') as file:
         return json.load(file)
+    
+def safe_extract_from_args(args : Namespace, name : str, default : any):
+    if hasattr(args, name):
+        return vars(args)[name]
+    return default
 
 def load_VAE(args) -> VAE:
     """Loads a VAE from a given folder. 
@@ -28,6 +34,7 @@ def load_VAE(args) -> VAE:
 
     folder = args.vae_folder
     load_version = args.vae_version
+    legacy_vae = args.legacy_vae
 
     def contains_correct_version(f : str, model_part : str):
         return model_part in f and (True if load_version is None else str(load_version) in f)
@@ -53,7 +60,13 @@ def load_VAE(args) -> VAE:
     n_emb = list(decoder.children())[0].in_features
     n_lay = len([l for l in decoder.children() if type(l) == nn.modules.linear.Linear])
 
-    vae =  VAE(n_in, n_emb, n_lay)
+    vae_args = read_VAE_args(os.path.join(folder, ARGS_PATH))
+
+    lrelu_slope = safe_extract_from_args(vae_args, "lrelu_slope", 0.0)
+    batch_norm = safe_extract_from_args(vae_args, "batch_norm", False)
+    dropout_p = safe_extract_from_args(vae_args, "dropout", 0.0)
+
+    vae =  VAE(n_in, n_emb, n_lay, lrelu_slope, batch_norm, dropout_p, legacy_vae)
     vae.encoder = encoder
     vae.decoder = decoder
 
