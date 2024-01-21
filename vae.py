@@ -72,14 +72,13 @@ class VAE:
         y = self.encoder(x)
         self.mu = y[:,:self.n_emb]
 
-        self.log_sigma = y[:,self.n_emb:]
-        self.sigma = torch.exp(self.log_sigma)
-
+        self.log_var = y[:,self.n_emb:]
         if  self.legacy_vae:
-            self.sigma = y[:,self.n_emb:]
-            self.log_sigma = torch.log(1 + self.sigma)
+            self.log_var = torch.log(1 + y[:,self.n_emb:])
 
-        return self.mu, self.sigma
+        self.std = torch.exp(0.5 * self.log_var)
+
+        return self.mu, self.std
     
     def encode(self, x : torch.Tensor, sample : bool = True) -> torch.Tensor:
         """Encodes an embedding into the latent space.
@@ -148,25 +147,23 @@ class VAE:
         x = format_input(x)
         y = format_input(y)
 
-        # Reconstruction loss
-        loss_reconstruction = torch.sum(torch.pow(x - y, 2.0), dim=1) 
-        loss_reconstruction = torch.mean(loss_reconstruction)
+        batch_size = x.shape[0]
 
-        # Divergence from N(0, 1)
-        loss_divergence = 0.5 * torch.sum(self.sigma, dim=1)                      # tr(sigma)
-        loss_divergence += 0.5 * torch.norm(self.mu, dim=1)                       # mu^T @ mu
-        loss_divergence -= 0.5 * torch.sum(self.log_sigma, dim=1)                 #log(sigma)
-        loss_divergence = torch.mean(loss_divergence)
+        loss_rec = torch.sum(torch.pow(x - y, 2.0)) 
+        loss_div = 0.5 * torch.sum(self.log_var.exp() + self.mu.pow(2) - self.log_var)               
 
-        loss = loss_reconstruction + loss_divergence
+        loss_rec /= batch_size
+        loss_div /= batch_size
+
+        loss = loss_rec + loss_div
 
         def to_float(x : torch.Tensor):
             return x.detach().cpu().numpy()
 
         blame = {
             "loss" : to_float(loss),
-            "loss_divergence" : to_float(loss_divergence),
-            "loss_reconstruction" : to_float(loss_reconstruction)
+            "loss_divergence" : to_float(loss_div),
+            "loss_reconstruction" : to_float(loss_rec)
         }
          
         return loss, blame

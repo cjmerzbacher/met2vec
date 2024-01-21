@@ -15,7 +15,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def divides(a, b):
     if a == 0:
         return False
-    return b % a == 0
+    return (b % a) == 0
 
 
 class VAETrainer:
@@ -34,7 +34,8 @@ class VAETrainer:
                 {"params": self.vae.decoder.parameters()}, 
                 {"params": self.vae.encoder.parameters()}
             ],
-            lr=self.args.lr
+            lr=self.args.lr,
+            weight_decay=0.1
         )
 
         self.data_loader = DataLoader(self.train_fd, batch_size=self.args.batch_size, shuffle=True)
