@@ -7,6 +7,8 @@
 # $3 - The split numbers that will be used "a b c ... z"
 # $4 - The tuner folder that will be used.
 # $5 - The number of epochs the VAEs will be run for.
+# $6 - The batch_size used.
+# $7 - The learning rate used.
 
 read -a splits <<< "$3"
 n=${#splits[@]}
@@ -15,7 +17,9 @@ echo "Samples folder    : $1"
 echo "Split folder      : $2"
 echo "Splits            : $3 ($n)"
 echo "Tuner folder      : $4"
-echo "Epochs (testing)  : $5"
+echo "Epochs            : $5"
+echo "Learning rate     : $5"
+echo "Batch size        : $5"
 echo ""
 echo "Current commit:"
 git rev-parse HEAD
@@ -47,7 +51,7 @@ echo ""
 echo "3) Running tuner..."
 echo ""
 
-python tuner.py $4 run "python trainer.py -e $5 -b 128 --save_on 0 --n_emb 32 --n_lay 5 --lr 0.0004 --lrelu_slope 0.1 --model_folder $1 --test_dataset $2/test/ -n 65536 --join inner --test_size 4096 --refresh_data_on 0"
+python tuner.py $4 run "python trainer.py -e $5 -b $6 --save_on 0 --n_emb 32 --n_lay 5 --lr $7 --lrelu_slope 0.1 --model_folder $1 --test_dataset $2/test/ -n 65536 --join inner --test_size 4096 --refresh_data_on 0"
 
 echo ""
 echo "Done."
