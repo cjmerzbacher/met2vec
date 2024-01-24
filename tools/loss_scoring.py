@@ -41,12 +41,11 @@ avg_over = args.average_over
 avg_over_epoch = args.average_over_epoch
 
 loss_ends = []
-it = enumerate(tqdm(
+it = enumerate(
     list(zip(loss_paths, args_paths)), 
-    desc="processing losses.csv(s)..."
-))
+)
 
-for i, (lp, ap) in it:
+for i, (lp, ap) in tqdm(it, desc='Processing losses.csv file(s)...'):
     try:
         loss = pd.read_csv(lp)
         rargs = read_VAE_args(ap)
@@ -62,8 +61,6 @@ for i, (lp, ap) in it:
     else:
         print(f"With '{lp}' only {n_loss} evaluations {avg_over} required.")
         quit()
-
-
 
     for name, value in rargs.items():
         s_loss_end[name] = value
