@@ -26,13 +26,20 @@ parser.add_argument("-e", "--average_over_epoch", action="store_true", default=F
 args = parser.parse_args()
 
 folders = args.folders
+loss_files = set()
 
 for fo in folders:
     if fo.endswith('*'):
         f = fo.removesuffix('*')
-        subfolders = filter(os.path.isdir, [os.path.join(f, sf) for sf in os.listdir(f)])
+
+        lsdir =  [os.path.join(f, sf) for sf in os.listdir(f)]
+
+        subfolders = filter(os.path.isdir, lsdir)
+        found_loss_files = filter(lambda f: f.endswith("losses.csv"))
+
         folders.remove(fo)
         folders += subfolders
+        loss_files = loss_files.union(found_loss_files)
 
 loss_paths = [joinp(f, LOSSES_PATH) for f in folders]
 args_paths = [joinp(f, ARGS_PATH) for f in folders]
@@ -41,9 +48,7 @@ avg_over = args.average_over
 avg_over_epoch = args.average_over_epoch
 
 loss_ends = []
-it = enumerate(
-    list(zip(loss_paths, args_paths)), 
-)
+it = list(enumerate(zip(loss_paths, args_paths)))
 
 for i, (lp, ap) in tqdm(it, desc='Processing losses.csv file(s)...'):
     try:
