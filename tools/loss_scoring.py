@@ -12,6 +12,8 @@ import argparse
 import pandas as pd
 import numpy as np
 
+from tqdm import tqdm
+
 joinp = os.path.join
 
 parser = argparse.ArgumentParser(parents=[
@@ -39,7 +41,12 @@ avg_over = args.average_over
 avg_over_epoch = args.average_over_epoch
 
 loss_ends = []
-for lp, ap in zip(loss_paths, args_paths):
+it = enumerate(tqdm(
+    list(zip(loss_paths, args_paths)), 
+    desc="processing losses.csv(s)..."
+))
+
+for i, (lp, ap) in it:
     try:
         loss = pd.read_csv(lp)
         rargs = read_VAE_args(ap)
@@ -60,6 +67,7 @@ for lp, ap in zip(loss_paths, args_paths):
 
     for name, value in rargs.items():
         s_loss_end[name] = value
+    s_loss_end['run'] = i
 
     loss_ends.append(s_loss_end)
 
