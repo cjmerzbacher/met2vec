@@ -77,8 +77,8 @@
             "justMyCode": true,
             "args": [
                 "./data/models/test/",
-                "-a", "8",
-                "--save_path", "./data/plot_data/test.csv"
+                "-e",
+                "--save_path", "./data/plot_data/loss_scoring_test.csv"
             ]
         },
         {
