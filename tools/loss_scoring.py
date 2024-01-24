@@ -32,9 +32,9 @@ for fo in folders:
     if fo.endswith('*'):
         f = fo.removesuffix('*')
 
-        lsdir =  [os.path.join(f, sf) for sf in os.listdir(f)]
+        lsdir =  [os.path.join(f, sf) for sf in os.listdir(f) if not f.startswith('.')]
 
-        subfolders = filter(os.path.isdir, lsdir)
+        subfolders = filter(filter(os.path.isdir, lsdir))
         found_loss_files = filter(lambda f: f.endswith("losses.csv"))
 
         folders.remove(fo)
