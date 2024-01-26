@@ -16,10 +16,10 @@ from misc.constants import *
 from misc.parsing import *
 
 parser = argparse.ArgumentParser(parents=[
-    PARSER_LOAD_VAE,
+    PARSER_VAE_LOAD,
     PARSER_STAGE,
-    PARSER_SAMPLE,
-    fluxDataset_loading_parser(path_tag="-d"),
+    PARSER_VAE_SAMPLE,
+    parser_fluxDataset_loading(path_tag="-d"),
     PARSER_SAVE
 ])
 parser.add_argument("-k", type=int, help="The number of clusers, defualt as many as labels in dataset.")

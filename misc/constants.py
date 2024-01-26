@@ -36,6 +36,10 @@ DEFAULT_TEST_SIZE = 2048
 PKL_FOLDER = '.pkl'
 TRAIN_FOLDER = 'train'
 
+LABEL = 'label'
+FILE_N = 'file_n'
+SOURCE_COLUMNS = [LABEL, FILE_N]
+
 # Dataset Joins
 INNER = 'inner'
 OUTER = 'outer'

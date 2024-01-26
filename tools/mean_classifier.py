@@ -15,12 +15,12 @@ import pandas as pd
 import argparse
 
 parser = argparse.ArgumentParser(parents=[
-    PARSER_LOAD_VAE,
+    PARSER_VAE_LOAD,
     PARSER_STAGE,
-    fluxDataset_loading_parser("train", "-T"),
-    fluxDataset_loading_parser("test", "-t"),
+    parser_fluxDataset_loading("train", "-T"),
+    parser_fluxDataset_loading("test", "-t"),
     PARSER_SAVE,
-    PARSER_SAMPLE,
+    PARSER_VAE_SAMPLE,
     ])
 
 args = parser.parse_args()

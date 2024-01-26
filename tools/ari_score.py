@@ -20,9 +20,9 @@ from misc.ari import get_bootstrap_ari
 from misc.kmeans import get_KMeans_classifications, get_k
 
 parser = argparse.ArgumentParser(parents=[
-    PARSER_LOAD_VAE,
-    PARSER_SAMPLE,
-    fluxDataset_loading_parser(path_tag='-d'),
+    PARSER_VAE_LOAD,
+    PARSER_VAE_SAMPLE,
+    parser_fluxDataset_loading(path_tag='-d'),
     PARSER_SAVE,
     PARSER_KMEANS_K,
 ])

@@ -31,7 +31,6 @@ class FluxDataset(Dataset):
                  dataset_size : int = DEFAULT_DATASET_SIZE,
                  model_folder : str = None,
                  join : str ='inner', 
-                 verbose : bool = True, 
                  columns : list[str] = None,
                  seed : int = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
@@ -45,7 +44,6 @@ class FluxDataset(Dataset):
         self.load_flux_files()
 
         self.join = join
-        self.verbose = verbose
         self.seed = seed
         self.dataset_size = dataset_size
 
@@ -167,17 +165,22 @@ class FluxDataset(Dataset):
         
         self.data = df
         self.normalized_values = df_norm.values
-        self.labels = list(df['label'].values)
+        self.labels = list(df[LABEL].values)
         self.unique_labels = list(set(self.labels))
 
     def load_sample(self) -> None:
         """Loads a sample into the dataset.
         """
-        columns = self.columns + ['label']
+        columns = self.columns + SOURCE_COLUMNS
         sections = [pd.DataFrame(columns=columns)]
-        for ff in tqdm(self.flux_files.values(), desc='Loading sample'):
+        flux_files_it = list(enumerate(self.flux_files.values()))
+
+        for i, ff in tqdm(flux_files_it, desc='Loading sample'):
             sample = ff.load_tmp_file()
-            sample['label'] = ff.model_name
+
+            sample[LABEL] = ff.model_name
+            sample[FILE_N] = i
+
             sections.append(sample)
         
         df = pd.concat(sections, ignore_index=True, sort=False, join='outer').fillna(0)
@@ -188,11 +191,11 @@ class FluxDataset(Dataset):
         self.columns = columns
 
         df_data = {c : self.data[c] for c in columns if c in self.data.columns}
-        df = pd.DataFrame(df_data, columns=columns + ['label'])
+        df = pd.DataFrame(df_data, columns=columns + SOURCE_COLUMNS)
         df.fillna(0, inplace=True)
 
         self.data = df
-        self.normalized_values = np.array(df.drop(columns='label').values.astype(float))
+        self.normalized_values = np.array(df.drop(columns=SOURCE_COLUMNS).values.astype(float))
         self.normalized_values
 
 
