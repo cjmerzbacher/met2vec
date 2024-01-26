@@ -59,4 +59,4 @@ df.drop(
 if verbose:
     print(df)
 
-df.to_csv(save_path)
+df.to_csv(save_path, index=False)
