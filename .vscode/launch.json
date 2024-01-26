@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: extract_fluxes",
+            "type": "python",
+            "request": "launch",
+            "program": "./tools/extract_fluxes.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--path", "./data/samples/small_human/",
+                "--size", "65536",
+                "--model_folder", "None",
+                "--join", "inner",
+                "-n", "5",
+                "--save_path", "./data/plot_data/test_extract_fluxes.csv"
+            ]
+        },
+        {
             "name": "Python: prepare_test_train",
             "type": "python",
             "request": "launch",
@@ -13,7 +29,8 @@
             "justMyCode": true,
             "args": [
                 "./data/samples/small_human/",
-                "1", "2",
+                "1",
+                "2",
                 "./data/samples/small_human_split/",
             ]
         },
@@ -43,8 +60,9 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v", "./data/models/test",
-                "-d", "./data/samples/small_human",
+                "-v",
+                "./data/models/test",
+                "-d",  "./data/samples/small_human",
                 "--size", "300",
                 "--join", "inner",
                 "-n", "64",
@@ -60,9 +78,10 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v", "./data/models/test/",
+                "-v",
+                "./data/models/test/",
                 "-d", "./data/samples/small_human",
-                "-s", "emb",
+                "-s", "emb", 
                 "--size", "300",
                 "--join", "inner",
                 "--save_path", "./data/plot_data/test_km.csv",
@@ -89,8 +108,10 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "-v", "./data/models/test/",
-                "-s", "emb",
+                "-v",
+                "./data/models/test/",
+                "-s",
+                "emb",
                 "--path", "./data/samples/small_human/",
                 "--prep", "tsne",
                 "--size", "300",
@@ -108,7 +129,7 @@
             "args": [
                 "-v", "./data/models/test/",
                 "-T", "./data/samples/small_human/",
-                "-t", "./data/samples/liver/",
+                "-t", "./data/samples/liver/", 
                 "-s", "pre",
                 "--train_size", "300",
                 "--test_size", "100",
@@ -138,11 +159,11 @@
             "justMyCode": true,
             "args": [
                 "-e", "5",
-                "-d", "./data/samples/2500_liver_hep/",
+                "-d", "./data/samples/small_human/",
                 "--join", "inner",
                 "--n_emb", "16",
                 "--n_lay", "4",
-                "-b", "256",
+                "-b", "256", 
                 "./data/models/test/",
                 "--lrelu_slope", "0.1",
                 "--test_dataset", "./data/samples/small_human_split/test/",

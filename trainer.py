@@ -55,7 +55,6 @@ train_fd = FluxDataset(
     args.dataset, 
     dataset_size=args.dataset_size, 
     join=args.join, 
-    verbose=True, 
     model_folder=args.model_folder)
 n_in = train_fd.normalized_values.shape[1]
 print(f"    {n_in} columns")
