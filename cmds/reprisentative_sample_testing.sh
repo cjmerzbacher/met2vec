@@ -13,13 +13,13 @@
 read -a splits <<< "$3"
 n=${#splits[@]}
 
-echo "Samples folder    : $1"
-echo "Split folder      : $2"
-echo "Splits            : $3 ($n)"
-echo "Tuner folder      : $4"
-echo "Epochs            : $5"
-echo "Learning rate     : $6"
-echo "Batch size        : $7"
+echo "Samples folder $1"
+echo "Split folder   $2"
+echo "Splits         $3 ($n)"
+echo "Tuner folder   $4"
+echo "Epochs         $5"
+echo "Batch size     $6"
+echo "Learning rate  $7"
 echo ""
 echo "Current commit:"
 git rev-parse HEAD
