@@ -27,7 +27,7 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame, random_state : Rando
     with open(path, 'wb') as file: pickle.dump(sample, file)
 
 def get_n_temps(n_samples, samples_per_file):
-    if n_samples < samples_per_file:
+    if n_samples <= samples_per_file:
         samples_per_file = n_samples
         return 1
     else:

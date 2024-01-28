@@ -39,4 +39,5 @@ else:
 
 df = pd.DataFrame(data, columns=columns)
 df["label"] = fd.labels
+df["file_n"] = fd.data["file_n"]
 df.to_csv(args.save_path, index=False)
