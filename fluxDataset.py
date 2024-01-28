@@ -47,6 +47,8 @@ class FluxDataset(Dataset):
         self.seed = seed
         self.dataset_size = dataset_size
 
+        print(f"Creating dataset from {self.main_folder} with size {self.dataset_size} and seed={seed}")
+
         # Find renamings and joins
         self.load_models()
         self.find_joins()
