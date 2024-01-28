@@ -29,6 +29,7 @@ parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The nu
 parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the number of losses saved, this allows evaluations which are a multiple to be saved.")
 parser.add_argument("--test_dataset", help="The samples which will be used as test_sets.")
 parser.add_argument("--test_size", type=int, default=2048, help='The size of the test sets.')
+parser.add_argument("--save_test_min", type=boolean_string, default=True, desc="If true will save the vae which scored the lowest loss on test data (default True)")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 

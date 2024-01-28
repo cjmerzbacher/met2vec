@@ -23,6 +23,7 @@ class VAETrainer:
         self.args = args
 
         self.epochs = args.epochs
+        self.save_test_min = args.save_test_min
         self.e_size = len(str(self.epochs - 1))
 
         self.vae : VAE = vae

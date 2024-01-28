@@ -35,6 +35,7 @@ def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDatase
     
     
 def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
+    print(f"Preppring data with {preprocessing}")
     match preprocessing:
         case 'none':
             return data
