@@ -5,6 +5,7 @@ import numpy as np
 
 from torch.utils.data import DataLoader
 from fluxDataset import FluxDataset
+from misc.io import safe_json_dump
 
 from vae import VAE
 from tqdm import tqdm
@@ -67,11 +68,34 @@ class VAETrainer:
                 ]
             file.write(f"{','.join(map(str,values))}\n")
 
-    def save_model(self, epoch) -> None:
-        torch.save(self.vae.encoder, os.path.join(self.args.main_folder, f"encoder{epoch}.pth"))
-        torch.save(self.vae.decoder, os.path.join(self.args.main_folder, f"decoder{epoch}.pth"))
+    def save_model(self, epoch, test_min_vae=False) -> None:
+        suffix = f"testmin" if test_min_vae else f"{epoch}"
+
+        def add_mf(path):
+            return os.path.join(self.args.main_folder, path)
+
+        encoder_path = add_mf(f"encoder{suffix}.pth")
+        decoder_path = add_mf(f"decoder{suffix}.pth")
+        vae_desc_path =add_mf(f"vae_desc{suffix}.json")
 
 
+        torch.save(self.vae.encoder, encoder_path)
+        torch.save(self.vae.decoder, decoder_path)
+
+        desc = {
+            "n_in" : self.vae.n_in,
+            "n_emb": self.vae.n_emb,
+            "n_lay": self.vae.n_lay,
+            "lrelu_slope": self.vae.lrelu_slope,
+            "batch_norm" : self.vae.batch_norm,
+            "dropout_p" : self.vae.dropout_p,
+            "legacy_vae": self.vae.legacy_vae,
+            "columns": self.train_fd.columns,
+            "train_dataset" : self.train_fd.main_folder,
+            "test_dataset" : self.test_fd.main_folder,
+        }
+
+        safe_json_dump(vae_desc_path, desc, True)
 
     def train_batch(self, x : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
@@ -90,23 +114,30 @@ class VAETrainer:
         
     def train(self) -> None:
         self.log_init()
+        self.test_loss_min = np.inf
 
         for e in range(self.epochs):
             self.epoch(e)
         self.save_model(e)
 
     def epoch(self, epoch):
-        
         if divides(self.args.refresh_data_on, epoch):
             self.train_fd.load_sample()
 
+        min_epoch_Lt = np.inf
+
         with tqdm(self.data_loader) as t:
             for i, (_, X) in enumerate(t):
-                desc = self.batch(epoch, i, X)
+                desc, train_loss = self.batch(epoch, i, X)
                 t.set_description(desc)
+
+                min_epoch_Lt = min(train_loss, min_epoch_Lt)
             
         if divides(self.args.save_on, epoch):
             self.save_model(epoch)
+        if min_epoch_Lt < self.save_test_min and self.save_test_min:
+            self.save_test_min(min_epoch_Lt)
+            self.save_model(e)
 
     def batch(self, epoch, batch, X):
         blame = self.train_batch(X)
@@ -115,5 +146,5 @@ class VAETrainer:
             test_blame = self.test_vae()
             self.log(epoch, blame, test_blame)
 
-        return f"[{epoch+1:{self.e_size}}/{self.epochs}] loss={blame['loss']:.4e}"
+        return f"[{epoch+1:{self.e_size}}/{self.epochs}] loss={blame['loss']:.4e}", test_blame["loss"]
                 

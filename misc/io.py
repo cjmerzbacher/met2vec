@@ -37,7 +37,7 @@ def safe_json_load(path):
 def safe_json_dump(path, obj, show=False):
     try:
         with open(path, 'w') as file:
-            json.dump(obj, file)
+            json.dump(obj, file, indent=4)
     except Exception as e:
         if show:
             print(f"Failed pickle dump, {e}")

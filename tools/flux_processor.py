@@ -38,6 +38,5 @@ else:
     columns = [f"{pref}{i}" for i in range(data.shape[1])]
 
 df = pd.DataFrame(data, columns=columns)
-df["label"] = fd.labels
-df["file_n"] = fd.data["file_n"]
+df[SOURCE_COLUMNS] = fd.data[SOURCE_COLUMNS]
 df.to_csv(args.save_path, index=False)

@@ -38,7 +38,9 @@ TRAIN_FOLDER = 'train'
 
 LABEL = 'label'
 FILE_N = 'file_n'
-SOURCE_COLUMNS = [LABEL, FILE_N]
+SAMPLE_N = 'sample_n'
+FILE_NAME = 'file_name'
+SOURCE_COLUMNS = [LABEL, FILE_N, SAMPLE_N, FILE_NAME]
 
 # Dataset Joins
 INNER = 'inner'

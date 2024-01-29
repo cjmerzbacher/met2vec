@@ -11,8 +11,10 @@ def format_input(x):
 def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
     model = []
     sizes = [round(s) for s in np.linspace(n_in, n_out, n_lay)]
-    for v_in, v_out in zip(sizes[0:-2], sizes[1:-1]):
-        model += [nn.Linear(v_in, v_out), nn.LeakyReLU(negative_slope=lrelu_slope), nn.Dropout(dropout_p)]
+    for i, (v_in, v_out) in enumerate(zip(sizes[0:-2], sizes[1:-1])):
+        model += [nn.Linear(v_in, v_out), nn.LeakyReLU(negative_slope=lrelu_slope)]
+
+        if i != 0: model += [nn.Dropout(dropout_p)]
         if batch_norm: model += [nn.BatchNorm1d(v_out)]
     model += [nn.Linear(sizes[-2], sizes[-1])]
     model = nn.Sequential(*model).float()
@@ -51,6 +53,9 @@ class VAE:
         self.n_emb = n_emb
         self.n_lay = n_lay
         self.legacy_vae = legacy_vae
+        self.lrelu_slope = lrelu_slope
+        self.batch_norm = batch_norm
+        self.dropout_p = dropout_p
 
         self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
         self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)

@@ -173,19 +173,17 @@ class FluxDataset(Dataset):
     def load_sample(self) -> None:
         """Loads a sample into the dataset.
         """
-        columns = self.columns + SOURCE_COLUMNS
+        columns = list(set(self.columns + SOURCE_COLUMNS))
         sections = [pd.DataFrame(columns=columns)]
         flux_files_it = list(enumerate(self.flux_files.values()))
 
         for i, ff in tqdm(flux_files_it, desc='Loading sample'):
             sample = ff.load_tmp_file()
-
-            sample[LABEL] = ff.model_name
             sample[FILE_N] = i
 
             sections.append(sample)
         
-        df = pd.concat(sections, ignore_index=True, sort=False, join='outer').fillna(0)
+        df = pd.concat(sections, sort=False, join='outer', ignore_index=True).fillna(0)
         df = df[df.columns.intersection(columns)]
         self.load_dataFrame(df)
 

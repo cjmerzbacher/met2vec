@@ -75,6 +75,12 @@ class FluxFile:
         if df is None:
             df = self.make_df_pkl()
 
+        # Source Details
+        df.reset_index(inplace=True)
+        df.rename(columns = {'index':SAMPLE_N}, inplace=True)
+        df[FILE_NAME] = self.file_name
+        df[LABEL] = self.model_name
+
         if self.model != None:
             renaming = self.model.get_renaming_dict()
             df.rename(columns=renaming, inplace=True)
