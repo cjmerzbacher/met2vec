@@ -29,7 +29,8 @@ parser.add_argument("-r", "--refresh_data_on", default=1, type=int, help="The nu
 parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the number of losses saved, this allows evaluations which are a multiple to be saved.")
 parser.add_argument("--test_dataset", help="The samples which will be used as test_sets.")
 parser.add_argument("--test_size", type=int, default=2048, help='The size of the test sets.')
-parser.add_argument("--save_test_min", type=boolean_string, default=True, help="If true will save the vae which scored the lowest loss on test data (default True)")
+parser.add_argument("--save_test_min", type=boolean_string, default=True, help="If true will save the vae which scored the lowest loss on test data (default True)")#
+parser.add_argument("--weight_decay", type=float, default=0)
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -71,7 +72,15 @@ test_fd = FluxDataset(
 
 # Load VAE
 print("Loading VAE...")
-vae = VAE(n_in, args.n_emb, args.n_lay, args.lrelu_slope, args.batch_norm, args.dropout)
+vae = VAE(
+    n_in=n_in, 
+    n_emb=args.n_emb, 
+    n_lay=args.n_lay, 
+    lrelu_slope=args.lrelu_slope, 
+    batch_norm=args.batch_norm, 
+    dropout_p=args.dropout, 
+    weight_decay=args.weight_decay
+)
 
 trainer = VAETrainer(args, vae, train_fd, test_fd)
 trainer.train()

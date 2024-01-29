@@ -37,7 +37,7 @@ class VAETrainer:
                 {"params": self.vae.encoder.parameters()}
             ],
             lr=self.args.lr,
-            weight_decay=0.1
+            weight_decay=vae.weight_decay
         )
 
         self.data_loader = DataLoader(self.train_fd, batch_size=self.args.batch_size, shuffle=True)
@@ -69,7 +69,7 @@ class VAETrainer:
             file.write(f"{','.join(map(str,values))}\n")
 
     def save_model(self, epoch, test_min_vae=False) -> None:
-        suffix = f"testmin" if test_min_vae else f"{epoch}"
+        suffix = f"_testmin" if test_min_vae else f"{epoch}"
 
         def add_mf(path):
             return os.path.join(self.args.main_folder, path)
@@ -83,6 +83,7 @@ class VAETrainer:
         torch.save(self.vae.decoder, decoder_path)
 
         desc = {
+            "epoch": epoch,
             "n_in" : self.vae.n_in,
             "n_emb": self.vae.n_emb,
             "n_lay": self.vae.n_lay,
@@ -90,6 +91,7 @@ class VAETrainer:
             "batch_norm" : self.vae.batch_norm,
             "dropout_p" : self.vae.dropout_p,
             "legacy_vae": self.vae.legacy_vae,
+            "weight_decay" : self.vae.weight_decay,
             "columns": self.train_fd.columns,
             "train_dataset" : self.train_fd.main_folder,
             "test_dataset" : self.test_fd.main_folder,
@@ -114,7 +116,7 @@ class VAETrainer:
         
     def train(self) -> None:
         self.log_init()
-        self.test_loss_min = np.inf
+        self.min_run_Lt = np.inf
 
         for e in range(self.epochs):
             self.epoch(e)
@@ -135,9 +137,9 @@ class VAETrainer:
             
         if divides(self.args.save_on, epoch):
             self.save_model(epoch)
-        if min_epoch_Lt < self.save_test_min and self.save_test_min:
-            self.save_test_min(min_epoch_Lt)
-            self.save_model(e)
+        if min_epoch_Lt < self.min_run_Lt and self.save_test_min:
+            self.save_test_min = min_epoch_Lt
+            self.save_model(epoch, test_min_vae=True)
 
     def batch(self, epoch, batch, X):
         blame = self.train_batch(X)

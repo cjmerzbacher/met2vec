@@ -31,6 +31,7 @@ class VAE:
                  batch_norm : bool = False, 
                  dropout_p : float = 0.0,
                  legacy_vae : bool = False,
+                 weight_decay: float = 0.5,
                  ):
         """Initializes a VAE with the dimensions and hyperparameters given.
 
@@ -56,6 +57,7 @@ class VAE:
         self.lrelu_slope = lrelu_slope
         self.batch_norm = batch_norm
         self.dropout_p = dropout_p
+        self.weight_decay = weight_decay
 
         self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
         self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)
