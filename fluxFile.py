@@ -66,9 +66,13 @@ class FluxFile:
         
 
     def make_df_pkl(self):
-        df = pd.read_csv(self.path,index_col=0)
-        safe_pkl_dump(self.pkl_path, df)
-        return df
+        try:
+            df = pd.read_csv(self.path,index_col=0)
+        
+            safe_pkl_dump(self.pkl_path, df)
+            return df
+        except Exception as e:
+            raise Exception(f"Failed to read df for {self.path}.").with_traceback(e.__traceback__)
 
     def get_df(self):
         df = safe_pkl_load(self.pkl_path)
