@@ -36,7 +36,7 @@ def get_save_models(folder, n, repeats):
 
     if repeats != 1:
         model_files = model_files * repeats
-        save_files = [f"{f[:-4]}({i}){f[-4:]}" for f, i in product(save_files, range(repeats))]
+        save_files = [f"{f[:-4]}({i}){f[-4:]}" for i, f in product(range(repeats), save_files)]
 
     return list(zip(save_files, model_files)) 
 
