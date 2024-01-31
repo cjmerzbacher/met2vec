@@ -57,6 +57,7 @@ class FluxFile:
 
     def get_columns(self, non_zero=False):
         df = self.get_df()
+        df.drop(columns=df.columns.intersection(SOURCE_COLUMNS), inplace=True)
 
         if non_zero:
             non_zeros = np.any(df.values != 0.0, axis=0)

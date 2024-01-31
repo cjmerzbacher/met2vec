@@ -3,11 +3,12 @@ import os
 import argparse
 import json
 
-from vae import VAE
+from vae import FluxVAE
 from vaeTrainer import VAETrainer
 from torch.utils.data import DataLoader
 from misc.parsing import boolean_string
 from misc.io import save_args
+from misc.constants import *
 from fluxDataset import FluxDataset
 
 # Get arguments
@@ -30,7 +31,8 @@ parser.add_argument("--save_losses_on", type=int, default=1, help="To reduce the
 parser.add_argument("--test_dataset", help="The samples which will be used as test_sets.")
 parser.add_argument("--test_size", type=int, default=2048, help='The size of the test sets.')
 parser.add_argument("--save_test_min", type=boolean_string, default=True, help="If true will save the vae which scored the lowest loss on test data (default True)")#
-parser.add_argument("--weight_decay", type=float, default=0)
+parser.add_argument("--weight_decay", type=float, default=0, help="Weight decay value.")
+parser.add_argument("--beta_S", type=float, default=0.0, help="Weighting value for the stoicheometry loss.")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -56,30 +58,33 @@ print("Loading dataset...")
 train_fd = FluxDataset(
     args.dataset, 
     dataset_size=args.dataset_size, 
-    join=args.join, 
     model_folder=args.model_folder)
-n_in = train_fd.normalized_values.shape[1]
-print(f"    {n_in} columns")
+
+# Find Reactions VAE will learn to reconstruct
+vae_reactions = train_fd.inner if args.join == INNER else train_fd.outer
+n_in =len(vae_reactions)
+
+print(f"    {len(train_fd.outer)} total reactions")
+print(f"    {n_in} VAE reactions")
 
 # Load test datasets
 test_fd = FluxDataset(
     args.test_dataset, 
     args.test_size, 
-    join='outer', 
-    columns=train_fd.columns,
     model_folder=args.model_folder
 )
 
 # Load VAE
 print("Loading VAE...")
-vae = VAE(
+vae = FluxVAE(
     n_in=n_in, 
     n_emb=args.n_emb, 
     n_lay=args.n_lay, 
     lrelu_slope=args.lrelu_slope, 
     batch_norm=args.batch_norm, 
     dropout_p=args.dropout, 
-    weight_decay=args.weight_decay
+    weight_decay=args.weight_decay,
+    reaction_names=vae_reactions
 )
 
 trainer = VAETrainer(args, vae, train_fd, test_fd)

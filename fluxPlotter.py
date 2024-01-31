@@ -11,7 +11,7 @@ from tqdm import tqdm
 from sklearn.metrics import adjusted_rand_score
 from sklearn.mixture import GaussianMixture
 from fluxDataset import FluxDataset, get_data
-from vae import load_VAE, VAE
+from vae import load_VAE, FluxVAE
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 

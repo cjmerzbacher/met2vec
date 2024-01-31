@@ -16,7 +16,11 @@ LOSSES_PATH = 'losses.csv'
 LOSS = 'loss'
 R_LOSS = 'reconstruction_loss'
 D_LOSS = 'divergence_loss'
+S_LOSS = "stoicheometry_loss"
 T_LOSS = 'test_loss'
+TR_LOSS = "test_reconstruction_loss"
+TD_LOSS = "test_divergence_loss"
+TS_LOSS = "test_stoicheometry_loss"
 
 # Prep
 TSNE = 'tsne'

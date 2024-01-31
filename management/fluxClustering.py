@@ -1,11 +1,11 @@
 
 from sklearn.cluster import KMeans, DBSCAN
-from vae import VAE
+from vae import FluxVAE
 
 from misc.constants import *
 from fluxDataset import FluxDataset, get_data
 
-def get_clustering(fd : FluxDataset,  clustering_type, vae : VAE = None, vae_stage : str = EMB, vae_sample=True, dbscan_params=None) -> list:
+def get_clustering(fd : FluxDataset,  clustering_type, vae : FluxVAE = None, vae_stage : str = EMB, vae_sample=True, dbscan_params=None) -> list:
     data = get_data(fd, vae_stage, vae, vae_sample)
 
     labels = fd.data['label'].unique()

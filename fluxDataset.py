@@ -30,8 +30,6 @@ class FluxDataset(Dataset):
                  path : str, 
                  dataset_size : int = DEFAULT_DATASET_SIZE,
                  model_folder : str = None,
-                 join : str ='inner', 
-                 columns : list[str] = None,
                  seed : int = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
         
@@ -43,7 +41,6 @@ class FluxDataset(Dataset):
         self.set_folder(path, model_folder)
         self.load_flux_files()
 
-        self.join = join
         self.seed = seed
         self.dataset_size = dataset_size
 
@@ -53,13 +50,12 @@ class FluxDataset(Dataset):
         self.load_models()
         self.find_joins()
         
-        if columns == None:
-            columns = self.joins[join]
-        self.columns = columns
-
         # Load data into current
         self.create_tmp_archive()
         self.load_sample()
+        self.create_stoicheometric_matrix()
+
+        self.C = self.get_conversion_matrix(self.inner)
 
     def __len__(self):
         return self.data.shape[0]
@@ -136,10 +132,8 @@ class FluxDataset(Dataset):
             inner = set(columns) if i == 0 else inner.intersection(columns)
             outer = outer.union(columns)
 
-        self.joins = {
-            'inner' : list(inner),
-            'outer' : list(outer)
-        }
+        self.outer = list(outer)
+        self.inner = list(inner)
 
     def create_tmp_archive(self):
         """Makes tmp files to be used to speed up sample loading.
@@ -173,7 +167,7 @@ class FluxDataset(Dataset):
     def load_sample(self) -> None:
         """Loads a sample into the dataset.
         """
-        columns = list(set(self.columns + SOURCE_COLUMNS))
+        columns = list(set(self.outer + SOURCE_COLUMNS))
         sections = [pd.DataFrame(columns=columns)]
         flux_files_it = list(enumerate(self.flux_files.values()))
 
@@ -187,15 +181,29 @@ class FluxDataset(Dataset):
         df = df[df.columns.intersection(columns)]
         self.load_dataFrame(df)
 
-    def set_columns(self, columns : list[str]):
-        self.columns = columns
+    def create_stoicheometric_matrix(self):
+        Ss = [
+            fm.get_stoicheometry() 
+            for fm in tqdm(list(self.flux_models.values()), desc="Creating S_outer")
+            if fm is not None
+        ]
 
-        df_data = {c : self.data[c] for c in columns if c in self.data.columns}
-        df = pd.DataFrame(df_data, columns=columns + SOURCE_COLUMNS)
-        df.fillna(0, inplace=True)
+        if len(Ss) != 0:
+            self.S_outer = pd.concat(Ss).fillna(0).values.T
+        else:
+            self.S_outer = None
 
-        self.data = df
-        self.normalized_values = np.array(df.drop(columns=SOURCE_COLUMNS).values.astype(float))
-        self.normalized_values
+    def get_conversion_matrix(self, to_reactions):
+        def row(from_reaction):
+            row = np.zeros(len(to_reactions))
+            if from_reaction in to_reactions:
+                from_i = to_reactions.index(from_reaction)
+                row[from_i] = 1
+            return row
+
+        return np.array([
+            row(to_reaction) 
+            for to_reaction in self.outer 
+        ])
 
 

@@ -4,10 +4,13 @@ import torch.optim as optim
 import numpy as np
 
 from torch.utils.data import DataLoader
+from argparse import Namespace
 from fluxDataset import FluxDataset
-from misc.io import safe_json_dump
 
-from vae import VAE
+from misc.io import safe_json_dump
+from misc.constants import *
+
+from vae import FluxVAE
 from tqdm import tqdm
 import os
 
@@ -20,14 +23,14 @@ def divides(a, b):
 
 
 class VAETrainer:
-    def __init__(self, args, vae, train_fd, test_fd):
+    def __init__(self, args : Namespace, vae : FluxVAE, train_fd : FluxDataset, test_fd : FluxDataset):
         self.args = args
 
         self.epochs = args.epochs
         self.save_test_min = args.save_test_min
         self.e_size = len(str(self.epochs - 1))
 
-        self.vae : VAE = vae
+        self.vae = vae
         self.train_fd = train_fd
         self.test_fd = test_fd
 
@@ -47,25 +50,29 @@ class VAETrainer:
         with open(self.args.losses_file, "w+") as file:
             file.write(",".join([
                 "epoch",
-                "loss",
-                "reconstruction_loss",
-                "divergence_loss",
-                "test_loss",
-                "test_rec",
-                "test_div\n",
-                ]))
+                LOSS,
+                R_LOSS,
+                D_LOSS,
+                S_LOSS,
+                T_LOSS, 
+                TR_LOSS,
+                TD_LOSS,
+                TS_LOSS,
+                ]) + "\n")
 
     def log(self, epoch, blame, test_blame) -> None:
         with open(self.args.losses_file, "a+") as file:
             values = [
                 epoch,
-                blame['loss'],
-                blame['loss_reconstruction'],
-                blame['loss_divergence'],
-                test_blame['loss'],
-                test_blame['loss_reconstruction'],
-                test_blame['loss_divergence'],
-                ]
+                blame[LOSS],
+                blame[R_LOSS],
+                blame[D_LOSS],
+                blame[S_LOSS],
+                test_blame[LOSS],
+                test_blame[R_LOSS],
+                test_blame[D_LOSS],
+                test_blame[S_LOSS],
+            ]
             file.write(f"{','.join(map(str,values))}\n")
 
     def save_model(self, epoch, test_min_vae=False) -> None:
@@ -92,31 +99,40 @@ class VAETrainer:
             "dropout_p" : self.vae.dropout_p,
             "legacy_vae": self.vae.legacy_vae,
             "weight_decay" : self.vae.weight_decay,
-            "columns": self.train_fd.columns,
+            "reaction_names": self.vae.reaction_names,
             "train_dataset" : self.train_fd.main_folder,
             "test_dataset" : self.test_fd.main_folder,
         }
 
         safe_json_dump(vae_desc_path, desc, True)
 
-    def train_batch(self, x : np.array) -> dict[str,float]:
+    def get_loss(self, V : np.array, C : np.array, S : np.array):
+        v_r, mu, log_var = self.vae.train_encode_decode(V, C)
+        loss, blame = self.vae.loss(V, v_r, mu, log_var, S, self.args.beta_S)
+        return loss, blame
+
+    def train_batch(self, V : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
-        y = self.vae.encode_decode(x)
-        loss, blame = self.vae.loss(x, y)
+        loss, blame = self.get_loss(V, self.C_train, self.S_train)
         loss.backward()
         self.optimizer.step()
 
         return blame
 
     def test_vae(self) -> list[dict[str,float]]:
-        x = self.test_fd.normalized_values
-        y = self.vae.encode_decode(x)
-        test_blame = self.vae.loss(x, y)[1]
-        return test_blame
+        with torch.no_grad():
+            V = self.test_fd.normalized_values
+            _, test_blame = self.get_loss(V, self.C_test, self.S_test)
+            return test_blame
         
     def train(self) -> None:
         self.log_init()
+
         self.min_run_Lt = np.inf
+        self.C_train = self.train_fd.get_conversion_matrix(self.vae.reaction_names)
+        self.C_test = self.test_fd.get_conversion_matrix(self.vae.reaction_names)
+        self.S_train = self.train_fd.S_outer
+        self.S_test = self.test_fd.S_outer
 
         for e in range(self.epochs):
             self.epoch(e)

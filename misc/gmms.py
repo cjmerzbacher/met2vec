@@ -1,10 +1,10 @@
 from fluxDataset import FluxDataset
 from .fluxDataset import get_data
-from vae import VAE
+from vae import FluxVAE
 from sklearn.mixture import GaussianMixture
 from tqdm import tqdm
 
-def train_gmms(fd : FluxDataset, vae : VAE, vae_stage : str, vae_sample : bool, k : int = 1, v : bool = True) -> dict[str,GaussianMixture]:
+def train_gmms(fd : FluxDataset, vae : FluxVAE, vae_stage : str, vae_sample : bool, k : int = 1, v : bool = True) -> dict[str,GaussianMixture]:
     labels = set(fd.labels)
     gmms = {label : GaussianMixture(k) for label in labels}
 

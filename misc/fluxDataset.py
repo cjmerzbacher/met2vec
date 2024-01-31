@@ -1,5 +1,5 @@
 from fluxDataset import FluxDataset
-from vae import VAE
+from vae import FluxVAE
 from misc.constants import *
 
 import argparse
@@ -46,7 +46,7 @@ def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
             pca = PCA()
             return pca.fit_transform(data)
 
-def get_data(fd : FluxDataset, vae : VAE = None, stage : str = EMB, vae_sample : bool = False, label : str = None) -> np.array:
+def get_data(fd : FluxDataset, vae : FluxVAE = None, stage : str = EMB, vae_sample : bool = False, label : str = None) -> np.array:
     """Transforms the data loaded in a FluxDataset through a vae.
      
     Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 

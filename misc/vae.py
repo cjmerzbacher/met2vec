@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from argparse import Namespace
-from vae import VAE
+from vae import FluxVAE
 from misc.constants import *
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -18,7 +18,7 @@ def safe_extract_from_args(args : Namespace, name : str, default : any):
         return vars(args)[name]
     return default
 
-def load_VAE(args) -> VAE:
+def load_VAE(args) -> FluxVAE:
     """Loads a VAE from a given folder. 
     
     The folder should contain encoder{version}.pth 
@@ -66,7 +66,7 @@ def load_VAE(args) -> VAE:
     batch_norm = safe_extract_from_args(vae_args, "batch_norm", False)
     dropout_p = safe_extract_from_args(vae_args, "dropout", 0.0)
 
-    vae =  VAE(n_in, n_emb, n_lay, lrelu_slope, batch_norm, dropout_p, legacy_vae)
+    vae =  FluxVAE(n_in, n_emb, n_lay, lrelu_slope, batch_norm, dropout_p, legacy_vae)
     vae.encoder = encoder
     vae.decoder = decoder
 
