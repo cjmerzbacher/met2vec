@@ -9,12 +9,10 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from sklearn.metrics import adjusted_rand_score
-from itertools import product
 
 from misc.parsing import *
 from misc.constants import *
-from misc.fluxDataset import load_fd, get_data
+from misc.fluxDataset import load_fd, get_data, get_fluxes
 from misc.vae import load_VAE
 from misc.ari import get_bootstrap_ari
 from misc.kmeans import get_KMeans_classifications, get_k
@@ -25,6 +23,7 @@ parser = argparse.ArgumentParser(parents=[
     parser_fluxDataset_loading(path_tag='-d'),
     PARSER_SAVE,
     PARSER_KMEANS_K,
+    PARSER_JOIN
 ])
 parser.add_argument("-n", type=int, default=64, help="Number of repititions that will be made.")
 parser.add_argument("--bootstrap_n", type=int, default=128, help="Number of bootstrap repititions that will be made to calculate mean and variance for ari.")
@@ -35,10 +34,13 @@ fd = load_fd(args, seed=0)
 
 k = get_k(args, fd)
 n = args.n
+join = args.join
 bn = args.bootstrap_n
 cell_types = fd.unique_labels
 
-data_pre = get_data(fd, vae, PRE, args.sample)
+fluxes = get_fluxes(fd, join)
+
+data_pre = get_data(fd, vae, PRE, args.sample, )
 data_emb = get_data(fd, vae, EMB, args.sample)
 data_rec = get_data(fd, vae, REC, args.sample)
 

@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser(parents=[
     parser_fluxDataset_loading("train", "-T"),
     parser_fluxDataset_loading("test", "-t"),
     PARSER_SAVE,
+    PARSER_JOIN
     ])
 
 args = parser.parse_args()
@@ -28,11 +29,10 @@ args = parser.parse_args()
 vae = load_VAE(args)
 
 train_fd = load_fd(args, "train", seed=0)
-train_columns = train_fd.columns
-
 test_fd = load_fd(args, "test", seed=1)
-test_fd.set_columns(train_columns)
+
 sample = False
+join = args.join
 
 gmms = train_gmms(train_fd, vae, args.stage, sample)
 
@@ -42,7 +42,7 @@ train_labels = train_fd.unique_labels
 nt = len(test_labels)
 nT = len(train_labels)
 
-test_data_sets = {label : get_data(test_fd, vae, args.stage, sample, label) for label in test_labels}
+test_data_sets = {label : get_data(test_fd, vae, args.stage, sample, label, join) for label in test_labels}
 
 def pred(data):
     probs = np.array([
@@ -52,6 +52,8 @@ def pred(data):
     return np.argmax(probs, axis=0)
 
 def get_prediction_accuracy(exp_label, data_label):
+    
+
     return np.mean(pred(test_data_sets[data_label]) == train_labels.index(exp_label))
 
 accuracies = np.zeros((nt, nT))

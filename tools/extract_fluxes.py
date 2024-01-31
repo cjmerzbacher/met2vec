@@ -30,7 +30,7 @@ verbose = args.verbose
 
 fd = load_fd(args, seed=0)
 
-all_fluxes = fd.columns
+all_fluxes = fd.outer
 
 if fluxes == []:
     print("No fluxes, picking random fluxes...")
@@ -55,6 +55,7 @@ df.drop(
     columns=df.columns.difference(fluxes + SOURCE_COLUMNS), 
     inplace=True
 )
+df = df.reindex(columns=SOURCE_COLUMNS + sorted(fluxes))
 
 if verbose:
     print(df)

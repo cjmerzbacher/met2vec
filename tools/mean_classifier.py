@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
 from misc.vae import load_VAE
-from misc.fluxDataset import load_fd, get_data
+from misc.fluxDataset import load_fd, get_data, get_fluxes
 from misc.constants import *
 from misc.parsing import *
 from tqdm import tqdm
@@ -21,38 +21,43 @@ parser = argparse.ArgumentParser(parents=[
     parser_fluxDataset_loading("test", "-t"),
     PARSER_SAVE,
     PARSER_VAE_SAMPLE,
+    PARSER_JOIN,
     ])
 
 args = parser.parse_args()
 
+join = args.join
+
 vae = load_VAE(args)
 
 train_fd = load_fd(args, "train", 0)
-train_columns = train_fd.columns
-
 test_fd = load_fd(args, "test", 1)
-test_fd.set_columns(train_columns)
+
+fluxes = get_fluxes(train_fd, join)
+
+#train_columns = train_fd.inner if join == INNER else train_fd.outer
+train_outer = train_fd.outer
 
 test_labels = test_fd.unique_labels
 train_labels = train_fd.unique_labels
 
 nt = len(test_labels)
 nT = len(train_labels)
-nd = len(train_columns)
+nO = len(train_outer)
 
 sample = args.sample
 stage = args.stage
 
 means = []
 for i, label in enumerate(train_labels):
-    data = get_data(train_fd, vae, stage, sample, label)
+    data = get_data(train_fd, vae, stage, sample, label, fluxes)
     mean = np.mean(data, axis=0)
     means.append(mean)
 means = np.array(means)
 
 
 test_data_sets = {
-    label : get_data(test_fd, vae, args.stage, sample, label) 
+    label : get_data(test_fd, vae, args.stage, sample, label, fluxes) 
     for label in test_labels}
 
 def pred(data):

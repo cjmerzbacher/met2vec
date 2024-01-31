@@ -24,6 +24,19 @@ rm = os.unlink
 joinp = os.path.join
 ensure_exists = lambda f: None if os.path.exists(f) else os.makedirs(f)
 
+def get_conversion_matrix(from_reactions : list[str], to_reactions : list[str]):
+    def row(from_reaction):
+        row = np.zeros(len(to_reactions))
+        if from_reaction in to_reactions:
+            from_i = to_reactions.index(from_reaction)
+            row[from_i] = 1
+        return row
+
+    return np.array([
+        row(to_reaction) 
+        for to_reaction in from_reactions
+    ])
+    
 class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
@@ -56,6 +69,9 @@ class FluxDataset(Dataset):
         self.create_stoicheometric_matrix()
 
         self.C = self.get_conversion_matrix(self.inner)
+
+        print(f"inner size -> {len(self.inner)}")
+        print(f"outer size -> {len(self.outer)}")
 
     def __len__(self):
         return self.data.shape[0]
@@ -194,16 +210,5 @@ class FluxDataset(Dataset):
             self.S_outer = None
 
     def get_conversion_matrix(self, to_reactions):
-        def row(from_reaction):
-            row = np.zeros(len(to_reactions))
-            if from_reaction in to_reactions:
-                from_i = to_reactions.index(from_reaction)
-                row[from_i] = 1
-            return row
-
-        return np.array([
-            row(to_reaction) 
-            for to_reaction in self.outer 
-        ])
-
+        return get_conversion_matrix(self.outer, to_reactions)
 

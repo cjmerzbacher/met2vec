@@ -12,15 +12,9 @@ def format_input(x):
 def format_matrix(A):
     return torch.Tensor(A).to(device)
 
-def format_C(C, n_in):
-    if C is None:
-        return torch.eye(n_in)
-    return format_matrix(C)
-
-def format_S(S, n_out):
-    if S is None:
-        return torch.zeros(n_out)
-    return format_matrix(S)
+def get_s(C):
+    s = torch.sum(C, dim=1)
+    return 1 - torch.minimum(s, torch.ones_like(s))
 
 def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
     model = []
@@ -67,10 +61,20 @@ class FluxVAE:
         self.encoder = get_linear_network(n_in, n_emb * 2, n_lay, lrelu_slope, batch_norm, dropout_p)
         self.decoder = get_linear_network(n_emb, n_in, n_lay, lrelu_slope, batch_norm, dropout_p)
 
+    def format_C(self, C):
+        if C is None:
+            return torch.eye(self.n_in)
+        return format_matrix(C)
+
+    def format_S(self, S):
+        if S is None:
+            return torch.zeros(self.n_in)
+        return format_matrix(S)
+
     def get_dist(self, x : torch.Tensor, C=None) -> torch.Tensor:
         """Gets the distribution values for a given input value."""
         x = format_input(x)
-        C = format_C(C, self.n_in)
+        C = self.format_C(C)
 
         y = self.encoder(x)
         mu = y[:,:self.n_emb]
@@ -89,35 +93,44 @@ class FluxVAE:
 
         return mu + ((std * epsilon) if sample else 0.0)
     
-    def encode(self, x : torch.Tensor, sample : bool = True) -> torch.Tensor:
+    def encode(self, v : torch.Tensor, sample : bool = True, C=None) -> torch.Tensor:
         with torch.no_grad():
-            x = format_input(x)
-            mu, _, std = self.get_dist(x)
+            v = format_input(v)
+            C = self.format_C(C)
+
+            v_i = torch.matmul(v, C)
+
+            mu, _, std = self.get_dist(v_i)
             return self.get_z_from_dist(mu, std, sample)
     
-    def decode(self, z : torch.Tensor) -> torch.Tensor:
+    def decode(self, z : torch.Tensor, C : torch.Tensor, v : torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
+            C = self.format_C(C)
+            v = format_input(v)
+
+            C_t = C.T
+            v_e = v * get_s(C)
+
             z = format_input(z)
-            return self.decoder(z)
+            v_o = self.decoder(z)
+
+            v_r = torch.matmul(v_o, C_t) + v_e
+
+            return v_r
     
     def train_encode_decode(self, v, C):
         """
-        
         Returns:
             v_r: Reconstructed vector.
             mu: Mean of z distribution.
             log_var: Log of Z distribution variance.
         """
         v = format_input(v)
+        C = self.format_C(C)
 
-        C = format_C(C, self.n_in)
         C_t = torch.transpose(C, 0, 1)
-
-        s = torch.sum(C, dim=1)
-        s = 1 - torch.minimum(s, torch.ones_like(s))
-        
         v_i = torch.matmul(v, C)
-        v_e = s * v
+        v_e = get_s(C) * v
         
         mu, log_var, std = self.get_dist(v_i)
         z = self.get_z_from_dist(mu, std, True)
@@ -137,7 +150,7 @@ class FluxVAE:
         """Computes the loss for a given x and y."""
         batch_size = v.shape[0]
         v = format_input(v)
-        S = format_S(S, v.shape[1])
+        S = self.format_S(S)
         
         loss_rec = torch.sum(torch.pow(v - v_r, 2.0)) 
         loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var)  

@@ -12,7 +12,6 @@ def parser_fluxDataset_loading(name : str = "", path_tag=None):
     parser.add_argument(*path_tag, f"--{prefix}path", required=True, help=f"The path {name}dataset will be laoded from.")
     parser.add_argument(f"--{prefix}size", default=65536, type=int, help=f"The size of {name}dataset samples.")
     parser.add_argument(f"--{prefix}model_folder", help=f"If set the model folder used for {name}dataset instead of main folder.")
-    parser.add_argument(f"--{prefix}join", default=INNER, choices=DATASET_JOINS, help=f"The join that will be used for {name}dataset.")
 
     return parser
 
@@ -59,3 +58,6 @@ PARSER_SEED.add_argument("--seed", type=int, default=randint(0,65536))
 
 PARSER_VERBOSE = argparse.ArgumentParser(add_help=False)
 PARSER_VERBOSE.add_argument("--verbose", action="store_true", default=False)
+
+PARSER_JOIN = argparse.ArgumentParser(add_help=False)
+PARSER_JOIN.add_argument("--join", choices=[INNER, OUTER], default=INNER)

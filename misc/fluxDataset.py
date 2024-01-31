@@ -1,4 +1,4 @@
-from fluxDataset import FluxDataset
+from fluxDataset import FluxDataset, get_conversion_matrix
 from vae import FluxVAE
 from misc.constants import *
 
@@ -30,7 +30,6 @@ def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDatase
         f"{prefix}path",
         f"{prefix}size",
         f"{prefix}model_folder",
-        f"{prefix}join",
     ]], seed=seed)
     
     
@@ -46,7 +45,18 @@ def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
             pca = PCA()
             return pca.fit_transform(data)
 
-def get_data(fd : FluxDataset, vae : FluxVAE = None, stage : str = EMB, vae_sample : bool = False, label : str = None) -> np.array:
+def get_fluxes(fd : FluxDataset, join : str):
+    if join == INNER:
+        return fd.inner
+    else:
+        return fd.outer
+
+def get_data(fd : FluxDataset, 
+             vae : FluxVAE = None, 
+             stage : str = EMB, 
+             vae_sample : bool = False, 
+             label : str = None, 
+             fluxes : list[str] = None) -> np.array:
     """Transforms the data loaded in a FluxDataset through a vae.
      
     Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
@@ -68,9 +78,16 @@ def get_data(fd : FluxDataset, vae : FluxVAE = None, stage : str = EMB, vae_samp
     else:
         data = fd[label]
 
+    data = data @ fd.get_conversion_matrix(fluxes)
+
     if vae and stage != PRE:
-        data = vae.encode(data, sample=vae_sample)
+        C = get_conversion_matrix(fluxes, vae.reaction_names)
+
+        data_z = vae.encode(data, sample=vae_sample, C=C)
+        if stage == EMB:
+            data = data_z
         if stage == REC:
-            data = vae.decode(data)
+            data = vae.decode(data_z, C, data)
+
         data = data.detach().cpu().numpy()
     return data
