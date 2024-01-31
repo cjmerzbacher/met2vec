@@ -41,7 +41,7 @@ class FluxDataset(Dataset):
     '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
                  path : str, 
-                 dataset_size : int = DEFAULT_DATASET_SIZE,
+                 n : int = DEFAULT_DATASET_SIZE,
                  model_folder : str = None,
                  seed : int = None):
         '''Takes files - a path to a csv file containing the data to be leaded. 
@@ -51,20 +51,18 @@ class FluxDataset(Dataset):
         Args:
             path: The path (.csv file or folder containing .csv files).
             dataset_size: The size'''
-        self.set_folder(path, model_folder)
-        self.load_flux_files()
-
         self.seed = seed
-        self.dataset_size = dataset_size
+        self.n = n
 
-        print(f"Creating dataset from {self.main_folder} with size {self.dataset_size} and seed={seed}")
+        self.set_folder(path, model_folder)
 
-        # Find renamings and joins
-        self.load_models()
-        self.find_joins()
-        
+        print(f"Creating dataset from {self.main_folder} with size {self.n} and seed={seed}")
+
+        self.find_flux_files()
+        self.find_models()
+        self.load_fluxes()
+
         # Load data into current
-        self.create_tmp_archive()
         self.load_sample()
         self.create_stoicheometric_matrix()
 
@@ -92,16 +90,19 @@ class FluxDataset(Dataset):
         Raises:
             FileNotFoundError: If the folder doesn't exist, or there are no files under
             the path.
-        
         """
         self.path = path
         self.main_folder = path if os.path.isdir(path) else os.path.dirname(path)
-        self.model_folder = model_folder if model_folder != None else self.main_folder
+        self.model_folder = model_folder 
+        
+        if model_folder is None:
+            print(f"No model folder specified using {self.main_folder}")
+            self.model_folder = self.main_folder
 
         if not os.path.exists(self.main_folder):
             raise FileNotFoundError(f"The folder {self.main_folder} does not exist and there is no flux data to load.")
 
-    def load_flux_files(self):   
+    def find_flux_files(self):   
         if self.path.endswith('.csv'):     
             flux_paths = [self.path] 
         else:
@@ -115,11 +116,12 @@ class FluxDataset(Dataset):
             raise FileNotFoundError(f"'{self.path}' has no .csv files.")
 
         self.flux_files : dict[str, FluxFile] = {}
+
         for f in flux_paths:
             flux_file = FluxFile(f, self.model_folder) 
             self.flux_files[flux_file.file_name] = flux_file
 
-    def load_models(self):
+    def find_models(self):
         self.flux_models : dict[str, FluxModel] = {}
 
         flux_file_by_model_name = {}
@@ -139,40 +141,53 @@ class FluxDataset(Dataset):
             for ff in flux_files:
                 ff.set_model(fm)
 
+    def load_fluxes(self):
+        samples_per_file = self.n // len(self.flux_files)
+        min_spf = samples_per_file
 
-    def find_joins(self):
-        inner, outer = set(), set()
+        flux_sums = []
+        flux_suqare_sums = []
+        flux_columns = []
+        n_fluxes = 0
 
-        for i, ff in tqdm(enumerate(self.flux_files.values()), desc="Making inter_union"):
-            columns = ff.get_columns(non_zero=False)
-            inner = set(columns) if i == 0 else inner.intersection(columns)
-            outer = outer.union(columns)
+        for ff in tqdm(self.flux_files.values(), desc="Loading fluxes..."):
+            flux_df = ff.get_df()
+            num_df = flux_df.drop(columns=flux_df.columns.intersection(SOURCE_COLUMNS))
 
-        self.outer = list(outer)
-        self.inner = list(inner)
+            act_spf = ff.make_tmps(samples_per_file, flux_df)
+            min_spf = min(act_spf, min_spf)
 
-    def create_tmp_archive(self):
-        """Makes tmp files to be used to speed up sample loading.
-        
-        tmp files - These are pickled pd.DataFrame random subsets of the files loaded. 
-        """
-        samples_per_file = self.dataset_size // len(self.flux_files)
+            #flux_columns.append(flux_df.columns[np.any(flux_df.values != 0, axis=0)])
+            flux_columns.append(set(num_df.columns))
 
-        min_sample_size = samples_per_file
-        for ff in tqdm(self.flux_files.values(), desc='Making tmps'):
-            sample_size = ff.make_tmps(samples_per_file)
-            min_sample_size = min(sample_size, min_sample_size)
+            flux_sums.append(num_df.sum())
+            flux_suqare_sums.append((num_df**2).sum())
+            n_fluxes += len(num_df.index)
 
-        if min_sample_size < samples_per_file:
-            new_dataset_size = min_sample_size * len(self.flux_files)
-            print(f"Dataset size too big! min_sample_size {min_sample_size}," + 
-                  f" updating dataset_size {self.dataset_size} -> {new_dataset_size}")
-            self.dataset_size = new_dataset_size
+        print(f"{n_fluxes} fluxes loaded...")
+
+        self.outer = sorted(set.union(*flux_columns))
+        self.inner = sorted(set.intersection(*flux_columns))
+
+        self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).sum().reindex(self.outer)
+
+        mean_squared = (self.flux_mean ** 2)
+        square_mean = pd.DataFrame(flux_suqare_sums).fillna(0).sum()
+        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).reindex(self.outer)
+
+        if min_spf < samples_per_file:
+            new_n = min_spf * len(self.flux_files)
+            print(f"n too big! min_spf {min_spf}, updating n: {self.n} -> {new_n}")
+            self.n = new_n
+
+    def get_mu_std(self):
+        return self.flux_mean.values, self.flux_std.values
 
     def load_dataFrame(self, df : pd.DataFrame) -> None:
         """Loads in and normalizes a dataFrame."""      
         df_num = df.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
-        df_norm = (df_num-df_num.mean())/df_num.std()
+
+        df_norm = (df_num - self.flux_mean) / self.flux_std
         df_norm.fillna(0, inplace=True)
         
         self.data = df
@@ -184,16 +199,16 @@ class FluxDataset(Dataset):
         """Loads a sample into the dataset.
         """
         columns = list(set(self.outer + SOURCE_COLUMNS))
-        sections = [pd.DataFrame(columns=columns)]
+        samples = [pd.DataFrame(columns=columns)]
         flux_files_it = list(enumerate(self.flux_files.values()))
 
         for i, ff in tqdm(flux_files_it, desc='Loading sample'):
             sample = ff.load_tmp_file()
             sample[FILE_N] = i
 
-            sections.append(sample)
+            samples.append(sample)
         
-        df = pd.concat(sections, sort=False, join='outer', ignore_index=True).fillna(0)
+        df = pd.concat(samples, ignore_index=True).fillna(0)
         df = df[df.columns.intersection(columns)]
         self.load_dataFrame(df)
 
@@ -205,7 +220,8 @@ class FluxDataset(Dataset):
         ]
 
         if len(Ss) != 0:
-            self.S_outer = pd.concat(Ss).fillna(0).values.T
+            self.S_outer = pd.concat(Ss).fillna(0)
+            self.S_outer = self.S_outer.reindex(columns=self.outer).values.T
         else:
             self.S_outer = None
 

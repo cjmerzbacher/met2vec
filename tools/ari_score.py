@@ -40,9 +40,9 @@ cell_types = fd.unique_labels
 
 fluxes = get_fluxes(fd, join)
 
-data_pre = get_data(fd, vae, PRE, args.sample, )
-data_emb = get_data(fd, vae, EMB, args.sample)
-data_rec = get_data(fd, vae, REC, args.sample)
+data_pre = get_data(fd, vae, PRE, args.sample, fluxes=fluxes)
+data_emb = get_data(fd, vae, EMB, args.sample, fluxes=fluxes)
+data_rec = get_data(fd, vae, REC, args.sample, fluxes=fluxes)
 
 sets = {
     PRE : get_KMeans_classifications(k, n, data_pre),

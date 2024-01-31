@@ -106,14 +106,14 @@ class VAETrainer:
 
         safe_json_dump(vae_desc_path, desc, True)
 
-    def get_loss(self, V : np.array, C : np.array, S : np.array):
+    def get_loss(self, V : np.array, C : np.array, S : np.array, v_mu : np.array, v_std : np.array):
         v_r, mu, log_var = self.vae.train_encode_decode(V, C)
-        loss, blame = self.vae.loss(V, v_r, mu, log_var, S, self.args.beta_S)
+        loss, blame = self.vae.loss(V, v_r, mu, log_var, S, v_mu, v_std, self.args.beta_S)
         return loss, blame
 
     def train_batch(self, V : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
-        loss, blame = self.get_loss(V, self.C_train, self.S_train)
+        loss, blame = self.get_loss(V, self.C_train, self.S_train, self.mu_train, self.std_train)
         loss.backward()
         self.optimizer.step()
 
@@ -122,15 +122,20 @@ class VAETrainer:
     def test_vae(self) -> list[dict[str,float]]:
         with torch.no_grad():
             V = self.test_fd.normalized_values
-            _, test_blame = self.get_loss(V, self.C_test, self.S_test)
+            _, test_blame = self.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test)
             return test_blame
         
     def train(self) -> None:
         self.log_init()
 
         self.min_run_Lt = np.inf
+
+        self.mu_train, self.std_train = self.train_fd.get_mu_std()
+        self.mu_test, self.std_test = self.test_fd.get_mu_std()
+
         self.C_train = self.train_fd.get_conversion_matrix(self.vae.reaction_names)
         self.C_test = self.test_fd.get_conversion_matrix(self.vae.reaction_names)
+
         self.S_train = self.train_fd.S_outer
         self.S_test = self.test_fd.S_outer
 

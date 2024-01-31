@@ -16,6 +16,21 @@ def get_s(C):
     s = torch.sum(C, dim=1)
     return 1 - torch.minimum(s, torch.ones_like(s))
 
+def format_S(S, n_outer):
+    if S is None:
+        return torch.zeros((n_outer, n_outer))
+    return format_matrix(S)
+
+def format_mu(v_mu, v):
+    if v_mu is None:
+        return torch.zeros_like(v)
+    return format_matrix(v_mu)
+
+def format_std(v_std, v):
+    if v_std is None:
+        return torch.zeros_like(v)
+    return format_matrix(v_std)
+
 def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
     model = []
     sizes = [round(s) for s in np.linspace(n_in, n_out, n_lay)]
@@ -66,10 +81,6 @@ class FluxVAE:
             return torch.eye(self.n_in)
         return format_matrix(C)
 
-    def format_S(self, S):
-        if S is None:
-            return torch.zeros(self.n_in)
-        return format_matrix(S)
 
     def get_dist(self, x : torch.Tensor, C=None) -> torch.Tensor:
         """Gets the distribution values for a given input value."""
@@ -146,15 +157,21 @@ class FluxVAE:
              mu : torch.Tensor, 
              log_var : torch.Tensor,
              S : torch.Tensor = None,
-             beta_S = 0) -> tuple[torch.Tensor, dict[str,float]]:
+             v_mu : torch.Tensor = None,
+             v_std : torch.Tensor = None,
+             beta_S = 0,
+             ) -> tuple[torch.Tensor, dict[str,float]]:
         """Computes the loss for a given x and y."""
         batch_size = v.shape[0]
         v = format_input(v)
-        S = self.format_S(S)
+        v_mu = format_mu(v_mu, v)
+        v_std = format_std(v_std, v)
+
+        S = format_S(S, v.shape[1])
         
         loss_rec = torch.sum(torch.pow(v - v_r, 2.0)) 
         loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var)  
-        loss_S = beta_S * torch.sum(torch.pow(torch.matmul(v, S), 2.0))
+        loss_S = beta_S * torch.sum(torch.pow(torch.matmul((v * v_std) + v_mu, S), 2.0))
 
         loss_rec /= batch_size
         loss_div /= batch_size

@@ -80,6 +80,8 @@ class FluxFile:
         if df is None:
             df = self.make_df_pkl()
 
+        df.drop(columns=df.columns.intersection(["Unnamed: 0"]), inplace=True)
+
         # Source Details
         df.reset_index(inplace=True)
         df.rename(columns = {'index':SAMPLE_N}, inplace=True)
@@ -99,8 +101,10 @@ class FluxFile:
     def get_rs(self, index=0):
         return get_random_state(self.seed, index)
     
-    def make_tmps(self, samples_per_file : int) -> int:
-        df = self.get_df()
+    def make_tmps(self, samples_per_file : int, df : pd.DataFrame=None) -> int:
+        if df is None:
+            df = self.get_df()
+
         n = get_n_temps(len(df.index), samples_per_file)
         rs = self.get_rs()
         self.clear_tmp_files()

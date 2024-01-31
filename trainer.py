@@ -57,8 +57,9 @@ print(f"Using device {device}...")
 print("Loading dataset...")
 train_fd = FluxDataset(
     args.dataset, 
-    dataset_size=args.dataset_size, 
-    model_folder=args.model_folder)
+    n=args.dataset_size, 
+    model_folder=args.model_folder
+)
 
 # Find Reactions VAE will learn to reconstruct
 vae_reactions = train_fd.inner if args.join == INNER else train_fd.outer
