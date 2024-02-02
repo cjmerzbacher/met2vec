@@ -36,9 +36,9 @@ def get_prediction_df(test_df : pd.DataFrame, train_df : pd.DataFrame, group_by,
     n_test = len(test_groups)
 
     accuracies = np.zeros((n_test, n_train))
-    for i, _ in enumerate(test_groups):
+    for i, test_group in enumerate(test_groups):
+        group_df = train_df[train_df[group_by] == test_group]
         for j, train_group in enumerate(train_groups):
-            group_df = train_df[train_df[group_by] == train_group]
             accuracies[i,j] = get_prediction_accuracy(group_df, train_group, pred)
 
     test_group_by = f"test_{group_by}"
