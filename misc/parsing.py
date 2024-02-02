@@ -64,3 +64,9 @@ PARSER_JOIN.add_argument("--join", choices=[INNER, OUTER], default=INNER, help="
 
 PARSER_GROUP_BY = argparse.ArgumentParser(add_help=False)
 PARSER_GROUP_BY.add_argument("--group_by", choices=SOURCE_COLUMNS, default=LABEL, help="How the data will be grouped.")
+
+PARSER_STAGES = argparse.ArgumentParser(add_help=False)
+PARSER_STAGES.add_argument("--stages", choices=VAE_STAGES, nargs="+", default=VAE_STAGES, help="VAE stages that will be used.")
+
+PARSER_ORIGIONAL_CLUSTERING = argparse.ArgumentParser(add_help=False)
+PARSER_ORIGIONAL_CLUSTERING.add_argument("--origional_clustering", choices=SOURCE_COLUMNS, default=LABEL, help="The data source columns that will be used as the origional labels.")

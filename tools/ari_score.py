@@ -23,7 +23,9 @@ parser = argparse.ArgumentParser(parents=[
     parser_fluxDataset_loading(path_tag='-d'),
     PARSER_SAVE,
     PARSER_KMEANS_K,
-    PARSER_JOIN
+    PARSER_JOIN,
+    PARSER_STAGES,
+    PARSER_ORIGIONAL_CLUSTERING
 ])
 parser.add_argument("-n", type=int, default=64, help="Number of repititions that will be made.")
 parser.add_argument("--bootstrap_n", type=int, default=128, help="Number of bootstrap repititions that will be made to calculate mean and variance for ari.")
@@ -36,34 +38,46 @@ k = get_k(args, fd)
 n = args.n
 join = args.join
 bn = args.bootstrap_n
-cell_types = fd.unique_labels
+stages = args.stages
+origional_clustering = args.origional_clustering
 
+if origional_clustering not in fd.data:
+    print(f"{origional_clustering} not in fd! Exiting")
+    quit()
+
+origional_types = list(fd.data[origional_clustering].unique())
 fluxes = get_fluxes(fd, join)
 
-data_pre = get_data(fd, vae, PRE, args.sample, fluxes=fluxes)
-data_emb = get_data(fd, vae, EMB, args.sample, fluxes=fluxes)
-data_rec = get_data(fd, vae, REC, args.sample, fluxes=fluxes)
-
-sets = {
-    PRE : get_KMeans_classifications(k, n, data_pre),
-    EMB : get_KMeans_classifications(k, n, data_emb),
-    REC : get_KMeans_classifications(k, n, data_rec),
-    ORIGIONAL : [[cell_types.index(cell) for cell in fd.labels]],
+dfs = {
+    stage : get_data(fd, vae, stage, args.sample, fluxes=fluxes)
+    for stage in stages
 }
 
-set_labels = sets.keys()
-n_lab = len(set_labels)
+clustering_sets = {
+    stage : get_KMeans_classifications(k, n, dfs[stage])
+    for stage in stages
+}
+clustering_sets[ORIGIONAL] = [[origional_types.index(cell) for cell in fd.data[origional_clustering]]]
 
-data = np.zeros((n_lab * 2, n_lab))
-data_columns = sum([[l, l + '_std'] for l in set_labels], start=[])
-data_rows = set_labels
+labels = clustering_sets.keys()
+n_labels = len(labels)
 
-for i, a in tqdm(enumerate(set_labels), desc="Calculating ARIs"):
-    for j, b in enumerate(set_labels): 
-        mean, std = get_bootstrap_ari(sets[a], sets[b], bn)
+data = np.zeros((n_labels * 2, n_labels))
+columns = sum([[label, label+ '_std'] for label in labels], start=[])
+
+rows = labels 
+
+for i, a in tqdm(list(enumerate(labels)), desc="Calculating ARIs"):
+    for j, b in enumerate(labels): 
+        mean, std = get_bootstrap_ari(
+            clustering_sets[a], 
+            clustering_sets[b], 
+            bn
+        )
+
         data[i*2, j] = mean
         data[i*2 + 1, j] = std
 
-df = pd.DataFrame(data.T, columns=data_columns)
-df['stage'] = data_rows
+df = pd.DataFrame(data.T, columns=columns)
+df['stage'] = rows
 df.to_csv(args.save_path, index=False)
