@@ -44,7 +44,7 @@ group_by = args.group_by
 train_df = get_data(train_fd, vae, stage, False, fluxes)
 test_df = get_data(test_fd, vae, stage, False, fluxes)
 
-pred = get_mean_pred(train_df, "label")
+pred = get_mean_pred(train_df, group_by)
 
 df = get_prediction_df(test_df, train_df, group_by, pred)
 df.to_csv(args.save_path, index=False)

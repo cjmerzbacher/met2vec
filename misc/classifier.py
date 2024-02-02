@@ -10,7 +10,7 @@ def get_mean_pred(train_df : pd.DataFrame, group_by : str):
  
     means = train_df.groupby([group_by]).mean(numeric_only=True)
     column_index = means.columns
-    groups = means.index
+    groups = train_df[group_by].unique()
     means = means.values
 
     def pred(test_df : pd.DataFrame):
