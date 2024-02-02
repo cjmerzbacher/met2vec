@@ -63,7 +63,7 @@ class FluxDataset(Dataset):
         self.load_fluxes()
 
         # Load data into current
-        self.load_sample()
+        self.reload_sample()
         self.create_stoicheometric_matrix()
 
         self.C = self.get_conversion_matrix(self.inner)
@@ -182,20 +182,32 @@ class FluxDataset(Dataset):
 
     def get_mu_std(self):
         return self.flux_mean.values, self.flux_std.values
+    
+    def normalize_data(self, data : pd.DataFrame) -> pd.DataFrame:
+        df_num = data.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
+        df_norm = ((df_num - self.flux_mean) / self.flux_std).fillna(0)
+        return df_norm
+    
+    def get_normalized_data(self, fluxes : list[str] = None):
+        nd = self.normalize_data(self.data)
+        nd[SOURCE_COLUMNS] = self.data[SOURCE_COLUMNS]
+
+        if fluxes is None:
+            fluxes = self.outer 
+
+        nd = nd.drop(columns = nd.columns.difference(SOURCE_COLUMNS + fluxes))
+        nd = nd.reindex(columns = SOURCE_COLUMNS + fluxes) 
+
+        return nd
 
     def load_dataFrame(self, df : pd.DataFrame) -> None:
         """Loads in and normalizes a dataFrame."""      
-        df_num = df.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
-
-        df_norm = (df_num - self.flux_mean) / self.flux_std
-        df_norm.fillna(0, inplace=True)
-        
         self.data = df
-        self.normalized_values = df_norm.values
+        self.normalized_values = self.normalize_data(df).values
         self.labels = list(df[LABEL].values)
         self.unique_labels = list(set(self.labels))
 
-    def load_sample(self) -> None:
+    def reload_sample(self) -> None:
         """Loads a sample into the dataset.
         """
         columns = list(set(self.outer + SOURCE_COLUMNS))

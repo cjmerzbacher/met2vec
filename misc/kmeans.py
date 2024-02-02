@@ -1,6 +1,12 @@
 from sklearn.cluster import KMeans
 
-def get_KMeans_classifications(k, n, data):
+from misc.constants import *
+
+import pandas as pd
+
+def get_KMeans_classifications(k, n, data : pd.DataFrame):
+    data = data.drop(columns=SOURCE_COLUMNS)
+
     classifications = []
     for _ in range(n):
         kmeans = KMeans(k, n_init='auto').fit(data)

@@ -60,4 +60,7 @@ PARSER_VERBOSE = argparse.ArgumentParser(add_help=False)
 PARSER_VERBOSE.add_argument("--verbose", action="store_true", default=False)
 
 PARSER_JOIN = argparse.ArgumentParser(add_help=False)
-PARSER_JOIN.add_argument("--join", choices=[INNER, OUTER], default=INNER)
+PARSER_JOIN.add_argument("--join", choices=[INNER, OUTER], default=INNER, help="The join that wll be used on the dataset.")
+
+PARSER_GROUP_BY = argparse.ArgumentParser(add_help=False)
+PARSER_GROUP_BY.add_argument("--group_by", choices=SOURCE_COLUMNS, default=LABEL, help="How the data will be grouped.")

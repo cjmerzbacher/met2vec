@@ -145,7 +145,7 @@ class VAETrainer:
 
     def epoch(self, epoch):
         if divides(self.args.refresh_data_on, epoch):
-            self.train_fd.load_sample()
+            self.train_fd.reload_sample()
 
         min_epoch_Lt = np.inf
 

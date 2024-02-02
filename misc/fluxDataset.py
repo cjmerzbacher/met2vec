@@ -4,9 +4,17 @@ from misc.constants import *
 
 import argparse
 import numpy as np
+import pandas as pd
+import torch
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+
+def untorch(x : torch.Tensor):
+    return x.detach().cpu().numpy()
+
+def get_nonsource(df : pd.DataFrame):
+    return df.drop(columns=SOURCE_COLUMNS)
 
 def get_name_prefix(name):
     prefix = f"{name}_" if name != "" else ""
@@ -55,8 +63,8 @@ def get_data(fd : FluxDataset,
              vae : FluxVAE = None, 
              stage : str = EMB, 
              vae_sample : bool = False, 
-             label : str = None, 
-             fluxes : list[str] = None) -> np.array:
+             fluxes : list[str] = None,
+             restrictions : dict[str, any] = {}) -> np.array:
     """Transforms the data loaded in a FluxDataset through a vae.
      
     Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
@@ -73,21 +81,38 @@ def get_data(fd : FluxDataset,
     Return:
         data: The transformed subset of the FluxDataset sample.
     """
-    if label is None:
-        data = fd.normalized_values
-    else:
-        data = fd[label]
+    if fluxes is None:
+        fluxes = fd.outer
 
-    data = data @ fd.get_conversion_matrix(fluxes)
+    df = fd.get_normalized_data(fluxes)
+    
+    for column, val in restrictions.items():
+        if not column in df.columns:
+            print(f"Warning {column} not found in data")
+            continue
 
-    if vae and stage != PRE:
+        df = df[df[column] == val]
+
+    if vae is not None:
+        unfufilled_fluxes = set(vae.reaction_names).difference(fluxes)
+        if len(unfufilled_fluxes) != 0:
+            print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
+
+    if vae is not None and stage != PRE:
+        V = get_nonsource(df).values
         C = get_conversion_matrix(fluxes, vae.reaction_names)
+        
+        z = vae.encode(V, sample=vae_sample, C=C)
 
-        data_z = vae.encode(data, sample=vae_sample, C=C)
         if stage == EMB:
-            data = data_z
+            columns = [f"emb{i}" for i in range(z.shape[1])]
+            data = z
         if stage == REC:
-            data = vae.decode(data_z, C, data)
+            V_r = vae.decode(z, C, V)
+            columns = fluxes
+            data = V_r
 
-        data = data.detach().cpu().numpy()
-    return data
+        df_ext = pd.DataFrame(untorch(data), columns=columns)
+        df = pd.concat([df[SOURCE_COLUMNS], df_ext], axis=1)
+
+    return df
