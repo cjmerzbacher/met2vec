@@ -25,10 +25,10 @@ parser = argparse.ArgumentParser(parents=[
     PARSER_KMEANS_K,
     PARSER_JOIN,
     PARSER_STAGES,
-    PARSER_ORIGIONAL_CLUSTERING
+    PARSER_ORIGIONAL_CLUSTERING,
+    PARSER_BOOTSTRAP_N,
 ])
 parser.add_argument("-n", type=int, default=64, help="Number of repititions that will be made.")
-parser.add_argument("--bootstrap_n", type=int, default=128, help="Number of bootstrap repititions that will be made to calculate mean and variance for ari.")
 args = parser.parse_args()
 
 vae = load_VAE(args)

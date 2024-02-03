@@ -55,3 +55,9 @@ DATASET_JOINS = [INNER, OUTER]
 KMEANS_C = "kmeans_cluster"
 ORIGIONAL = "origional"
 CLUSTERING = "clustering"
+
+# K-Means Metrics
+WCSS = "wcss" #Within Cluster Sum of Squares
+ARI = "ari"
+
+KMEANS_METRICS = [WCSS, ARI]

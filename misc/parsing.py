@@ -15,9 +15,9 @@ def parser_fluxDataset_loading(name : str = "", path_tag=None):
 
     return parser
 
-def parser_n(help : str = None):
+def parser_n(help : str = None, default=0):
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-n", help=help, type=int, default=0)
+    parser.add_argument("-n", help=help, type=int, default=default)
     return parser
 
 def boolean_string(s):
@@ -47,6 +47,12 @@ PARSER_VAE_SAMPLE.add_argument("--sample", default=True, type=boolean_string, he
 PARSER_KMEANS_K = argparse.ArgumentParser(add_help=False)
 PARSER_KMEANS_K.add_argument("-k", type=int, help="The number of cluster, if unset same as number of labels.")
 
+PARSER_KMEANS_METRIC = argparse.ArgumentParser(add_help=False)
+PARSER_KMEANS_METRIC.add_argument("--kmeans_metric", choices=KMEANS_METRICS)
+
+PARSER_MAX_K = argparse.ArgumentParser(add_help=False)
+PARSER_MAX_K.add_argument("--max_k", type=int, help="The max k that will be used, if unset nr files will be used.")
+
 PARSER_MODEL_FOLDER = argparse.ArgumentParser(add_help=False)
 PARSER_MODEL_FOLDER.add_argument("--model_folder", help="If specified, common folder all datasets will used for model files.")
 
@@ -70,3 +76,7 @@ PARSER_STAGES.add_argument("--stages", choices=VAE_STAGES, nargs="+", default=VA
 
 PARSER_ORIGIONAL_CLUSTERING = argparse.ArgumentParser(add_help=False)
 PARSER_ORIGIONAL_CLUSTERING.add_argument("--origional_clustering", choices=SOURCE_COLUMNS, default=LABEL, help="The data source columns that will be used as the origional labels.")
+
+PARSER_BOOTSTRAP_N = argparse.ArgumentParser(add_help=False)
+PARSER_BOOTSTRAP_N.add_argument("--bootstrap_n", type=int, default=128, help="Number of bootstrap repititions that will be made to calculate mean and variance for ari.")
+

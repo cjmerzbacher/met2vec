@@ -59,6 +59,17 @@ def get_fluxes(fd : FluxDataset, join : str):
     else:
         return fd.outer
 
+def get_data_at_stages(fd : FluxDataset, 
+                       vae : FluxVAE, 
+                       stages : str = VAE_STAGES, 
+                       vae_sample : bool = False,
+                       fluxes : list[str] = None,
+                       restrictions : dict[str,any] = {}):
+    return {
+        stage : get_data(fd, vae, stage, vae_sample, fluxes, restrictions)
+        for stage in stages
+    }
+
 def get_data(fd : FluxDataset, 
              vae : FluxVAE = None, 
              stage : str = EMB, 
