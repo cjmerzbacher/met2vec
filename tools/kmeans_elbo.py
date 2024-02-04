@@ -34,7 +34,7 @@ sample = args.sample
 n = args.n
 save_path = args.save_path
 
-fd = load_fd(args)
+fd = load_fd(args, seed=0)
 fluxes = get_fluxes(fd, join)
 vae = load_VAE(args)
 max_k = get_max_k(args, fd)
