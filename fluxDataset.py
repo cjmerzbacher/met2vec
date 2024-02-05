@@ -166,7 +166,7 @@ class FluxDataset(Dataset):
 
         print(f"{n_fluxes} fluxes loaded...")
 
-        self.outer = sorted(set.union(*flux_columns))
+        self.outer = list((set.union(*flux_columns)))
         self.inner = sorted(set.intersection(*flux_columns))
 
         self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).sum().reindex(self.outer)
@@ -205,7 +205,7 @@ class FluxDataset(Dataset):
         self.data = df
         self.normalized_values = self.normalize_data(df).values
         self.labels = list(df[LABEL].values)
-        self.unique_labels = list(set(self.labels))
+        self.unique_labels = df[LABEL].unique()
 
     def reload_sample(self) -> None:
         """Loads a sample into the dataset.
@@ -222,6 +222,7 @@ class FluxDataset(Dataset):
         
         df = pd.concat(samples, ignore_index=True).fillna(0)
         df = df[df.columns.intersection(columns)]
+        df = df.reindex(columns=self.outer + SOURCE_COLUMNS)
         self.load_dataFrame(df)
 
     def create_stoicheometric_matrix(self):

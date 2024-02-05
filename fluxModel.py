@@ -11,7 +11,7 @@ from cobra.io import read_sbml_model
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
 def get_metabolite_name(metabolite : Metabolite):
-    return f"m[f[{metabolite.formula}]ch[{metabolite.charge}]co[{metabolite.compartment}]]"
+    return f"m[n[{metabolite.name}]f[{metabolite.formula}]ch[{metabolite.charge}]co[{metabolite.compartment}]]"
 
 def get_reaction_name(reaction):
     reaction_parts = [f"{get_metabolite_name(m)}[{reaction.metabolites[m]}]" for m in reaction.metabolites]

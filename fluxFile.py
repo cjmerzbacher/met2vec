@@ -91,7 +91,7 @@ class FluxFile:
         if self.model != None:
             renaming = self.model.get_renaming_dict()
             df.rename(columns=renaming, inplace=True)
-            df = df.groupby(df.columns, axis=1).agg(sum)
+            #df = df.groupby(df.columns, axis=1).agg(sum)
 
         return df
     
