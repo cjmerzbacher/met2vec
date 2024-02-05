@@ -17,13 +17,8 @@ def get_KMeans_classifications(k, n, data : pd.DataFrame):
 
     return classifications
 
-def get_KMeans_WCSS(k, data : pd.DataFrame, repeats):
-    inertias = np.array([
-        get_flux_kmeans(k, data).inertia_
-        for _ in range(repeats)
-    ])
-
-    return inertias.mean(), inertias.std()
+def get_kmeans_inertia(k, data : pd.DataFrame):
+    return get_flux_kmeans(k, data).inertia_
 
 def get_k(args, fd, origional_clustering=LABEL):
     k = args.k

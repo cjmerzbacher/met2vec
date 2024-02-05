@@ -46,22 +46,14 @@ ks = list(range(1, max_k+1))
 n_stages = len(stages)
 n_ks = len(ks)
 
-data = np.zeros((n_ks, n_stages * 2))
+data = np.zeros((n_ks, n_stages))
 for i, k in tqdm(list(enumerate(ks)), desc='Runing KMeans'):
     for j, stage in enumerate(stages):
-        wcss, wcss_std = get_KMeans_WCSS(k, dfs[stage], n)
-
-        data[i,j*2] = wcss
-        data[i,j*2 + 1] = wcss_std
-
-columns = sum([
-    [stage, f"{stage}_std"]
-    for stage in stages
-], start=[])
+        data[i,j] = get_kmeans_inertia(k, dfs[stage]) / len(dfs[stage].index)
 
 elbo_df = pd.DataFrame(
     data,
-    columns=columns
+    columns=map(str,stages)
 )
 elbo_df['k'] = ks
 elbo_df.to_csv(save_path, index=False)
