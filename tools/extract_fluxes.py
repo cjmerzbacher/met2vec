@@ -4,7 +4,7 @@ import os
 parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
-from misc.fluxDataset import load_fd, get_data, prep_data
+from misc.fluxDataset import load_fd
 from misc.parsing import *
 from misc.constants import *
 
@@ -30,7 +30,7 @@ verbose = args.verbose
 
 fd = load_fd(args, seed=0)
 
-all_fluxes = fd.outer
+all_fluxes = fd.reaction_names
 
 if fluxes == []:
     print("No fluxes, picking random fluxes...")

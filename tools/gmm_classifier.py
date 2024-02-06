@@ -4,7 +4,7 @@ import os
 parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
-from misc.gmms import train_gmms
+from unused.gmms import train_gmms
 from misc.vae import load_VAE
 from misc.fluxDataset import load_fd, get_data
 from misc.constants import *

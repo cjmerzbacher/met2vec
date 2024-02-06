@@ -164,6 +164,7 @@ class FluxVAE:
         """Computes the loss for a given x and y."""
         batch_size = v.shape[0]
         v = format_input(v)
+        v_r = format_input(v_r)
         v_mu = format_mu(v_mu, v)
         v_std = format_std(v_std, v)
 
@@ -171,7 +172,7 @@ class FluxVAE:
         
         loss_rec = torch.sum(torch.pow(v - v_r, 2.0)) 
         loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var)  
-        loss_S = beta_S * torch.sum(torch.pow(torch.matmul((v * v_std) + v_mu, S), 2.0))
+        loss_S = beta_S * torch.sum(torch.pow(torch.matmul((v_r * v_std) + v_mu, S), 2.0))
 
         loss_rec /= batch_size
         loss_div /= batch_size

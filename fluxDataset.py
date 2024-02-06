@@ -10,7 +10,7 @@ from misc.constants import *
 from misc.io import *
 
 from fluxFile import FluxFile
-from fluxModel import FluxModel
+from fluxModel import *
 
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
 
@@ -66,10 +66,10 @@ class FluxDataset(Dataset):
         self.reload_sample()
         self.create_stoicheometric_matrix()
 
-        self.C = self.get_conversion_matrix(self.inner)
+        self.C = self.get_conversion_matrix(self.core_reaction_names)
 
-        print(f"inner size -> {len(self.inner)}")
-        print(f"outer size -> {len(self.outer)}")
+        print(f"inner size -> {len(self.core_reaction_names)}")
+        print(f"outer size -> {len(self.reaction_names)}")
 
     def __len__(self):
         return self.data.shape[0]
@@ -118,7 +118,7 @@ class FluxDataset(Dataset):
         self.flux_files : dict[str, FluxFile] = {}
 
         for f in flux_paths:
-            flux_file = FluxFile(f, self.model_folder) 
+            flux_file = FluxFile(f, self.model_folder, seed=self.seed) 
             self.flux_files[flux_file.file_name] = flux_file
 
     def find_models(self):
@@ -166,14 +166,14 @@ class FluxDataset(Dataset):
 
         print(f"{n_fluxes} fluxes loaded...")
 
-        self.outer = list((set.union(*flux_columns)))
-        self.inner = sorted(set.intersection(*flux_columns))
+        self.reaction_names = sorted(set.union(*flux_columns))
+        self.core_reaction_names = sorted(set.intersection(*flux_columns))
 
-        self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).sum().reindex(self.outer)
+        self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).sum().reindex(self.reaction_names)
 
         mean_squared = (self.flux_mean ** 2)
         square_mean = pd.DataFrame(flux_suqare_sums).fillna(0).sum()
-        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).reindex(self.outer)
+        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).reindex(self.reaction_names)
 
         if min_spf < samples_per_file:
             new_n = min_spf * len(self.flux_files)
@@ -193,7 +193,7 @@ class FluxDataset(Dataset):
         nd[SOURCE_COLUMNS] = self.data[SOURCE_COLUMNS]
 
         if fluxes is None:
-            fluxes = self.outer 
+            fluxes = self.reaction_names 
 
         nd = nd.drop(columns = nd.columns.difference(SOURCE_COLUMNS + fluxes))
         nd = nd.reindex(columns = SOURCE_COLUMNS + fluxes) 
@@ -210,7 +210,7 @@ class FluxDataset(Dataset):
     def reload_sample(self) -> None:
         """Loads a sample into the dataset.
         """
-        columns = list(set(self.outer + SOURCE_COLUMNS))
+        columns = list(set(self.reaction_names + SOURCE_COLUMNS))
         samples = [pd.DataFrame(columns=columns)]
         flux_files_it = list(enumerate(self.flux_files.values()))
 
@@ -222,22 +222,55 @@ class FluxDataset(Dataset):
         
         df = pd.concat(samples, ignore_index=True).fillna(0)
         df = df[df.columns.intersection(columns)]
-        df = df.reindex(columns=self.outer + SOURCE_COLUMNS)
+        df = df.reindex(columns=self.reaction_names + SOURCE_COLUMNS)
         self.load_dataFrame(df)
 
     def create_stoicheometric_matrix(self):
-        Ss = [
-            fm.get_stoicheometry() 
-            for fm in tqdm(list(self.flux_models.values()), desc="Creating S_outer")
-            if fm is not None
+        if len(self.flux_models) == 0:
+            return
+
+        models = [
+            flux_model.get_cobra_model()
+            for flux_model in tqdm(list(self.flux_models.values()), desc="Loading models")
         ]
 
-        if len(Ss) != 0:
-            self.S_outer = pd.concat(Ss).fillna(0)
-            self.S_outer = self.S_outer.reindex(columns=self.outer).values.T
-        else:
-            self.S_outer = None
+        self.metabolite_names = list(set.union(*[
+            set(map(get_metabolite_name, model.metabolites))
+            for model in models
+        ]))
+
+        reactions = {
+            get_reaction_name(reaction) : reaction
+            for reaction in sum([
+                model.reactions
+                for model in models
+            ], start=[])
+        }
+
+        S_raw = np.zeros((
+            len(self.metabolite_names),
+            len(self.reaction_names)
+        ))
+
+        r_ind = self.reaction_names.index
+        m_ind = self.metabolite_names.index
+
+        for reaction_name, reaction in reactions.items():
+            for metabolite, stoich in reaction.metabolites.items():
+                metabolite_name = get_metabolite_name(metabolite)
+
+                S_raw[
+                    m_ind(metabolite_name),
+                    r_ind(reaction_name)
+                ] = stoich
+
+        self.S = pd.DataFrame(
+            S_raw,
+            columns = self.reaction_names,
+        )
+        self.S[METABOLITE] = self.metabolite_names
+        self.S = self.S.set_index(METABOLITE)
 
     def get_conversion_matrix(self, to_reactions):
-        return get_conversion_matrix(self.outer, to_reactions)
+        return get_conversion_matrix(self.reaction_names, to_reactions)
 

@@ -6,6 +6,7 @@ from misc.constants import GEM_FOLDER, PKL_FOLDER
 
 from cobra import Metabolite, Reaction, Model
 from cobra.io import read_sbml_model
+from cobra.util.array import create_stoichiometric_matrix
 
 
 logging.getLogger('cobra').setLevel(logging.CRITICAL)
@@ -14,22 +15,12 @@ def get_metabolite_name(metabolite : Metabolite):
     return f"m[n[{metabolite.name}]f[{metabolite.formula}]ch[{metabolite.charge}]co[{metabolite.compartment}]]"
 
 def get_reaction_name(reaction):
-    reaction_parts = [f"{get_metabolite_name(m)}[{reaction.metabolites[m]}]" for m in reaction.metabolites]
+    reaction_parts = [f"{get_metabolite_name(m)}s[{s}]" for m,s in reaction.metabolites.items()]
     name = f"r[{''.join(sorted(reaction_parts))}]"
     return name.replace(",", ".")
 
-def get_rename_dict(model) -> dict[str,str]:
+def get_rename_dict(model : Model) -> dict[str,str]:
     """Gets the renaming dict for a given file.
-    
-    This will transform the file path to get the name and path for the reactions.
-    Then the sbml model loaded will be used to generate a dictionary mapping metabolite
-    names to 'reaction_names'.
-    
-    Arguments:
-        path: The path of the sample which will be used to find a model.
-
-    Returns:
-        renaming: A dictionary mapping metabolits names to 'reaction_names'
     """
     if model == None:
         return None
@@ -43,12 +34,11 @@ def get_reaction_stoicheometry(reaction : Reaction):
     return stoicheometry
 
 def get_model_stoicheometry(model : Model):
-    data = {
-        get_reaction_name(r) :
-        get_reaction_stoicheometry(r)
-        for r in model.reactions
-    }
-    return pd.DataFrame(data).fillna(0)
+    s = pd.DataFrame(
+        create_stoichiometric_matrix(model),
+        columns=map(get_reaction_name, model.reactions)
+    )
+    return s.set_index(map(get_metabolite_name,model.metabolites))
 
 class FluxModel:
     def __init__(self, name, main_folder):

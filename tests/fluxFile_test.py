@@ -45,4 +45,3 @@ class FluxFileTest(TestCase):
 
         assert lat_vent_file_name == ff.file_name
         assert lat_vent_model_name == ff.model_name
-        assert np(lat_vent_gem_file) == np(ff.gem_file)

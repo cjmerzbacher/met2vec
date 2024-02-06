@@ -26,7 +26,7 @@ class FluxModelTest(TestCase):
 
         model_renaming_dict_1 = fm.get_renaming_dict()
         fm.make_cobra_model_pkl()
-        model_renaming_dict_2 = fm.make_renaming_dict()
+        model_renaming_dict_2 = fm.get_renaming_dict()
 
         for reaction in model_renaming_dict_1:
             assert model_renaming_dict_1[reaction] == model_renaming_dict_2[reaction]

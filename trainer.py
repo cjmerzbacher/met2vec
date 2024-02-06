@@ -62,10 +62,10 @@ train_fd = FluxDataset(
 )
 
 # Find Reactions VAE will learn to reconstruct
-vae_reactions = train_fd.inner if args.join == INNER else train_fd.outer
+vae_reactions = train_fd.core_reaction_names if args.join == INNER else train_fd.reaction_names
 n_in =len(vae_reactions)
 
-print(f"    {len(train_fd.outer)} total reactions")
+print(f"    {len(train_fd.reaction_names)} total reactions")
 print(f"    {n_in} VAE reactions")
 
 # Load test datasets
@@ -88,5 +88,18 @@ vae = FluxVAE(
     reaction_names=vae_reactions
 )
 
-trainer = VAETrainer(args, vae, train_fd, test_fd)
-trainer.train()
+trainer = VAETrainer(
+    vae=vae, 
+    train_fd=train_fd, 
+    test_fd=test_fd,
+    lr=args.lr,
+    batch_size=args.batch_size,
+    beta_S=args.beta_S,
+    main_folder=args.main_folder,
+    losses_file=args.losses_file,
+    refresh_data_on=args.refresh_data_on,
+    save_on=args.save_on,
+    save_losses_on=args.save_losses_on,
+    save_test_min=args.save_test_min
+)
+trainer.train(args.epochs)

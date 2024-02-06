@@ -51,6 +51,9 @@ INNER = 'inner'
 OUTER = 'outer'
 DATASET_JOINS = [INNER, OUTER]
 
+METABOLITE = "metabolite"
+REACTION = "reaction"
+
 # Clustering
 KMEANS_C = "kmeans_cluster"
 ORIGIONAL = "origional"

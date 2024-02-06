@@ -55,9 +55,9 @@ def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
 
 def get_fluxes(fd : FluxDataset, join : str):
     if join == INNER:
-        return fd.inner
+        return fd.core_reaction_names
     else:
-        return fd.outer
+        return fd.reaction_names
 
 def get_data_at_stages(fd : FluxDataset, 
                        vae : FluxVAE, 
@@ -93,7 +93,7 @@ def get_data(fd : FluxDataset,
         data: The transformed subset of the FluxDataset sample.
     """
     if fluxes is None:
-        fluxes = fd.outer
+        fluxes = fd.reaction_names
 
     df = fd.get_normalized_data(fluxes)
     
