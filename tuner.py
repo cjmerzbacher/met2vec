@@ -52,6 +52,7 @@ def get_args():
     # run command
     parser_run = subparsers.add_parser(RUN, help='Run many intances of the given script to find the effect of the different hyperparameters.')
     parser_run.add_argument('script', type=str)
+    parser_run.add_argument('--singles', default=[], nargs="+", type=int)
 
     # output command
     parser_output = subparsers.add_parser(OUTPUT, help='Check files made by scripts run to get results.')
@@ -203,16 +204,26 @@ def run(args):
         generate_arg_sets(args)
 
     # Run Scripts
+
+    if len(args.singles) != 0:    
+        for script in args.singles:
+            run_script(args, script, state)
+        return
+
+
     state = load_state_file(args)
     while state[SCRIPTS_RUN] < len(state[ARG_SETS]):
-        arg_set = state[ARG_SETS][state[SCRIPTS_RUN]]
-        script = f"{args.script} {arg_set[ARG_STR]}"
-        
-        print(f"\nRunning Script '{script}'\n\n")
-        os.system(script)
-
+        run_script(args, state[SCRIPTS_RUN], state)
         state[SCRIPTS_RUN] += 1
-        save_state_file(state, args)
+
+def run_script(args, script, state):
+    arg_set = state[ARG_SETS][script]
+    script = f"{args.script} {arg_set[ARG_STR]}"
+        
+    print(f"\nRunning Script '{script}'\n\n")
+    os.system(script)
+
+    save_state_file(state, args)
 
 def clear(args):
     state : dict[str,any] = load_state_file(args)
