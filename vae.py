@@ -11,14 +11,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 def format_matrix(A):
     if type(A) != torch.Tensor:
         return torch.Tensor(A).to(device)
-    return A
+    return A.to(device)
 
 def format_input(x):
     return format_matrix(x)
 
 def get_s(C):
     s = torch.sum(C, dim=1)
-    return 1 - torch.minimum(s, torch.ones_like(s))
+    return 1 - torch.minimum(s, torch.ones_like(s)).to(device)
 
 def format_S(S, n_outer):
     if S is None:
@@ -27,12 +27,12 @@ def format_S(S, n_outer):
 
 def format_mu(v_mu, v):
     if v_mu is None:
-        return torch.zeros_like(v)
+        return torch.zeros_like(v).to(device)
     return format_matrix(v_mu)
 
 def format_std(v_std, v):
     if v_std is None:
-        return torch.zeros_like(v)
+        return torch.zeros_like(v).to(device)
     return format_matrix(v_std)
 
 def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
