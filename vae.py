@@ -6,11 +6,15 @@ from misc.constants import *
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-def format_input(x):
-    return torch.Tensor(x).to(device)
+
 
 def format_matrix(A):
-    return torch.Tensor(A).to(device)
+    if type(A) != torch.Tensor:
+        return torch.Tensor(A).to(device)
+    return A
+
+def format_input(x):
+    return format_matrix(x)
 
 def get_s(C):
     s = torch.sum(C, dim=1)
