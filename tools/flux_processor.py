@@ -35,12 +35,14 @@ data = df_origin.drop(columns=SOURCE_COLUMNS).values
 data = prep_data(data, args.prep, args.perp)
 
 if args.prep == None and args.stage != EMB:
+     print("Using fd columns for new data.")
      columns = fd.columns
 else:
-    pref = args.prep
-    if pref == NONE:
-        pref = EMB
-    columns = [f"{pref}{i}" for i in range(data.shape[1])]
+    prefix = args.prep
+    if prefix == NONE:
+        prefix = EMB
+    print(f"Using prefix '{prefix}' for new data.")
+    columns = [f"{prefix}{i}" for i in range(data.shape[1])]
 
 df = pd.DataFrame(data, columns=columns)
 df[SOURCE_COLUMNS] = fd.data[SOURCE_COLUMNS]

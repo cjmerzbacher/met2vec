@@ -28,7 +28,7 @@ def safe_extract_from_desc(desc : dict[str, any], name : str, default : any):
             return desc[name]
     return default
 
-def load_VAE(args) -> FluxVAE:
+def load_VAE(folder, version=None, legacy_vae=False) -> FluxVAE:
     """Loads a VAE from a given folder. 
     
     The folder should contain encoder{version}.pth 
@@ -42,19 +42,15 @@ def load_VAE(args) -> FluxVAE:
         vae: A VAE with weights loaded from the specified folder.
     """
 
-    folder = args.vae_folder
-    load_version = args.vae_version
-    legacy_vae = args.legacy_vae
-
     def contains_correct_version(f : str, model_part : str):
-        return model_part in f and (True if load_version is None else str(load_version) in f)
+        return model_part in f and (True if version is None else str(version) in f)
     
     encoder_files = [os.path.join(folder, f) for f in os.listdir(folder) if contains_correct_version(f, 'encoder')]
     decoder_files = [os.path.join(folder, f) for f in os.listdir(folder) if contains_correct_version(f, 'decoder')]
     desc_files = [os.path.join(folder, f) for f in os.listdir(folder) if contains_correct_version(f, 'vae_desc')]
 
     if len(encoder_files) == 0 or len(decoder_files) == 0:
-        print(f'Unable to load VAE model .pth file not found for version {load_version}')
+        print(f'Unable to load VAE model .pth file not found for version {version}')
         return None
 
     encoder_path = sorted(encoder_files)[-1]
