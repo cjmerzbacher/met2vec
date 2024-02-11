@@ -123,8 +123,9 @@ class VAETrainer:
             "weight_decay" : self.vae.weight_decay,
             "reaction_names": self.vae.reaction_names,
             "train_dataset" : self.train_fd.main_folder,
-            "test_dataset" : self.test_fd.main_folder,
         }
+        if self.test_fd is not None:
+            desc["test_dataset"] = self.test_fd.main_folder,
 
         safe_json_dump(vae_desc_path, desc, True)
 
@@ -142,6 +143,13 @@ class VAETrainer:
         return blame
 
     def test_vae(self) -> list[dict[str,float]]:
+        if self.test_fd is None:
+            return {
+                LOSS : 0.0,
+                R_LOSS : 0.0,
+                D_LOSS : 0.0,
+                S_LOSS : 0.0
+            }
         with torch.no_grad():
             V = self.test_fd.normalized_values
             _, test_blame = self.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test)
@@ -154,13 +162,13 @@ class VAETrainer:
         self.min_run_Lt = np.inf
 
         self.mu_train, self.std_train = self.train_fd.get_mu_std()
-        self.mu_test, self.std_test = self.test_fd.get_mu_std()
-
         self.C_train = self.train_fd.get_conversion_matrix(self.vae.reaction_names)
-        self.C_test = self.test_fd.get_conversion_matrix(self.vae.reaction_names)
-
         self.S_train = self.train_fd.S.values.T
-        self.S_test = self.test_fd.S.values.T
+
+        if self.test_fd != None:
+            self.mu_test, self.std_test = self.test_fd.get_mu_std()
+            self.C_test = self.test_fd.get_conversion_matrix(self.vae.reaction_names)
+            self.S_test = self.test_fd.S.values.T
 
         for e in range(self.epochs):
             self.epoch(e)

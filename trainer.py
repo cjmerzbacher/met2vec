@@ -69,11 +69,14 @@ print(f"    {len(train_fd.reaction_names)} total reactions")
 print(f"    {n_in} VAE reactions")
 
 # Load test datasets
-test_fd = FluxDataset(
-    args.test_dataset, 
-    args.test_size, 
-    model_folder=args.model_folder
-)
+if args.test_dataset != None:
+    test_fd = FluxDataset(
+        args.test_dataset, 
+        args.test_size, 
+        model_folder=args.model_folder
+    )
+else:
+    test_fd = None
 
 # Load VAE
 print("Loading VAE...")
