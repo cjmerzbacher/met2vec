@@ -108,8 +108,12 @@ def get_data(fd : FluxDataset,
         unfufilled_fluxes = set(vae.reaction_names).difference(fluxes)
         if len(unfufilled_fluxes) != 0:
             print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
+    else:
+        print("No VAE pressent.")
 
     if vae is not None and stage != PRE:
+        print(f"Using VAE with stage {stage}")
+
         V = get_nonsource(df).values
         C = get_conversion_matrix(fluxes, vae.reaction_names)
         
