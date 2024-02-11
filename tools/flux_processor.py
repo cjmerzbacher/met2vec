@@ -34,7 +34,7 @@ df_origin = get_data(fd, vae, args.stage, args.sample, fluxes=fluxes)
 data = df_origin.drop(columns=SOURCE_COLUMNS).values
 data = prep_data(data, args.prep, args.perp)
 
-if args.prep == None and args.stage != EMB:
+if args.prep == NONE and args.stage != EMB:
      print("Using fd columns for new data.")
      columns = fd.columns
 else:
