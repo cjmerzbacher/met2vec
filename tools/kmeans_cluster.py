@@ -9,7 +9,7 @@ import pandas as pd
 
 from sklearn.cluster import KMeans
 from misc.fluxDataset  import load_fd, get_data
-from misc.vae import load_VAE
+from misc.vae import load_VAE, get_load_VAE_args
 from misc.kmeans import get_KMeans_classifications, get_k
 
 from misc.constants import *
@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(parents=[
 parser.add_argument("-k", type=int, help="The number of clusers, defualt as many as labels in dataset.")
 args = parser.parse_args()
 
-vae = load_VAE(args)
+vae = load_VAE(*get_load_VAE_args(args))
 fd = load_fd(args, seed=0)
 
 data = get_data(fd, vae, args.stage, args.sample)

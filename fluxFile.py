@@ -10,9 +10,6 @@ from reproducability import get_random_state, RandomState
 from fluxModel import FluxModel
 
 
-def get_file_name(path : str):
-    return 
-
 def get_model_name(file_name : str):
     end_pattern = r'_([0-9]|k)+(\([0-9]*\))?$'
     return re.sub(end_pattern, '', file_name)

@@ -28,6 +28,9 @@ def safe_extract_from_desc(desc : dict[str, any], name : str, default : any):
             return desc[name]
     return default
 
+def get_load_VAE_args(args):
+    return args.vae_folder, args.vae_version, args.legacy_vae
+
 def load_VAE(folder, version=None, legacy_vae=False) -> FluxVAE:
     """Loads a VAE from a given folder. 
     

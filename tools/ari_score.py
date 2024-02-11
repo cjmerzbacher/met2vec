@@ -13,7 +13,7 @@ from tqdm import tqdm
 from misc.parsing import *
 from misc.constants import *
 from misc.fluxDataset import load_fd, get_data, get_fluxes
-from misc.vae import load_VAE
+from misc.vae import load_VAE, get_load_VAE_args
 from misc.ari import get_bootstrap_ari
 from misc.kmeans import get_KMeans_classifications, get_k
 
@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(parents=[
 parser.add_argument("-n", type=int, default=64, help="Number of repititions that will be made.")
 args = parser.parse_args()
 
-vae = load_VAE(args)
+vae = load_VAE(*get_load_VAE_args(args))
 fd = load_fd(args, seed=0)
 
 k = get_k(args, fd)

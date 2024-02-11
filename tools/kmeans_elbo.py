@@ -36,7 +36,7 @@ save_path = args.save_path
 
 fd = load_fd(args, seed=0)
 fluxes = get_fluxes(fd, join)
-vae = load_VAE(args)
+vae = load_VAE(*get_load_VAE_args(args))
 max_k = get_max_k(args, fd)
 
 dfs = get_data_at_stages(fd, vae, stages, sample)

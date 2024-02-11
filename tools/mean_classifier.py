@@ -4,7 +4,7 @@ import os
 parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
-from misc.vae import load_VAE
+from misc.vae import load_VAE, get_load_VAE_args
 from misc.fluxDataset import load_fd, get_data, get_fluxes
 from misc.constants import *
 from misc.parsing import *
@@ -30,7 +30,7 @@ args = parser.parse_args()
 
 join = args.join
 
-vae = load_VAE(args)
+vae = load_VAE(*get_load_VAE_args(args))
 
 train_fd = load_fd(args, "train", 0)
 test_fd = load_fd(args, "test", 1)

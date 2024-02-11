@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
 sys.path.append(parent_dir)
 
 from misc.fluxDataset import load_fd, get_data, prep_data, get_fluxes
-from misc.vae import load_VAE
+from misc.vae import load_VAE, get_load_VAE_args
 from misc.constants import *
 from misc.parsing import *
 
@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 join = args.join
 
-vae = load_VAE(args)
+vae = load_VAE(*get_load_VAE_args(args))
 
 fd = load_fd(args, "", seed=0)
 fluxes = get_fluxes(fd, join)
