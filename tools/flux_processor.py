@@ -36,7 +36,7 @@ data = prep_data(data, args.prep, args.perp)
 
 if args.prep == NONE and args.stage != EMB:
      print("Using fd columns for new data.")
-     columns = fd.columns
+     columns = fluxes
 else:
     prefix = args.prep
     if prefix == NONE:
