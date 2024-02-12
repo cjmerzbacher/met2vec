@@ -62,7 +62,7 @@ class VAETrainer:
             weight_decay=vae.weight_decay
         )
 
-        self.data_loader = DataLoader(self.train_fd, batch_size=self.batch_size, shuffle=False)
+        self.data_loader = DataLoader(self.train_fd, batch_size=self.batch_size, shuffle=True)
 
     def set_epochs(self, epochs):
         self.epochs = epochs
