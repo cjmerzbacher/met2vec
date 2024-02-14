@@ -27,7 +27,7 @@ def boolean_string(s):
 
 # Constant Parsers
 PARSER_STAGE = argparse.ArgumentParser(add_help=False)
-PARSER_STAGE.add_argument("-s", "--stage", choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
+PARSER_STAGE.add_argument("-s", "--stage", default=PRE, choices=VAE_STAGES, help="The stage in the VAE used to evaluated data.")
 
 PARSER_VAE_LOAD = argparse.ArgumentParser(add_help=False)
 PARSER_VAE_LOAD.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
