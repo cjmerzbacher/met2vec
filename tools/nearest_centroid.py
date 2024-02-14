@@ -48,8 +48,11 @@ train_groups = sorted(map(str, train_df[group_by].unique()))
 test_groups = sorted(map(str, test_df[group_by].unique()))
 
 train_df[group_by] = train_df[group_by].map(str).map(train_groups.index)
+test_df = test_df.reindex(columns=train_df.columns)
+test_df.fillna(0, inplace=True)
 
 train_X = train_df.drop(columns=group_by).values
+
 test_X = test_df.drop(columns=group_by).values
 
 train_y = train_df[group_by].values

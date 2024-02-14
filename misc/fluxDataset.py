@@ -76,23 +76,8 @@ def get_data(fd : FluxDataset,
              vae_sample : bool = False, 
              fluxes : list[str] = None,
              restrictions : dict[str, any] = {},
-             source_columns=[]) -> np.array:
-    """Transforms the data loaded in a FluxDataset through a vae.
-     
-    Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
-    unchanged, transformed into the VAE embedding, or reconstructed from it's VAE embedding.
-    
-    Arguments:
-        fd: The FluxDataset whose sample will be transformed.
-        vae: The VAE which will be used to transform the data.
-        stage: The stage in the VAE which be output ('pre', 'emb', 'post').
-        vae_sample: If true the VAE will sample from the embedding distribution, isntead of using the mean.
-        label: The label for the subset of the FluxDataset that will be transformed. By default the whole
-            sample will be used.
-
-    Return:
-        data: The transformed subset of the FluxDataset sample.
-    """
+             source_columns=[]) -> pd.DataFrame:
+    """Transforms the data loaded in a FluxDataset through a vae."""
     if fluxes is None:
         fluxes = fd.reaction_names
 
