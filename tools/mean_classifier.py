@@ -41,8 +41,8 @@ sample = args.sample
 stage = args.stage
 group_by = args.group_by
 
-train_df = get_data(train_fd, vae, stage, False, fluxes)
-test_df = get_data(test_fd, vae, stage, False, fluxes)
+train_df = get_data(train_fd, vae, stage, False, fluxes, source_columns=[group_by])
+test_df = get_data(test_fd, vae, stage, False, fluxes, source_columns=[group_by])
 
 pred = get_mean_pred(train_df, group_by)
 

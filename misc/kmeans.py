@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 
 def get_flux_kmeans(k, data : pd.DataFrame):
-    data = data.drop(columns=SOURCE_COLUMNS)
     return KMeans(k, n_init='auto').fit(data)
 
 def get_KMeans_classifications(k, n, data : pd.DataFrame):

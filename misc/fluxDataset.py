@@ -75,7 +75,8 @@ def get_data(fd : FluxDataset,
              stage : str = EMB, 
              vae_sample : bool = False, 
              fluxes : list[str] = None,
-             restrictions : dict[str, any] = {}) -> np.array:
+             restrictions : dict[str, any] = {},
+             source_columns=[]) -> np.array:
     """Transforms the data loaded in a FluxDataset through a vae.
      
     Transform the sample loaded into a FluxDataset possibly restricted to a sample. The sample will be left 
@@ -129,5 +130,7 @@ def get_data(fd : FluxDataset,
 
         df_ext = pd.DataFrame(untorch(data), columns=columns)
         df = pd.concat([df[SOURCE_COLUMNS], df_ext], axis=1)
+
+    df.drop(columns=[c for c in df.columns if c in SOURCE_COLUMNS and c not in source_columns], inplace=True)
 
     return df

@@ -137,6 +137,9 @@ class FluxDataset(Dataset):
             except:
                 fm = None
 
+            if fm is None:
+                continue
+
             self.flux_models[model_name] = fm 
             for ff in flux_files:
                 ff.set_model(fm)
