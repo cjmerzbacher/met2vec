@@ -3,10 +3,17 @@ import numpy as np
 import pandas as pd
 
 from fluxDataset import FluxDataset
+from misc.constants import SOURCE_COLUMNS
 
 def get_mean_pred(train_df : pd.DataFrame, group_by : str):
     if group_by not in train_df.columns:
         raise IndexError(f"{group_by} not found in train_df.columns")
+    
+    train_df = train_df.drop(columns=[
+        c 
+        for c in train_df.columns
+        if c in SOURCE_COLUMNS and c != group_by
+    ])
  
     means = train_df.groupby([group_by]).mean(numeric_only=True)
     column_index = means.columns
