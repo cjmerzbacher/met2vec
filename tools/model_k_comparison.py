@@ -30,14 +30,14 @@ save_path = args.save_path
 
 print_args(args)
 
-vaes = [
-    load_VAE(folder)
+vaes = {
+    folder: load_VAE(folder)
     for folder in vae_foldrs
-]
+}
 
 fds = load_multiple_fds(args, "test", seed=0)
 
-def get_vae_data(vae : FluxVAE):
+def get_vae_data(vae : FluxVAE, folder : str):
     data = vae.get_desc()
     data.pop("reaction_names")
 
@@ -54,7 +54,7 @@ def get_vae_data(vae : FluxVAE):
     return data
 
 df = pd.DataFrame([
-    get_vae_data(vae)
-    for vae in vaes
+    get_vae_data(vae, folder)
+    for folder, vae in vaes.items()
 ])
 df.to_csv(save_path, index=False)
