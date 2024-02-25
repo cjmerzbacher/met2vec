@@ -42,6 +42,10 @@ def get_vae_data(vae : FluxVAE, folder : str):
     data.pop("reaction_names")
 
     for fd in fds:
+        unfufilled_fluxes = set(vae.reaction_names).difference()
+        if len(unfufilled_fluxes) != 0:
+            print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
+
         _, blame = vae.get_loss(
             fd.normalized_values, 
             fd.get_conversion_matrix(vae.reaction_names),
