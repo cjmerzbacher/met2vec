@@ -14,73 +14,75 @@ from misc.parsing import *
 from misc.vae import load_VAE
 from misc.fluxDataset import load_multiple_fds
 
-parser = argparse.ArgumentParser(parents=[
-    PARSER_VAE_FOLDERS, 
-    PARSER_BETA_S,
-    parser_multiple_fluxDatasets_loading("test"),
-    PARSER_IGNORE_CHEMICAL_NAME,
-    PARSER_SAVE,
-])
+def update_rn(rn : str):
+    rn = 'r[' + ''.join(sorted(map(lambda s: f"m[{s}", rn[2:-1].split('m[')[1:]))) + ']' 
+    return re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]', '', rn))
 
-args = parser.parse_args()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(parents=[
+        PARSER_VAE_FOLDERS, 
+        PARSER_BETA_S,
+        parser_multiple_fluxDatasets_loading("test"),
+        PARSER_IGNORE_CHEMICAL_NAME,
+        PARSER_SAVE,
+    ])
 
-
-
-vae_foldrs = args.vae_folders
-beta_S = args.beta_S
-ignore_chemical_name = args.ignore_chemical_name
-save_path = args.save_path
-
-print_args(args)
-
-vaes = {
-    folder: load_VAE(folder)
-    for folder in vae_foldrs
-}
-
-fds = load_multiple_fds(args, "test", seed=0)
-
-def remove_chemical_names(reaction_names : list[str]) -> list[str]:
-    def update_rn(rn : str):
-        rn = 'r[' + ''.join(sorted(map(rn[1:-1].split("m[n[")), lambda s: f"m[n[{s}") + ']'
-        return re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]', '', rn))
-
-    return [update_rn(rn) for rn in reaction_names]
-
-def get_vae_data(vae : FluxVAE, folder : str):
-    data = vae.get_desc()
-    data.pop("reaction_names")
+    args = parser.parse_args()
 
 
-    for fd in fds:
-        if ignore_chemical_name:
-            fd.core_reaction_names = remove_chemical_names(fd.core_reaction_names)
-            fd.reaction_names = remove_chemical_names(fd.reaction_names)
-            vae.reaction_names = remove_chemical_names(vae.reaction_names)
 
-        fluxes = fd.core_reaction_names
-        unfufilled_fluxes = set(vae.reaction_names).difference(fluxes)
-        if len(unfufilled_fluxes) != 0:
-            print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
-            for flux in sorted(unfufilled_fluxes)[:1]:
-                print(f"    vae - {flux}")
-            for flux in sorted(set(fluxes).difference(vae.reaction_names))[:1]:
-                print(f"    fd - {flux}")
+    vae_foldrs = args.vae_folders
+    beta_S = args.beta_S
+    ignore_chemical_name = args.ignore_chemical_name
+    save_path = args.save_path
+
+    print_args(args)
+
+    vaes = {
+        folder: load_VAE(folder)
+        for folder in vae_foldrs
+    }
+
+    fds = load_multiple_fds(args, "test", seed=0)
+
+    def remove_chemical_names(reaction_names : list[str]) -> list[str]:
+
+        return [update_rn(rn) for rn in reaction_names]
+
+    def get_vae_data(vae : FluxVAE, folder : str):
+        data = vae.get_desc()
+        data.pop("reaction_names")
 
 
-        _, blame = vae.get_loss(
-            fd.normalized_values, 
-            fd.get_conversion_matrix(vae.reaction_names),
-            fd.S.values.T,
-            fd.flux_mean.values,
-            fd.flux_std.values,
-            beta_S)
-        data[fd.main_folder] = blame[LOSS]
+        for fd in fds:
+            if ignore_chemical_name:
+                fd.core_reaction_names = remove_chemical_names(fd.core_reaction_names)
+                fd.reaction_names = remove_chemical_names(fd.reaction_names)
+                vae.reaction_names = remove_chemical_names(vae.reaction_names)
 
-    return data
+            fluxes = fd.core_reaction_names
+            unfufilled_fluxes = set(vae.reaction_names).difference(fluxes)
+            if len(unfufilled_fluxes) != 0:
+                print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
+                for flux in sorted(unfufilled_fluxes)[:1]:
+                    print(f"    vae - {flux}")
+                for flux in sorted(set(fluxes).difference(vae.reaction_names))[:1]:
+                    print(f"    fd - {flux}")
 
-df = pd.DataFrame([
-    get_vae_data(vae, folder)
-    for folder, vae in vaes.items()
-])
-df.to_csv(save_path, index=False)
+
+            _, blame = vae.get_loss(
+                fd.normalized_values, 
+                fd.get_conversion_matrix(vae.reaction_names),
+                fd.S.values.T,
+                fd.flux_mean.values,
+                fd.flux_std.values,
+                beta_S)
+            data[fd.main_folder] = blame[LOSS]
+
+        return data
+
+    df = pd.DataFrame([
+        get_vae_data(vae, folder)
+        for folder, vae in vaes.items()
+    ])
+    df.to_csv(save_path, index=False)
