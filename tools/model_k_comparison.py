@@ -35,7 +35,7 @@ vaes = [
     for folder in vae_foldrs
 ]
 
-fds = load_multiple_fds(args, "test")
+fds = load_multiple_fds(args, "test", seed=0)
 
 def get_vae_data(vae : FluxVAE):
     data = vae.get_desc()
