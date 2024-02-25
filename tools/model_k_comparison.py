@@ -41,8 +41,10 @@ def get_vae_data(vae : FluxVAE, folder : str):
     data = vae.get_desc()
     data.pop("reaction_names")
 
+
     for fd in fds:
-        unfufilled_fluxes = set(vae.reaction_names).difference()
+        fluxes = fd.core_reaction_names
+        unfufilled_fluxes = set(vae.reaction_names).difference(fluxes)
         if len(unfufilled_fluxes) != 0:
             print(f"Warning VAE used without {len(unfufilled_fluxes)} reqired fluxes!")
 
