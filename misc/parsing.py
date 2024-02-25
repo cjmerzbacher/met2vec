@@ -4,6 +4,10 @@ from random import randint
 
 import argparse
 
+def print_args(args : argparse.Namespace):
+    for name, val in vars(args).items():
+        print(f"    {name}: {val}")
+
 def parser_fluxDataset_loading(name : str = "", path_tag=None):
     name, prefix = get_name_prefix(name)
     path_tag = [path_tag] if path_tag != None else []
@@ -12,6 +16,16 @@ def parser_fluxDataset_loading(name : str = "", path_tag=None):
     parser.add_argument(*path_tag, f"--{prefix}path", required=True, help=f"The path {name}dataset will be laoded from.")
     parser.add_argument(f"--{prefix}size", default=65536, type=int, help=f"The size of {name}dataset samples.")
     parser.add_argument(f"--{prefix}model_folder", help=f"If set the model folder used for {name}dataset instead of main folder.")
+
+    return parser
+
+def parser_multiple_fluxDatasets_loading(name : str = ""):
+    name, prefix = get_name_prefix(name)
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(f"--{prefix}paths", required=True, nargs="+", help=f"The paths {name}datasets will be laoded from.")
+    parser.add_argument(f"--{prefix}size", default=65536, type=int, help=f"The size of {name}datasets' samples.")
+    parser.add_argument(f"--{prefix}model_folder", help=f"If set the model folder used for {name}datasets instead of main folder.")
 
     return parser
 
@@ -33,6 +47,9 @@ PARSER_VAE_LOAD = argparse.ArgumentParser(add_help=False)
 PARSER_VAE_LOAD.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
 PARSER_VAE_LOAD.add_argument("--vae_version", help="The version of the VAE that will be loaded.")
 PARSER_VAE_LOAD.add_argument("--legacy_vae", type=boolean_string, help="If the VAE used legacy sigma encoding.", default=False)
+
+PARSER_VAE_FOLDERS = argparse.ArgumentParser(add_help=False)
+PARSER_VAE_FOLDERS.add_argument("--vae_folders", type=str, nargs='+', help="The folders from which VAEs will be loaded.")
 
 PARSER_PREP = argparse.ArgumentParser(add_help=False)
 PARSER_PREP.add_argument("--prep", default=NONE, choices=PREPS, help='The preprocessing that will be used on the data.')
@@ -79,4 +96,8 @@ PARSER_ORIGIONAL_CLUSTERING.add_argument("--origional_clustering", choices=SOURC
 
 PARSER_BOOTSTRAP_N = argparse.ArgumentParser(add_help=False)
 PARSER_BOOTSTRAP_N.add_argument("--bootstrap_n", type=int, default=128, help="Number of bootstrap repititions that will be made to calculate mean and variance for ari.")
+
+PARSER_BETA_S = argparse.ArgumentParser(add_help=False)
+PARSER_BETA_S.add_argument("--beta_S", type=float, default=0.0, help="Weighting value for the stoicheometry loss.")
+
 

@@ -4,10 +4,9 @@ import torch.optim as optim
 import numpy as np
 
 from torch.utils.data import DataLoader
-from argparse import Namespace
 from fluxDataset import FluxDataset
 
-from misc.io import safe_json_dump
+from misc.io import safe_json_dump, safe_pkl_dump
 from misc.constants import *
 
 from vae import FluxVAE
@@ -106,37 +105,27 @@ class VAETrainer:
         encoder_path = add_mf(f"encoder{suffix}.pth")
         decoder_path = add_mf(f"decoder{suffix}.pth")
         vae_desc_path =add_mf(f"vae_desc{suffix}.json")
+        vae_pkl_path  =add_mf(f"vae_pkl{suffix}.pkl")
 
 
         torch.save(self.vae.encoder, encoder_path)
         torch.save(self.vae.decoder, decoder_path)
 
-        desc = {
-            "epoch": epoch,
-            "n_in" : self.vae.n_in,
-            "n_emb": self.vae.n_emb,
-            "n_lay": self.vae.n_lay,
-            "lrelu_slope": self.vae.lrelu_slope,
-            "batch_norm" : self.vae.batch_norm,
-            "dropout_p" : self.vae.dropout_p,
-            "legacy_vae": self.vae.legacy_vae,
-            "weight_decay" : self.vae.weight_decay,
-            "reaction_names": self.vae.reaction_names,
-            "train_dataset" : self.train_fd.main_folder,
-        }
+        desc = self.vae.get_desc()
+
+        desc["epoch"] = epoch
+
+        if self.train_fd is not None:
+            desc["train_dataset"] = self.train_fd.main_folder,
         if self.test_fd is not None:
             desc["test_dataset"] = self.test_fd.main_folder,
 
         safe_json_dump(vae_desc_path, desc, True)
-
-    def get_loss(self, V : np.array, C : np.array, S : np.array, v_mu : np.array, v_std : np.array):
-        v_r, mu, log_var = self.vae.train_encode_decode(V, C)
-        loss, blame = self.vae.loss(V, v_r, mu, log_var, S, v_mu, v_std, self.beta_S)
-        return loss, blame
+        safe_pkl_dump(vae_pkl_path, self.vae, True)
 
     def train_batch(self, V : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
-        loss, blame = self.get_loss(V, self.C_train, self.S_train, self.mu_train, self.std_train)
+        loss, blame = self.vae.get_loss(V, self.C_train, self.S_train, self.mu_train, self.std_train, self.beta_S)
         loss.backward()
         self.optimizer.step()
 
@@ -152,7 +141,7 @@ class VAETrainer:
             }
         with torch.no_grad():
             V = self.test_fd.normalized_values
-            _, test_blame = self.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test)
+            _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.beta_S)
             return test_blame
         
     def train(self, epochs : int) -> None:

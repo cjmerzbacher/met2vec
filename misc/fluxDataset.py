@@ -23,15 +23,7 @@ def get_name_prefix(name):
     return name, prefix
 
 def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDataset:
-    """Load a FluxDataset given its name and args.
-    
-    Arguments:
-        args: The arguments namespace
-        name: The name of the dataset
-
-    Returns:
-        fd: The FluxDataset
-    """
+    """Load a FluxDataset given its name and args."""
     _, prefix = get_name_prefix(name)
 
     return FluxDataset(*[args.__dict__[k] for k in [
@@ -40,7 +32,19 @@ def load_fd(args : argparse.Namespace, name : str = "", seed=None) -> FluxDatase
         f"{prefix}model_folder",
     ]], seed=seed)
     
-    
+def load_multiple_fds(args : argparse.Namespace, name : str = "", seed=None) -> list[FluxDataset]:
+    """Load a FluxDataset given its name and args."""
+    _, prefix = get_name_prefix(name)
+
+    paths = args.__dict__[f"{prefix}paths"]
+    size = args.__dict__[f"{prefix}size"]
+    model_folder = args.__dict__[f"{prefix}model_folder"]
+
+    return [
+        FluxDataset(path, size, model_folder, seed)
+        for path in paths
+    ]
+
 def prep_data(data : np.array, preprocessing : str, perplexity : float = 30):
     print(f"Preppring data with {preprocessing}")
     match preprocessing:

@@ -85,6 +85,23 @@ class FluxVAE:
             return torch.eye(self.n_in)
         return format_matrix(C)
 
+    def get_desc(self):
+        return {
+            "n_in" : self.n_in,
+            "n_emb": self.n_emb,
+            "n_lay": self.n_lay,
+            "lrelu_slope": self.lrelu_slope,
+            "batch_norm" : self.batch_norm,
+            "dropout_p" : self.dropout_p,
+            "legacy_vae": self.legacy_vae,
+            "weight_decay" : self.weight_decay,
+            "reaction_names": self.reaction_names,
+        }
+    
+    def get_loss(self, V : np.array, C : np.array, S : np.array, v_mu : np.array, v_std : np.array, beta_S : float):
+        v_r, mu, log_var = self.train_encode_decode(V, C)
+        loss, blame = self.loss(V, v_r, mu, log_var, S, v_mu, v_std, beta_S)
+        return loss, blame
 
     def get_dist(self, x : torch.Tensor, C=None) -> torch.Tensor:
         """Gets the distribution values for a given input value."""
