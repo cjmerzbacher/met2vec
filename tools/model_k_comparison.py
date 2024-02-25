@@ -61,7 +61,7 @@ def get_vae_data(vae : FluxVAE, folder : str):
             for flux in list(unfufilled_fluxes)[:1]:
                 print(f"    vae - {flux}")
             for flux in list(set(fluxes).difference(vae.reaction_names))[:1]:
-                pritn(f"    fd - {flux}")
+                print(f"    fd - {flux}")
 
 
         _, blame = vae.get_loss(
