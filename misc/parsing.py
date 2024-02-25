@@ -100,4 +100,9 @@ PARSER_BOOTSTRAP_N.add_argument("--bootstrap_n", type=int, default=128, help="Nu
 PARSER_BETA_S = argparse.ArgumentParser(add_help=False)
 PARSER_BETA_S.add_argument("--beta_S", type=float, default=0.0, help="Weighting value for the stoicheometry loss.")
 
+PARSER_IGNORE_CHEMICAL_NAME = argparse.ArgumentParser(add_help=False)
+PARSER_IGNORE_CHEMICAL_NAME.add_argument("--ignore_chemical_name", action="store_true", help="Whether the chemical_name in the reaction formula should be ignored.")
+
+
+
 
