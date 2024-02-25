@@ -42,7 +42,7 @@ fds = load_multiple_fds(args, "test", seed=0)
 
 def remove_chemical_names(reaction_names : list[str]) -> list[str]:
     def update_rn(rn : str):
-        rn = 'r[' + 'm[n['.join(sorted(rn[1:-1].split("m[n["))) + ']'
+        rn = 'r[' + ''.join(sorted(map(rn[1:-1].split("m[n[")), lambda s: f"m[n[{s}") + ']'
         return re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]', '', rn))
 
     return [update_rn(rn) for rn in reaction_names]
