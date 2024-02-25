@@ -16,8 +16,8 @@ from misc.fluxDataset import load_multiple_fds
 
 def update_rn(rn : str):
     rn = 'r[' + ''.join(sorted(map(lambda s: f"m[{s}", rn[2:-1].split('m[')[1:]))) + ']' 
-    return re.sub(r'n\[.*?\]', '', rn)
-    return re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]', '', rn))
+    return re.sub(r'n\[.*?\]f\[', 'f[', rn)
+    return re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]f[', 'f[', rn))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[
