@@ -40,8 +40,8 @@ vaes = {
 
 fds = load_multiple_fds(args, "test", seed=0)
 
-def remove_chemical_names(reaction_names : str):
-    return [re.sub(r'n\[.*?\]', '', rn) for rn in reaction_names]
+def remove_chemical_names(reaction_names : list[str]) -> list[str]:
+    return [re.sub(r'\]s\[', '][', re.sub(r'n\[.*?\]', '', rn)) for rn in reaction_names]
 
 def get_vae_data(vae : FluxVAE, folder : str):
     data = vae.get_desc()
