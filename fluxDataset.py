@@ -230,6 +230,8 @@ class FluxDataset(Dataset):
 
     def create_stoicheometric_matrix(self):
         if len(self.flux_models) == 0:
+            n_reactions = len(self.reaction_names)
+            self.S = pd.DataFrame(np.zeros((n_reactions, n_reactions)), columns=self.reaction_names)
             return
 
         models = [
