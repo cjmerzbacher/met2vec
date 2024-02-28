@@ -32,6 +32,9 @@ fluxes = get_fluxes(fd, join)
 
 df_origin = get_data(fd, vae, args.stage, args.sample, fluxes=fluxes)
 data = df_origin.values
+
+print(f"{len(fluxes)} fluxes used for joint {join}")
+
 data = prep_data(data, args.prep, args.perp)
 
 if args.prep == NONE and args.stage != EMB:
