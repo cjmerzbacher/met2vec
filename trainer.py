@@ -33,6 +33,7 @@ parser.add_argument("--test_size", type=int, default=2048, help='The size of the
 parser.add_argument("--save_test_min", type=boolean_string, default=True, help="If true will save the vae which scored the lowest loss on test data (default True)")#
 parser.add_argument("--weight_decay", type=float, default=0, help="Weight decay value.")
 parser.add_argument("--beta_S", type=float, default=0.0, help="Weighting value for the stoicheometry loss.")
+parser.add_argument("--test_beta_S", type=float, default=0.0, help="Beta_S value output in test_loss")
 parser.add_argument("main_folder", type=str, help="Name of the folder data will be saved to.")
 args = parser.parse_args()
 
@@ -100,6 +101,7 @@ trainer = VAETrainer(
     beta_S=args.beta_S,
     main_folder=args.main_folder,
     losses_file=args.losses_file,
+    test_beta_S=args.test_beta_S,
     refresh_data_on=args.refresh_data_on,
     save_on=args.save_on,
     save_losses_on=args.save_losses_on,

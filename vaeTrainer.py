@@ -31,6 +31,7 @@ class VAETrainer:
                  beta_S : float,
                  main_folder : str,
                  losses_file : str,
+                 test_beta_S : float = None,
                  refresh_data_on : int = 0,
                  save_on : int = 0,
                  save_losses_on : int = 1,
@@ -40,6 +41,7 @@ class VAETrainer:
         self.lr = lr
         self.batch_size = batch_size
         self.beta_S = beta_S
+        self.test_beta_S = beta_S if test_beta_S is None else test_beta_S
         self.refresh_data_on = refresh_data_on
         self.save_on = save_on
         self.save_losses_on = save_losses_on
@@ -141,7 +143,7 @@ class VAETrainer:
             }
         with torch.no_grad():
             V = self.test_fd.normalized_values
-            _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.beta_S)
+            _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.test_beta_S)
             return test_blame
         
     def train(self, epochs : int) -> None:
