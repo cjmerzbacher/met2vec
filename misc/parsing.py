@@ -103,6 +103,8 @@ PARSER_BETA_S.add_argument("--beta_S", type=float, default=0.0, help="Weighting 
 PARSER_IGNORE_CHEMICAL_NAME = argparse.ArgumentParser(add_help=False)
 PARSER_IGNORE_CHEMICAL_NAME.add_argument("--ignore_chemical_name", action="store_true", help="Whether the chemical_name in the reaction formula should be ignored.")
 
+PARSER_ADD_LOSSES = argparse.ArgumentParser(add_help=False)
+PARSER_ADD_LOSSES.add_argument("--add_losses", action='store_true', help="Whether flux dataset losses should be calculated and output.")
 
 
 

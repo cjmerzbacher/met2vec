@@ -17,6 +17,8 @@ parser = argparse.ArgumentParser(parents=[
     PARSER_STAGE,
     PARSER_PREP,
     parser_fluxDataset_loading(),
+    PARSER_ADD_LOSSES,
+    PARSER_BETA_S,
     PARSER_SAVE,
     PARSER_VAE_SAMPLE,
     PARSER_JOIN,
@@ -24,6 +26,8 @@ parser = argparse.ArgumentParser(parents=[
 args = parser.parse_args()
 
 join = args.join
+add_losses = args.add_losses
+beta_S = args.beta_S
 
 vae = load_VAE(*get_load_VAE_args(args))
 
@@ -49,4 +53,19 @@ else:
 
 df = pd.DataFrame(data, columns=columns)
 df[SOURCE_COLUMNS] = fd.data[SOURCE_COLUMNS]
+
+if vae is not None and add_losses:
+    C = fd.get_conversion_matrix(vae.reaction_names)
+    S = fd.S.values.T
+    v_mu = fd.flux_mean.values
+    v_std = fd.flux_std.values
+
+
+    losses_df = pd.DataFrame([
+        vae.get_loss(v[None,:], C, S, v_mu, v_std, beta_S)[1]
+        for v in fd.normalized_values
+    ])
+
+    df = pd.concat([df, losses_df], axis=1)
+
 df.to_csv(args.save_path, index=False)
