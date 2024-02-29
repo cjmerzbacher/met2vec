@@ -21,7 +21,8 @@ def make_tmp(path : str, n : int, source_df : pd.DataFrame, random_state : Rando
     """Splits of a tmp file from source df of size n to be stored in path."""
     sample = source_df.sample(min(n, len(source_df.index)), random_state=random_state)
     source_df.drop(index=sample.index, inplace=True)
-    with open(path, 'wb') as file: pickle.dump(sample, file)
+    if len(sample) >= 0.8 * n:
+        with open(path, 'wb') as file: pickle.dump(sample, file)
 
 def get_n_temps(n_samples, samples_per_file):
     if n_samples <= samples_per_file:
