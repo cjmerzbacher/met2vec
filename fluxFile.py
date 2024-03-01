@@ -103,7 +103,9 @@ class FluxFile:
         if df is None:
             df = self.get_df()
 
-        n = get_n_temps(len(df.index), samples_per_file)
+        n = get_n_temps(len(df), samples_per_file)
+                        
+        samples_per_file = len(df) // n
         rs = self.get_rs()
         self.clear_tmp_files()
 

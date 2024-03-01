@@ -176,7 +176,8 @@ class VAETrainer:
                 desc, train_loss = self.batch(epoch, i, X)
                 t.set_description(desc)
 
-                min_epoch_Lt = min(train_loss, min_epoch_Lt)
+                if train_loss is not None:
+                    min_epoch_Lt = min(train_loss, min_epoch_Lt)
             
         if divides(self.save_on, epoch):
             self.save_model(epoch)
@@ -187,9 +188,12 @@ class VAETrainer:
     def batch(self, epoch, batch, X):
         blame = self.train_batch(X)
 
+        test_loss = None
         if divides(self.save_losses_on, batch):
             test_blame = self.test_vae()
             self.log(epoch, blame, test_blame)
+            test_loss = test_blame[LOSS]
 
-        return f"[{epoch+1:{self.e_size}}/{self.epochs}] loss={blame['loss']:.4e}", test_blame["loss"]
+        return f"[{epoch+1:{self.e_size}}/{self.epochs}] loss={blame[LOSS]:.4e}", test_loss
+
                 
