@@ -15,7 +15,7 @@ import argparse
 parser = argparse.ArgumentParser(parents=[
     parser_fluxDataset_loading(),
     PARSER_FLUXES,
-    PARSER_SEED,
+    parser_seed(0),
     PARSER_SAVE,
     PARSER_VERBOSE,
     parser_n("The number of fluxes sampled if none are given.")

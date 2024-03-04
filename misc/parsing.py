@@ -76,6 +76,15 @@ PARSER_MODEL_FOLDER.add_argument("--model_folder", help="If specified, common fo
 PARSER_FLUXES = argparse.ArgumentParser(add_help=False)
 PARSER_FLUXES.add_argument("--fluxes", help="The names of fluxes to be extracted.", nargs='*', default=[])
 
+def parser_seed(default=None):
+    if default is None:
+        default=randint(0,65536)
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--seed", type=int, default=default)
+
+    return parser
+
 PARSER_SEED = argparse.ArgumentParser(add_help=False)
 PARSER_SEED.add_argument("--seed", type=int, default=randint(0,65536))
 

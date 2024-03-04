@@ -22,16 +22,18 @@ parser = argparse.ArgumentParser(parents=[
     PARSER_SAVE,
     PARSER_VAE_SAMPLE,
     PARSER_JOIN,
+    parser_seed(0),
 ])
 args = parser.parse_args()
 
 join = args.join
 add_losses = args.add_losses
 beta_S = args.beta_S
+seed = args.seed
 
 vae = load_VAE(*get_load_VAE_args(args))
 
-fd = load_fd(args, "", seed=0)
+fd = load_fd(args, "", seed=seed)
 fluxes = get_fluxes(fd, join)
 
 df_origin = get_data(fd, vae, args.stage, args.sample, fluxes=fluxes)
