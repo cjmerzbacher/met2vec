@@ -172,7 +172,7 @@ class FluxDataset(Dataset):
         self.reaction_names = sorted(set.union(*flux_columns))
         self.core_reaction_names = sorted(set.intersection(*flux_columns))
 
-        self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).groupby(self.reaction_names).sum().reindex(self.reaction_names)
+        self.flux_mean = (pd.DataFrame(flux_sums) / n_fluxes).fillna(0).sum().reindex(self.reaction_names)
 
         mean_squared = (self.flux_mean ** 2)
         square_mean = pd.DataFrame(flux_suqare_sums).fillna(0).sum()
