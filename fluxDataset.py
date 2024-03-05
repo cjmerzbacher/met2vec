@@ -176,7 +176,7 @@ class FluxDataset(Dataset):
 
         mean_squared = (self.flux_mean ** 2)
         square_mean = pd.DataFrame(flux_suqare_sums).fillna(0).sum()
-        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).groupby(self.reaction_names).reindex(self.reaction_names)
+        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).groupby(self.reaction_names).sum().reindex(self.reaction_names)
 
         if min_spf < samples_per_file:
             new_n = min_spf * len(self.flux_files)
