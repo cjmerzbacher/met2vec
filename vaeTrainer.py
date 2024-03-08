@@ -32,6 +32,7 @@ class VAETrainer:
                  main_folder : str,
                  losses_file : str,
                  test_beta_S : float = None,
+                 use_beta_S_in_test_loss : bool = False,
                  refresh_data_on : int = 0,
                  save_on : int = 0,
                  save_losses_on : int = 1,
@@ -42,6 +43,11 @@ class VAETrainer:
         self.batch_size = batch_size
         self.beta_S = beta_S
         self.test_beta_S = beta_S if test_beta_S is None else test_beta_S
+        self.use_beta_S_in_test_loss = use_beta_S_in_test_loss
+
+        if use_beta_S_in_test_loss and beta_S == 0:
+            print("Warning: Using beta_S in test loss while beta_S in training is 0!")
+
         self.refresh_data_on = refresh_data_on
         self.save_on = save_on
         self.save_losses_on = save_losses_on
@@ -144,6 +150,8 @@ class VAETrainer:
         with torch.no_grad():
             V = self.test_fd.normalized_values
             _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.test_beta_S)
+            if not self.use_beta_S_in_test_loss:
+                test_blame[LOSS] -= test_blame[S_LOSS]
             return test_blame
         
     def train(self, epochs : int) -> None:
