@@ -1,0 +1,1 @@
+nohup python trainer.py -e 256 -b 256 -s 0 --n_emb 32 --n_lay 5 --lr 0.0001 --lrelu_slope 0.1 -d ./data/samples/agren_human_cells/k250/ -n 131072 --join inner -r 8 --save_losses_on 1 --test_dataset ./data/samples/agren_human_cells/k250/test/ --model_folder ./data/samples/agren_human_cells/k250/ --test_size 8192 --weight_decay 0.05 ./data/models/agren_40_long/
