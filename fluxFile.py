@@ -1,6 +1,7 @@
 import os
 import re
 import pickle
+import math
 import pandas as pd
 import numpy as np
 
@@ -105,7 +106,7 @@ class FluxFile:
 
         n = get_n_temps(len(df), samples_per_file)
                         
-        samples_per_file = len(df) // n
+        samples_per_file = math.ceil(len(df) / n)
         rs = self.get_rs()
         self.clear_tmp_files()
 
