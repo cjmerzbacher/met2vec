@@ -201,17 +201,21 @@ class FluxDataset(Dataset):
         df_norm = ((df_num - self.flux_mean) / self.flux_std).fillna(0)
         return df_norm
     
-    def get_normalized_data(self, fluxes : list[str] = None):
-        nd = self.normalize_data(self.data)
-        nd[SOURCE_COLUMNS] = self.data[SOURCE_COLUMNS]
+    def get_data(self, fluxes : list[str] = None, normalize=False):
+        if normalize:
+            data = self.normalize_data(self.data)
+        else:
+            data = self.get_num_data(self.data)
+
+        data[SOURCE_COLUMNS] = self.data[SOURCE_COLUMNS]
 
         if fluxes is None:
             fluxes = self.reaction_names 
 
-        nd = nd.drop(columns = nd.columns.difference(SOURCE_COLUMNS + fluxes))
-        nd = nd.reindex(columns = SOURCE_COLUMNS + fluxes) 
+        data = data.drop(columns = data.columns.difference(SOURCE_COLUMNS + fluxes))
+        data = data.reindex(columns = SOURCE_COLUMNS + fluxes) 
 
-        return nd
+        return data
 
     def load_dataFrame(self, df : pd.DataFrame) -> None:
         """Loads in and normalizes a dataFrame."""      

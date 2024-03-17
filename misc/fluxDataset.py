@@ -85,7 +85,7 @@ def get_data(fd : FluxDataset,
     if fluxes is None:
         fluxes = fd.reaction_names
 
-    df = fd.get_normalized_data(fluxes)
+    df = fd.get_data(fluxes)
     
     for column, val in restrictions.items():
         if not column in df.columns:
