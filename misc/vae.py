@@ -33,6 +33,10 @@ def get_load_VAE_args(args):
     return args.vae_folder, args.vae_version, args.legacy_vae, args.legacy_train_folder, args.legacy_model_folder
 
 def load_v_mu_and_v_std_from_train_folder(train_folder, model_folder, reaction_names):
+    if train_folder is None:
+        print("No train folder given!")
+        quit()
+
     path = os.path.join(train_folder, MU_STD_FILE)
     v_mu_v_std = safe_json_load(path)
     
@@ -49,9 +53,9 @@ def load_v_mu_and_v_std_from_train_folder(train_folder, model_folder, reaction_n
             quit()
 
         safe_json_dump(path, {
-            V_MU : v_mu,
-            V_STD : v_std
-        })
+            V_MU : v_mu.tolist(),
+            V_STD : v_std.tolist()
+        }, True)
 
     return v_mu, v_std
 
