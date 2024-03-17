@@ -30,7 +30,7 @@ def get_n_temps(n_samples, samples_per_file):
         samples_per_file = n_samples
         return 1
     else:
-        return n_samples // samples_per_file + 1
+        return math.ceil(n_samples / samples_per_file)
 
 
 class FluxFile:
