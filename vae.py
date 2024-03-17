@@ -22,18 +22,8 @@ def get_s(C):
 
 def format_S(S, n_outer):
     if S is None:
-        return torch.zeros((n_outer, n_outer))
+        return torch.zeros((n_outer, n_outer), dtype=torch.float32)
     return format_matrix(S)
-
-def format_mu(v_mu, v):
-    if v_mu is None:
-        return torch.zeros_like(v).to(device)
-    return format_matrix(v_mu)
-
-def format_std(v_std, v):
-    if v_std is None:
-        return torch.zeros_like(v).to(device)
-    return format_matrix(v_std)
 
 def get_linear_network(n_in : int, n_out : int, n_lay : int, lrelu_slope : float, batch_norm : bool, dropout_p : float) -> nn.Module:
     model = []
@@ -60,6 +50,8 @@ class FluxVAE:
                  legacy_vae : bool = False,
                  weight_decay: float = 0.5,
                  reaction_names : list[str] = None,
+                 v_mu : np.array = None,
+                 v_std : np.array = None,
                  ):
         """Initializes a VAE with the dimensions and hyperparameters given."""
 
@@ -73,6 +65,10 @@ class FluxVAE:
         self.weight_decay = weight_decay
         self.reaction_names = reaction_names
 
+        if v_mu  is None: v_mu  = np.zeros(self.n_in)
+        if v_std is None: v_std = np.ones(self.n_in)
+        self.set_v_mu_and_v_std(v_mu, v_std)
+
         if reaction_names != None:
             if len(reaction_names) != n_in:
                 ValueError(f"Reaction_names([{len(reaction_names)}]) isn't length of n_in:{n_in}")
@@ -85,6 +81,20 @@ class FluxVAE:
             return torch.eye(self.n_in)
         return format_matrix(C)
 
+    def set_v_mu_and_v_std(self, v_mu, v_std):
+        self.v_mu = torch.Tensor(v_mu)
+        self.v_std = torch.Tensor(v_std)
+
+        self.v_std[torch.isclose(self.v_std, torch.zeros(self.n_in))] = 1
+
+    def convert_v_to_x(self, v):
+        x = (v - self.v_mu[None,:]) / self.v_std[None,:]
+        return x
+    
+    def convert_x_to_v(self, x):
+        v = x * self.v_std + self.v_mu
+        return v
+
     def get_desc(self):
         return {
             "n_in" : self.n_in,
@@ -96,11 +106,13 @@ class FluxVAE:
             "legacy_vae": self.legacy_vae,
             "weight_decay" : self.weight_decay,
             "reaction_names": self.reaction_names,
+            "v_mu" : self.v_mu.tolist(),
+            "v_std": self.v_std.tolist(),
         }
     
     def get_loss(self, V : np.array, C : np.array, S : np.array, v_mu : np.array, v_std : np.array, beta_S : float):
-        v_r, mu, log_var = self.train_encode_decode(V, C)
-        loss, blame = self.loss(V, v_r, mu, log_var, S, v_mu, v_std, beta_S)
+        v_r, mu, log_var, x_in, x_out = self.train_encode_decode(V, C)
+        loss, blame = self.loss(x_in, x_out, v_r, mu, log_var, S, beta_S)
         return loss, blame
 
     def get_dist(self, x : torch.Tensor, C=None) -> torch.Tensor:
@@ -122,7 +134,6 @@ class FluxVAE:
     def get_z_from_dist(self, mu, std, sample):
         ones = torch.ones_like(std)
         epsilon = torch.normal(ones, ones * 0).to(device)
-
         return mu + ((std * epsilon) if sample else 0.0)
     
     def encode(self, v : torch.Tensor, sample : bool = True, C=None) -> torch.Tensor:
@@ -130,9 +141,10 @@ class FluxVAE:
             v = format_input(v)
             C = self.format_C(C)
 
-            v_i = torch.matmul(v, C)
+            v_in = torch.matmul(v, C)
+            x_in = self.convert_v_to_x(v_in)
 
-            mu, _, std = self.get_dist(v_i)
+            mu, _, std = self.get_dist(x_in)
             return self.get_z_from_dist(mu, std, sample)
     
     def decode(self, z : torch.Tensor, C : torch.Tensor, v : torch.Tensor) -> torch.Tensor:
@@ -144,7 +156,7 @@ class FluxVAE:
             v_e = v * get_s(C)
 
             z = format_input(z)
-            v_o = self.decoder(z)
+            v_o = self.convert_x_to_v(self.decoder(z))
 
             v_r = torch.matmul(v_o, C_t) + v_e
 
@@ -161,39 +173,38 @@ class FluxVAE:
         C = self.format_C(C)
 
         C_t = torch.transpose(C, 0, 1)
-        v_i = torch.matmul(v, C)
-        v_e = get_s(C) * v
+        v_in = torch.matmul(v, C)
+        x_in = self.convert_v_to_x(v_in)
+        v_extra = get_s(C) * v
         
-        mu, log_var, std = self.get_dist(v_i)
+        mu, log_var, std = self.get_dist(x_in)
         z = self.get_z_from_dist(mu, std, True)
 
-        v_o = self.decoder(z)
-        v_r = torch.matmul(v_o, C_t) + v_e
+        x_out = self.decoder(z)
+        v_out = self.convert_x_to_v(x_out)
+        v_r = torch.matmul(v_out, C_t) + v_extra
 
-        return v_r, mu, log_var 
+        return v_r, mu, log_var, x_in, x_out
 
     def loss(self, 
-             v : torch.Tensor, 
-             v_r : torch.Tensor, 
+             x : torch.Tensor, 
+             x_r : torch.Tensor, 
+             v_r : torch.Tensor,
              mu : torch.Tensor, 
              log_var : torch.Tensor,
              S : torch.Tensor = None,
-             v_mu : torch.Tensor = None,
-             v_std : torch.Tensor = None,
              beta_S = 0,
              ) -> tuple[torch.Tensor, dict[str,float]]:
         """Computes the loss for a given x and y."""
-        batch_size = v.shape[0]
-        v = format_input(v)
-        v_r = format_input(v_r)
-        v_mu = format_mu(v_mu, v)
-        v_std = format_std(v_std, v)
+        batch_size = x.shape[0]
+        x = format_input(x)
+        x_r = format_input(x_r)
 
-        S = format_S(S, v.shape[1])
+        S = format_S(S, x.shape[1])
         
-        loss_rec = torch.sum(torch.pow(v - v_r, 2.0)) 
+        loss_rec = torch.sum(torch.pow(x - x_r, 2.0)) 
         loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var)  
-        loss_S = beta_S * torch.sum(torch.pow(torch.matmul((v_r * v_std) + v_mu, S), 2.0))
+        loss_S = beta_S * torch.sum(torch.pow(torch.matmul(v_r, S), 2.0))
 
         loss_rec /= batch_size
         loss_div /= batch_size

@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
 
             _, blame = vae.get_loss(
-                fd.normalized_values, 
+                fd.values, 
                 fd.get_conversion_matrix(vae.reaction_names),
                 fd.S.values.T,
                 fd.flux_mean.values,

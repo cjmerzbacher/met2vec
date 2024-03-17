@@ -20,5 +20,5 @@ class FluxDatasetTest(TestCase):
         for flux_file in fd1.flux_files.values():
             assert flux_file.seed == fd1.seed
 
-        assert np.allclose(fd1.normalized_values, fd2.normalized_values)
+        assert np.allclose(fd1.values, fd2.values)
 

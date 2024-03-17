@@ -76,8 +76,8 @@ class FluxDataset(Dataset):
     
     def __getitem__(self, idx):
         if type(idx) == str:
-            return self.normalized_values[np.array(self.labels) == idx]
-        return self.labels[idx], torch.Tensor(self.normalized_values[idx])
+            return self.values[np.array(self.labels) == idx]
+        return self.labels[idx], torch.Tensor(self.values[idx])
     
     def set_folder(self, path : str, model_folder : str):
         """Sets up the folder for the FluxDataset.
@@ -176,18 +176,28 @@ class FluxDataset(Dataset):
 
         mean_squared = (self.flux_mean ** 2)
         square_mean = pd.DataFrame(flux_suqare_sums).fillna(0).sum()
-        self.flux_std = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).reindex(self.reaction_names)
+        self.flux_std : pd.DataFrame = np.sqrt((square_mean / n_fluxes) - mean_squared).fillna(0).reindex(self.reaction_names)
+        self.flux_std.replace(0, 1, inplace=True)
 
         if min_spf < samples_per_file:
             new_n = min_spf * len(self.flux_files)
             print(f"n too big! min_spf {min_spf}, updating n: {self.n} -> {new_n}")
             self.n = new_n
 
+    def get_mu_std_for_reactions(self, reaction_names):
+        return (
+            self.flux_mean[reaction_names].values,
+            self.flux_std[reaction_names].values
+        )
+
     def get_mu_std(self):
         return self.flux_mean.values, self.flux_std.values
-    
+
+    def get_num_data(self, data : pd.DataFrame) -> pd.DataFrame:
+        return data.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
+
     def normalize_data(self, data : pd.DataFrame) -> pd.DataFrame:
-        df_num = data.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
+        df_num = self.get_num_data(data) 
         df_norm = ((df_num - self.flux_mean) / self.flux_std).fillna(0)
         return df_norm
     
@@ -206,7 +216,7 @@ class FluxDataset(Dataset):
     def load_dataFrame(self, df : pd.DataFrame) -> None:
         """Loads in and normalizes a dataFrame."""      
         self.data = df
-        self.normalized_values = self.normalize_data(df).values
+        self.values = self.get_num_data(df).values
         self.labels = list(df[LABEL].values)
         self.unique_labels = df[LABEL].unique()
 

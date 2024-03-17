@@ -65,7 +65,7 @@ if vae is not None and add_losses:
 
     losses_df = pd.DataFrame([
         vae.get_loss(v[None,:], C, S, v_mu, v_std, beta_S)[1]
-        for v in fd.normalized_values
+        for v in fd.values
     ])
 
     df = pd.concat([df, losses_df], axis=1)

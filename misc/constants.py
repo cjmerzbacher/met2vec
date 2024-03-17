@@ -33,12 +33,16 @@ PREPS = [TSNE, PCA, NONE]
 GEM_FOLDER = 'gems'
 RENAME_DICT_FILE = ".renaming.json"
 JOIN_FILE = ".join.json"
+MU_STD_FILE = ".mu_std.json"
 PKL_FOLDER = ".pkl"
 MODELS_PKL_FILE = "models.pkl"
 DEFAULT_DATASET_SIZE = 65536
 DEFAULT_TEST_SIZE = 2048
 PKL_FOLDER = '.pkl'
 TRAIN_FOLDER = 'train'
+
+V_MU = 'v_mu'
+V_STD = 'v_std'
 
 LABEL = 'label'
 FILE_N = 'file_n'

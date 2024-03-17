@@ -14,7 +14,7 @@ class FluxVAETest(TestCase):
     def test_loss_properties(self):
         fd = FluxDataset("./data/samples/small_human")
 
-        v = fd.normalized_values
+        v = fd.values
         S = fd.S.values.T
         v_mu = fd.flux_mean.values
         v_std = fd.flux_std.values
@@ -32,8 +32,8 @@ class FluxVAETest(TestCase):
         )
 
         loss, blame = vae.loss(
-            v=v, 
-            v_r=v, 
+            x=v, 
+            x_r=v, 
             mu=torch.zeros(16), 
             log_var=torch.ones(16),
             S=S,

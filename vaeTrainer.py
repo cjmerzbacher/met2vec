@@ -56,9 +56,13 @@ class VAETrainer:
         self.losses_file = losses_file
         self.save_test_min = save_test_min
 
-        self.vae = vae
         self.train_fd = train_fd
         self.test_fd = test_fd
+
+        self.vae = vae
+        self.vae.set_v_mu_and_v_std(
+            *self.train_fd.get_mu_std_for_reactions(self.vae.reaction_names)
+        )
 
         self.optimizer = optim.Adam(
             [
@@ -148,7 +152,7 @@ class VAETrainer:
                 S_LOSS : 0.0
             }
         with torch.no_grad():
-            V = self.test_fd.normalized_values
+            V = self.test_fd.values
             _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.test_beta_S)
             if not self.use_beta_S_in_test_loss:
                 test_blame[LOSS] -= test_blame[S_LOSS]

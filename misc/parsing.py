@@ -47,6 +47,8 @@ PARSER_VAE_LOAD = argparse.ArgumentParser(add_help=False)
 PARSER_VAE_LOAD.add_argument("-v", "--vae_folder", help="The folder the VAE will be loaded from.")
 PARSER_VAE_LOAD.add_argument("--vae_version", help="The version of the VAE that will be loaded.")
 PARSER_VAE_LOAD.add_argument("--legacy_vae", type=boolean_string, help="If the VAE used legacy sigma encoding.", default=False)
+PARSER_VAE_LOAD.add_argument("--legacy_train_folder", type=str, default=None, help="If an older VAE is being used it may not store v_mu and v_std, this dataset will be loaded to find these.")
+PARSER_VAE_LOAD.add_argument("--legacy_model_folder", type=str, default=None, help="The model folder that will be used for the dataset when finding v_mu and v_std.")
 
 PARSER_VAE_FOLDERS = argparse.ArgumentParser(add_help=False)
 PARSER_VAE_FOLDERS.add_argument("--vae_folders", type=str, nargs='+', help="The folders from which VAEs will be loaded.")
