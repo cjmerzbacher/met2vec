@@ -82,8 +82,8 @@ class FluxVAE:
         return format_matrix(C)
 
     def set_v_mu_and_v_std(self, v_mu, v_std):
-        self.v_mu = torch.Tensor(v_mu)
-        self.v_std = torch.Tensor(v_std)
+        self.v_mu = format_matrix(v_mu)
+        self.v_std = format_matrix(v_std)
 
         self.v_std[torch.isclose(self.v_std, torch.zeros(self.n_in))] = 1
 
