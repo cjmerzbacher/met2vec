@@ -85,7 +85,7 @@ class FluxVAE:
         self.v_mu = format_matrix(v_mu)
         self.v_std = format_matrix(v_std)
 
-        self.v_std[torch.isclose(self.v_std, torch.zeros(self.n_in))] = 1
+        self.v_std[torch.isclose(self.v_std, torch.zeros(self.n_in).to(device)).to(device)] = 1
 
     def convert_v_to_x(self, v):
         x = (v - self.v_mu[None,:]) / self.v_std[None,:]
