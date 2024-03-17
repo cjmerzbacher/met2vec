@@ -41,7 +41,7 @@ def load_v_mu_and_v_std_from_train_folder(train_folder, model_folder, reaction_n
         v_std = v_mu_v_std[V_STD]
     else:
         print(f"'{MU_STD_FILE}' not found. Loading using FluxDataset.")
-        fd = FluxDataset(train_folder, 100, model_folder, seed=0)
+        fd = FluxDataset(train_folder, 1024, model_folder, seed=0)
         v_mu, v_std = fd.get_mu_std_for_reactions(reaction_names)
 
         if v_mu is None or v_std is None:
