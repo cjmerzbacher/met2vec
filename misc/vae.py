@@ -44,6 +44,15 @@ def load_v_mu_and_v_std_from_train_folder(train_folder, model_folder, reaction_n
         fd = FluxDataset(train_folder, 100, model_folder, seed=0)
         v_mu, v_std = fd.get_mu_std_for_reactions(reaction_names)
 
+        if v_mu is None or v_std is None:
+            print("Unable to load v_mu and v_std, exiting!")
+            quit()
+
+        safe_json_dump(path, {
+            V_MU : v_mu,
+            V_STD : v_std
+        })
+
     return v_mu, v_std
 
 def load_VAE(
