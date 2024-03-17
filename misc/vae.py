@@ -95,7 +95,10 @@ def load_VAE(
     if v_mu is None or v_std is None:
         print(f"v_mu or v_std not pressent in VAE desc, loading from dataset...")
         print(f"Using legacy train folder '{legacy_train_folder}' with model folder '{legacy_model_folder}'.")
-        v_mu, v_std = load_v_mu_and_v_std_from_train_folder(legacy_train_folder, legacy_model_folder)
+        v_mu, v_std = load_v_mu_and_v_std_from_train_folder(
+            legacy_train_folder, 
+            legacy_model_folder,
+            reaction_names)
 
     lrelu_slope = safe_extract_from_args(vae_args, "lrelu_slope", 0.0)
     batch_norm = safe_extract_from_args(vae_args, "batch_norm", False)
