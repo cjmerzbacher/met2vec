@@ -4,16 +4,17 @@ This library implements a variational autoencoder (VAE), specifically altered to
 ## Dependencies
 This project was origionally created using the python `venv` utility, for setup information see [this page](https://docs.python.org/3/library/venv.html). Once `venv` is set up run:
 ```
-python -m pip install requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## Organization of the code
 The main files implementing the VAE and dataset can be found in the root folder.
 
-- `fluxDataset.py` contains the implementation of `FluxDataset` which manages loading flux samples generated tih `fluxSampler.py`. It cannot be run independently.
+- `fluxDataset.py` contains the implementation of the `FluxDataset` class which manages loading flux samples generated the `fluxSampler.py`. It cannot be run independently.
 - `fluxFile` contains the implementation of `FluxFile` class which acts as a wrapper around the flux samples files and manager renaming columns etc.
 - `fluxModel/py` contains the implementation of `FluxModel` class which acts as a wrapper around a GSM model (which are assumed to be stored in some `./gems/` folder.)
 - `fluxSampler.py` is a python script which acts as a wrapper around the COBRApy implementation of `OptGpSampler` and `ACHR`.
+- `reproducibility.py` contains some functionality related to reproducibility with random states.
 - `trainer.py` is a python script that is used to train VAEs. 
 - `vae.py` constraints the implementation of the `FluxVAE` class implementing the main VAE functionality along side some extra functionality specific to loading samples from different GSM sources consistently.
 - `vaeTrainer.py` contains the implementation of the `VAETrainer` class which `trainer.py` is running.
@@ -47,7 +48,7 @@ Once a dataset has been setup `trainer.py` can be run. Using the `-h` tag will r
 ```
 python trainer.py -h
 ```
-The only required arguments are `-d` (dataset folder) and a final `main_folder` which the VAE and a `losses.csv` file will be saved to. As an example:
+The only required arguments are `-d` (dataset folder) and a final `main_folder` (where the VAE and a `losses.csv` file will be saved to) are required, but generally other arguments are required. As an example:
 ```
 python trainer.py -d ./data/samples/new_dataset/ -e 32 --lr 0.0001 ./data/models/test/
 ```

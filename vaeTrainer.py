@@ -94,6 +94,7 @@ class VAETrainer:
                 ]) + "\n")
 
     def log(self, epoch, blame, test_blame) -> None:
+        """"""
         with open(self.losses_file, "a+") as file:
             values = [
                 epoch,
@@ -109,6 +110,7 @@ class VAETrainer:
             file.write(f"{','.join(map(str,values))}\n")
 
     def save_model(self, epoch, test_min_vae=False) -> None:
+        """Save the VAE in its current state"""
         suffix = f"_testmin" if test_min_vae else f"{epoch}"
 
         def add_mf(path):
@@ -117,14 +119,13 @@ class VAETrainer:
         encoder_path = add_mf(f"encoder{suffix}.pth")
         decoder_path = add_mf(f"decoder{suffix}.pth")
         vae_desc_path =add_mf(f"vae_desc{suffix}.json")
-        vae_pkl_path  =add_mf(f"vae_pkl{suffix}.pkl")
 
-
+        # Save encoder and decoder weights
         torch.save(self.vae.encoder, encoder_path)
         torch.save(self.vae.decoder, decoder_path)
 
+        # Makes desc to be saved along side VAE
         desc = self.vae.get_desc()
-
         desc["epoch"] = epoch
 
         if self.train_fd is not None:
@@ -133,9 +134,9 @@ class VAETrainer:
             desc["test_dataset"] = self.test_fd.main_folder,
 
         safe_json_dump(vae_desc_path, desc, True)
-        safe_pkl_dump(vae_pkl_path, self.vae, True)
 
     def train_batch(self, V : np.array) -> dict[str,float]:
+        """Trains a single batch V through the VAE, then takes a gradient step"""
         self.optimizer.zero_grad()
         loss, blame = self.vae.get_loss(V, self.C_train, self.S_train, self.beta_S)
         loss.backward()

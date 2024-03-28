@@ -38,7 +38,7 @@ def get_conversion_matrix(from_reactions : list[str], to_reactions : list[str]):
     ])
     
 class FluxDataset(Dataset):
-    '''Class alowing a fluxdataset.csv file to be loaded into pytorch.'''
+    '''Class allowing a fluxdataset.csv file to be loaded into pytorch.'''
     def __init__(self, 
                  path : str, 
                  n : int = DEFAULT_DATASET_SIZE,
@@ -64,7 +64,7 @@ class FluxDataset(Dataset):
 
         # Load data into current
         self.reload_sample()
-        self.create_stoicheometric_matrix()
+        self.create_stoichiometric_matrix()
 
         self.C = self.get_conversion_matrix(self.core_reaction_names)
 
@@ -72,25 +72,17 @@ class FluxDataset(Dataset):
         print(f"outer size -> {len(self.reaction_names)}")
 
     def __len__(self):
+        """Gets the length of the current sample"""
         return self.data.shape[0]
     
     def __getitem__(self, idx):
+        """Indexes and item (if string allows specific flux to be taken)"""
         if type(idx) == str:
             return self.values[np.array(self.labels) == idx]
         return self.labels[idx], torch.Tensor(self.values[idx])
     
     def set_folder(self, path : str, model_folder : str):
-        """Sets up the folder for the FluxDataset.
-        
-        Just readies the directory creating a pkl_folder
-
-        Args:
-            path: The path to a csv file or folder constaining many csv files.
-
-        Raises:
-            FileNotFoundError: If the folder doesn't exist, or there are no files under
-            the path.
-        """
+        """Sets up the folder for the FluxDataset."""
         self.path = path
         self.main_folder = path if os.path.isdir(path) else os.path.dirname(path)
         self.model_folder = model_folder 
@@ -102,7 +94,8 @@ class FluxDataset(Dataset):
         if not os.path.exists(self.main_folder):
             raise FileNotFoundError(f"The folder {self.main_folder} does not exist and there is no flux data to load.")
 
-    def find_flux_files(self):   
+    def find_flux_files(self):
+        """Finds all the flux files in the main_folder"""   
         if self.path.endswith('.csv'):     
             flux_paths = [self.path] 
         else:
@@ -122,6 +115,7 @@ class FluxDataset(Dataset):
             self.flux_files[flux_file.file_name] = flux_file
 
     def find_models(self):
+        """Finds all the models in the models folder."""
         self.flux_models : dict[str, FluxModel] = {}
 
         flux_file_by_model_name = {}
@@ -145,6 +139,7 @@ class FluxDataset(Dataset):
                 ff.set_model(fm)
 
     def load_fluxes(self):
+        """Loads all flux files created tmps in the process."""
         samples_per_file = self.n // len(self.flux_files)
         min_spf = samples_per_file
 
@@ -185,23 +180,28 @@ class FluxDataset(Dataset):
             self.n = new_n
 
     def get_mu_std_for_reactions(self, reaction_names):
+        """Returns the mu and std of reaction fluxes for some reaction_names"""
         return (
             self.flux_mean[reaction_names].values,
             self.flux_std[reaction_names].values
         )
 
     def get_mu_std(self):
+        """Returns the full mu and std for all reaction fluxes"""
         return self.flux_mean.values, self.flux_std.values
 
     def get_num_data(self, data : pd.DataFrame) -> pd.DataFrame:
+        """Returns only the numerical data"""
         return data.drop(columns=SOURCE_COLUMNS).select_dtypes(include='number')
 
     def normalize_data(self, data : pd.DataFrame) -> pd.DataFrame:
+        """Returns only the numerical data (normalized)"""
         df_num = self.get_num_data(data) 
         df_norm = ((df_num - self.flux_mean) / self.flux_std).fillna(0)
         return df_norm
     
     def get_data(self, fluxes : list[str] = None, normalize=False):
+        """Gets the main data df, e.g. numerical data combined with source information."""
         if normalize:
             data = self.normalize_data(self.data)
         else:
@@ -242,7 +242,8 @@ class FluxDataset(Dataset):
         df = df.reindex(columns=self.reaction_names + SOURCE_COLUMNS)
         self.load_dataFrame(df)
 
-    def create_stoicheometric_matrix(self):
+    def create_stoichiometric_matrix(self):
+        """Creates the combined stoichiometric matrix for this dataset."""
         if len(self.flux_models) == 0:
             n_reactions = len(self.reaction_names)
             self.S = pd.DataFrame(np.zeros((n_reactions, n_reactions)), columns=self.reaction_names)
@@ -291,5 +292,6 @@ class FluxDataset(Dataset):
         self.S = self.S.set_index(METABOLITE)
 
     def get_conversion_matrix(self, to_reactions):
+        """Creates a conversion matrix for a given set of values."""
         return get_conversion_matrix(self.reaction_names, to_reactions)
 
