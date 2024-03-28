@@ -137,7 +137,7 @@ class VAETrainer:
 
     def train_batch(self, V : np.array) -> dict[str,float]:
         self.optimizer.zero_grad()
-        loss, blame = self.vae.get_loss(V, self.C_train, self.S_train, self.mu_train, self.std_train, self.beta_S)
+        loss, blame = self.vae.get_loss(V, self.C_train, self.S_train, self.beta_S)
         loss.backward()
         self.optimizer.step()
 
@@ -153,7 +153,7 @@ class VAETrainer:
             }
         with torch.no_grad():
             V = self.test_fd.values
-            _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.mu_test, self.std_test, self.test_beta_S)
+            _, test_blame = self.vae.get_loss(V, self.C_test, self.S_test, self.test_beta_S)
             if not self.use_beta_S_in_test_loss:
                 test_blame[LOSS] -= test_blame[S_LOSS]
             return test_blame
@@ -164,12 +164,10 @@ class VAETrainer:
 
         self.min_run_Lt = np.inf
 
-        self.mu_train, self.std_train = self.train_fd.get_mu_std()
         self.C_train = self.train_fd.get_conversion_matrix(self.vae.reaction_names)
         self.S_train = self.train_fd.S.values.T
 
         if self.test_fd != None:
-            self.mu_test, self.std_test = self.test_fd.get_mu_std()
             self.C_test = self.test_fd.get_conversion_matrix(self.vae.reaction_names)
             self.S_test = self.test_fd.S.values.T
 

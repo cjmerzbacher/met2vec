@@ -110,7 +110,7 @@ class FluxVAE:
             "v_std": self.v_std.tolist(),
         }
     
-    def get_loss(self, V : np.array, C : np.array, S : np.array, v_mu : np.array, v_std : np.array, beta_S : float):
+    def get_loss(self, V : np.array, C : np.array, S : np.array, beta_S : float = 0):
         v_r, mu, log_var, x_in, x_out = self.train_encode_decode(V, C)
         loss, blame = self.loss(x_in, x_out, v_r, mu, log_var, S, beta_S)
         return loss, blame
@@ -203,7 +203,7 @@ class FluxVAE:
         S = format_S(S, x.shape[1])
         
         loss_rec = torch.sum(torch.pow(x - x_r, 2.0)) 
-        loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var)  
+        loss_div = 0.5 * torch.sum(log_var.exp() + mu.pow(2) - log_var - self.n_emb)  
         loss_S = beta_S * torch.sum(torch.pow(torch.matmul(v_r, S), 2.0))
 
         loss_rec /= batch_size
