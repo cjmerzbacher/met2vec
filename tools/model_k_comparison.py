@@ -75,8 +75,6 @@ if __name__ == '__main__':
                 fd.values, 
                 fd.get_conversion_matrix(vae.reaction_names),
                 fd.S.values.T,
-                fd.flux_mean.values,
-                fd.flux_std.values,
                 beta_S)
             data[fd.main_folder] = blame[LOSS]
 

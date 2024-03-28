@@ -59,12 +59,9 @@ df[SOURCE_COLUMNS] = fd.data[SOURCE_COLUMNS]
 if vae is not None and add_losses:
     C = fd.get_conversion_matrix(vae.reaction_names)
     S = fd.S.values.T
-    v_mu = fd.flux_mean.values
-    v_std = fd.flux_std.values
-
 
     losses_df = pd.DataFrame([
-        vae.get_loss(v[None,:], C, S, v_mu, v_std, beta_S)[1]
+        vae.get_loss(v[None,:], C, S, beta_S)[1]
         for v in fd.values
     ])
 
