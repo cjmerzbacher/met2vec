@@ -4,11 +4,13 @@ import pickle
 import math
 import pandas as pd
 import numpy as np
+import shutil
 
 from misc.constants import *
 from misc.io import *
 from reproducability import get_random_state, RandomState
 from fluxModel import FluxModel
+from random import randint
 
 
 def get_model_name(file_name : str):
@@ -34,7 +36,14 @@ def get_n_temps(n_samples, samples_per_file):
 
 
 class FluxFile:
-    def __init__(self, path : str, model_main_folder : str = None, model : FluxModel = None, seed : int = None):
+    def __init__(self, path : str, model : FluxModel = None, seed : int = None):
+        """FluxFile is an interface which manages loading the the large flux sample files created by flux sampling.
+        
+        Args:
+            path: The path of the file.
+            model: The model (e.g. GSM wrapper).
+            seed: Seed fixes randomness set if repeatability is required.
+        """
         self.path = path    
         self.model = model
         self.seed = seed
@@ -46,15 +55,17 @@ class FluxFile:
         self.pkl_folder = join(self.main_folder, PKL_FOLDER, make_folder=True)
         self.pkl_path = join(self.pkl_folder, f"{self.file_name}.pkl")
 
-        self.train_pkl_folder = join(self.pkl_folder, TRAIN_FOLDER, make_folder=True)
-
-        self.model_folder = model_main_folder
-        if self.model_folder is None:
-            self.model_folder = self.main_folder
+        self.pkl_folder = join(self.pkl_folder, f"{self.file_name}{randint(0, 65536)}", make_folder=True)
 
         self.model_name = get_model_name(self.file_name)
+        self.tmp_paths_queue : list[str] = []
+
+    def __del__(self):
+        """Makes sure pkl folder is removed, if program crashes might have to be done manually."""
+        shutil.rmtree(self.pkl_folder)
 
     def get_columns(self, non_zero=False):
+        """Finds the columns of this fluxfile, these will be renamed already."""
         df = self.get_df()
         df.drop(columns=df.columns.intersection(SOURCE_COLUMNS), inplace=True)
 
@@ -66,6 +77,7 @@ class FluxFile:
         
 
     def make_df_pkl(self):
+        """Loads the flux .csv file and saves it as a pkl to make future loadings fater."""
         try:
             df = pd.read_csv(self.path,index_col=0)
         
@@ -75,6 +87,7 @@ class FluxFile:
             raise Exception(f"Failed to read df for {self.path}.").with_traceback(e.__traceback__)
 
     def get_df(self):
+        """Get a cope of the dataframe with renaming applied."""
         df = safe_pkl_load(self.pkl_path)
         if df is None:
             df = self.make_df_pkl()
@@ -95,12 +108,15 @@ class FluxFile:
         return df
     
     def set_model(self, model : FluxModel):
+        """Sets the model (GSM) used for renaming."""
         self.model = model
     
     def get_rs(self, index=0):
+        """Gets a random state set by seed, index allow different random states to be generated."""
         return get_random_state(self.seed, index)
     
     def make_tmps(self, samples_per_file : int, df : pd.DataFrame=None) -> int:
+        """Generates and saves tmp files to allow smaller samples to be loaded by FluxDataset"""
         if df is None:
             df = self.get_df()
 
@@ -108,12 +124,11 @@ class FluxFile:
                         
         samples_per_file = math.ceil(len(df) / n)
         rs = self.get_rs()
-        self.clear_tmp_files()
 
         for i in range(n):
             make_tmp(
                 os.path.join(
-                    self.train_pkl_folder,
+                    self.pkl_folder,
                     f"{self.file_name}_{i}.pkl"
                 ),
                 samples_per_file,
@@ -126,22 +141,26 @@ class FluxFile:
 
         return samples_per_file
     
-    def clear_tmp_files(self):
-        paths = self.get_tmp_paths()
-        for path in paths:
-            os.unlink(path)
-
     def get_tmp_paths(self):
+        """Find all tmp files (saved as .pkl files)."""
         return [
-            os.path.join(self.train_pkl_folder, f)
-            for f in os.listdir(self.train_pkl_folder)
+            os.path.join(self.pkl_folder, f)
+            for f in os.listdir(self.pkl_folder)
             if f.startswith(self.file_name)
         ]
     
-    def load_tmp_file(self):
-        paths = self.get_tmp_paths()
+    def reset_tmp_paths_queue(self):
+        """Resets the tmp queue"""
         rs = self.get_rs()
-        path = paths[rs.randint(0, len(paths))]
+        self.tmp_paths_queue = self.get_tmp_paths() 
+        rs.shuffle(self.tmp_paths_queue)
+    
+    def load_tmp_file(self):
+        """Loads the next tmp file in the tmp queue"""
+        if len(self.tmp_paths_queue) == 0:
+            self.reset_tmp_paths_queue()
+
+        path = self.tmp_paths_queue.pop(0)
         with open(path, 'rb') as file:
             return pickle.load(file)
         

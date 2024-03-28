@@ -225,8 +225,8 @@ class FluxDataset(Dataset):
         self.unique_labels = df[LABEL].unique()
 
     def reload_sample(self) -> None:
-        """Loads a sample into the dataset.
-        """
+        """Loads next sample into the dataset."""
+
         columns = list(set(self.reaction_names + SOURCE_COLUMNS))
         samples = [pd.DataFrame(columns=columns)]
         flux_files_it = list(enumerate(self.flux_files.values()))
