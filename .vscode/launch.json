@@ -5,8 +5,41 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: model_k_comparison",
+            "type": "debugpy",
+            "request": "launch",
+            "program":"./tools/model_k_comparison.py", 
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--vae_folders", "./data/models/test/", "./data/models/test/",
+                "--test_paths", 
+                "./data/samples/small_human_split/0",
+                "./data/samples/small_human_split/1",
+                "./data/samples/small_human_split/test",
+                "--test_size", "64",
+                "--test_model_folder", "./data/samples/small_human/",
+                "--ignore_chemical_name",
+                "--save_path", "./data/plot_data/model_k_comparison_test.csv"
+            ]
+        },
+        {
+            "name": "Python: kmeans_elbo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./tools/kmeans_elbo.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--path", "./data/samples/small_human/",
+                "--size", "65536",
+                "--save_path", "./data/plot_data/kmeans_elbo_fluxes.csv",
+                "--model_folder", "None",
+            ]
+        },
+        {
             "name": "Python: extract_fluxes",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/extract_fluxes.py",
             "console": "integratedTerminal",
@@ -14,15 +47,14 @@
             "args": [
                 "--path", "./data/samples/small_human/",
                 "--size", "65536",
-                "--model_folder", "None",
-                "--join", "inner",
                 "-n", "5",
-                "--save_path", "./data/plot_data/test_extract_fluxes.csv"
+                "--save_path", "./data/plot_data/test_extract_fluxes.csv",
+                "--model_folder", "None",
             ]
         },
         {
             "name": "Python: prepare_test_train",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/prepare_test_train.py",
             "console": "integratedTerminal",
@@ -35,26 +67,26 @@
             ]
         },
         {
-            "name": "Python: mean_classifier",
-            "type": "python",
+            "name": "Python: nearest_centroid",
+            "type": "debugpy",
             "request": "launch",
-            "program": "./tools/mean_classifier.py",
+            "program": "./tools/nearest_centroid.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
                 "-v", "./data/models/test/",
-                "-s", "emb",
+                "-s", "pre",
                 "-T", "./data/samples/small_human/",
                 "--train_size", "300",
-                "-t", "./data/samples/liver/",
+                "-t", "./data/samples/small_human/",
                 "--test_size", "100",
-                "-s", "emb",
                 "--save_path", "./data/plot_data/test_means_class.csv",
+                "--group_by", "file_n",
             ]
         },
         {
             "name": "Python: ari_score",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/ari_score.py",
             "console": "integratedTerminal",
@@ -64,7 +96,6 @@
                 "./data/models/test",
                 "-d",  "./data/samples/small_human",
                 "--size", "300",
-                "--join", "inner",
                 "-n", "64",
                 "--bootstrap_n", "1024",
                 "--save_path", "./data/plot_data/test_ari.csv"
@@ -72,7 +103,7 @@
         },
         {
             "name": "Python: kmeans_cluster.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/kmeans_cluster.py",
             "console": "integratedTerminal",
@@ -83,13 +114,12 @@
                 "-d", "./data/samples/small_human",
                 "-s", "emb", 
                 "--size", "300",
-                "--join", "inner",
                 "--save_path", "./data/plot_data/test_km.csv",
             ]
         },
         {
             "name": "Python: loss_scoring.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/loss_scoring.py",
             "console": "integratedTerminal",
@@ -102,7 +132,7 @@
         },
         {
             "name": "Python: flux_processor",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "./tools/flux_processor.py",
             "console": "integratedTerminal",
@@ -115,44 +145,29 @@
                 "--path", "./data/samples/small_human/",
                 "--prep", "tsne",
                 "--size", "300",
-                "--join", "inner",
+                "--add_losses",
+                "--beta_S", "1",
                 "--save_path", "./data/plot_data/test_tsne.csv",
-            ]
-        },
-        {
-            "name": "Python: gmm_classifier.py",
-            "type": "python",
-            "request": "launch",
-            "program": "./tools/gmm_classifier.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "-v", "./data/models/test/",
-                "-T", "./data/samples/small_human/",
-                "-t", "./data/samples/liver/", 
-                "-s", "pre",
-                "--train_size", "300",
-                "--test_size", "100",
-                "--save_path", "./data/plot_data/test.csv",
+                "--legacy_train_folder", "./data/samples/small_human/",
             ]
         },
         {
             "name": "Python: FBASampler",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "FBASampler.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "./data/samples/fba_sampler_test",
-                "-r", "1",
-                "-n", "1",
+                "./data/samples/small_human/",
+                "-r", "3",
+                "-n", "5000",
                 "-t"
             ]
         },
         {
             "name": "Python: trainer.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "trainer.py",
             "console": "integratedTerminal",
@@ -160,20 +175,23 @@
             "args": [
                 "-e", "5",
                 "-d", "./data/samples/small_human/",
-                "--join", "inner",
                 "--n_emb", "16",
-                "--n_lay", "4",
-                "-b", "256", 
+                "--n_lay", "2",
+                "-b", "10", 
                 "./data/models/test/",
                 "--lrelu_slope", "0.1",
-                "--test_dataset", "./data/samples/small_human_split/test/",
                 "--lr", "0.0001",
+                "--weight_decay", "0.01",
+                "--beta_S", "0",
+                "--save_losses_on", "8",
+                "--test_dataset", "./data/samples/small_human/",
+                "--test_beta_S", "1",
                 "-r", "4",
             ]
         },
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
